@@ -1,0 +1,172 @@
+%\documentclass[a4paper,11pt]{IEEEtran}
+\documentclass[11pt, titlepage, oneside, a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{listings} % http://ctan.org/pkg/listings
+\usepackage{url}
+\usepackage{lastpage}
+\usepackage{datetime}
+\usepackage{fancyhdr}
+%\usepackage{standalone}
+%Includes "References" in the table of contents
+\usepackage[nottoc]{tocbibind}
+\usepackage{varwidth}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{float}
+% type-set color
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{todonotes}
+% psudeocode
+\usepackage{clrscode3e}
+\usepackage{algorithm}
+\usepackage{newfloat}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{subcaption}
+\usepackage{multicol}
+\usepackage[top=50pt,bottom=50pt,left=48pt,right=46pt]{geometry}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\newenvironment{centerverbatim}{%
+  \par
+  \centering
+  \varwidth{\linewidth}%
+  \verbatim
+}{%
+  \endverbatim
+  \endvarwidth
+  \par
+}
+
+\DeclareFloatingEnvironment[placement={ht!},name=Grammar]{grammar}
+\DeclareFloatingEnvironment[placement={ht!},name=List]{mylist}
+\DeclareFloatingEnvironment[placement={ht!},name=Language]{lang}
+\setlist[itemize]{noitemsep, topsep=0pt}
+
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+                   % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=1,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+
+
+\hypersetup{colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue}}
+\makeatletter
+\newcommand\footnoteref[1]{\protected@xdef\@thefnmark{\ref{#1}}\@footnotemark}
+\makeatletter
+
+%Title, date an author of the document
+%Define special date YYYY-mm-dd
+\newdateformat{specialdate}{\THEYEAR-\twodigit{\THEMONTH}-\twodigit{\THEDAY}}
+\date{\specialdate\today}
+\def\datemade{\specialdate\today}
+
+%Define paper
+\def\university{Umeå University}
+\def\instution{Department of Computing Science}
+\def\pagetypename{Master thesis report}
+
+%Define course
+\def\coursename{Examensarbete för civilingenjörsexamen i teknisk datavetenskap}
+\def\coursecode{5DV143}
+\def\coursegiventerm{VT19}
+\def\coursepoints{30HP}
+\def\titleFrontPage{\coursename\\\coursepoints, \coursecode, \coursegiventerm}
+\def\usupervisor{Jan-Erik Moström (\url{jem@cs.umu.se})\\}
+\def\csupervisor{Oskar Janssson (\url{oskar.jansson@cinnober.com})\\}
+
+%Define assignment
+\def\assignmentname{Cross-chain
+	Settlement and Exchange in
+	Cryptocurrency}
+
+%Labpartners (separate with comma)
+\def\csuser{c14can}
+\def\casuser{caan0156}
+\def\name{Carl-Johan Andersson}
+
+%Header
+%\setlength{\headheight}{15pt}
+\setlength{\headheight}{27.11652pt}
+\setlength{\headsep}{20pt}
+
+\pagestyle{fancy}
+\fancyhead[LE,RO]{\datemade\\\name}
+\fancyhead[RE,LO]{\coursename\\\university}
+\fancyfoot[CE,CO]{\rightmark}
+\fancyfoot[LE,RO]{\thepage}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+
+%Sets the paragraph formatting
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{10pt}
+
+\begin{document}
+%Begining of the documents
+
+%Frontpage
+\input{frontpage}
+\onecolumn
+\newpage
+% TOC - Table Of Contents
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+\setcounter{page}{1}
+\setcounter{section}{0}
+
+\newcommand{\Section}[1]{\section{#1}\vspace{-15pt}}
+\newcommand{\Subsection}[1]{\vspace{-4pt}\subsection{#1}\vspace{-15pt}}
+\newcommand{\Subsubsection}[1]{\vspace{-4pt}\subsubsection{#1}\vspace{-15pt}}
+
+
+
+
+\section*{Abstract}
+wafawf
+\newpage
+
+\Section{Introduction}
+
+\twocolumn
+
+
+\onecolumn
+% Bibliography
+\bibliographystyle{plain}
+%\bibliography{reference}
+
+
+\end{document}
