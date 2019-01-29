@@ -12,3 +12,6 @@ The txid can be found here:
 
 **Claim**
 `27b2a5950bd67a96fcdb4c9dcc35e5af4bdcf215fed325dba86f804101ab5646`
+
+## day 2
+What started as code clean up ended up being a project moving all functionality into the code, previously I had used the bitcoin cli to do somethings. But it would be a lot nicer doing it all from the go code.

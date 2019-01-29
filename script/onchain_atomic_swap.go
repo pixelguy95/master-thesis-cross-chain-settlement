@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	"encoding/json"
+
+	"./rpcutils"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
 )
 
 func main() {
-	//unspent := basictransactions.GenerateInputIndex("27b2a5950bd67a96fcdb4c9dcc35e5af4bdcf215fed325dba86f804101ab5646", 0)
 
 	//02c8fc9f6644e56705bd8bb7d287482968e3da0dede91caa45243c4ee378eacca5
 	//hexTransaction := basictransactions.GenerateP2PKHTransaction("0327ef5006745e8c135911b86ad42e73170ecdb4e5793949362a580eee59885c03", "02c8fc9f6644e56705bd8bb7d287482968e3da0dede91caa45243c4ee378eacca5", unspent, 5424000, 12848000)
@@ -24,16 +26,46 @@ func main() {
 	}
 
 	ntfnHandlers := rpcclient.NotificationHandlers{
+		OnClientConnected: func() {
+			fmt.Println("Connected")
+		},
 		OnAccountBalance: func(account string, balance btcutil.Amount, confirmed bool) {
 			log.Printf("New balance for account %s: %v", account,
 				balance)
 		},
+		OnUnknownNotification: func(method string, params []json.RawMessage) {
+			fmt.Println(method)
+		},
 	}
 
 	client, error := rpcclient.New(connCfg, &ntfnHandlers)
-	fmt.Println(error)
+	if error != nil {
+		fmt.Println(error)
+	}
 
-	client.Connect(3)
+	client.Connect(1)
+	clientWraper := rpcutils.New(client)
+	rawData, error := clientWraper.ListWallets()
 
-	client.
+	if error != nil {
+		fmt.Println(error)
+	}
+
+	fmt.Println(rawData)
+
+	error = clientWraper.UnloadAllWallets()
+	if error != nil {
+		fmt.Println(error)
+	} else {
+		fmt.Println("All wallets deleted")
+	}
+
+	newWalletMsg, error := clientWraper.CreateWallet("brandnew")
+	if error != nil {
+		fmt.Println(error)
+	} else {
+		fmt.Println(newWalletMsg)
+	}
+
+	client.Disconnect()
 }
