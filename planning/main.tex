@@ -40,29 +40,6 @@
 \date{\specialdate\today}
 \def\datemade{\specialdate\today}
 
-%Define paper
-\def\university{Umeå University}
-\def\instution{Department of Computing Science}
-\def\pagetypename{Report}
-
-%Define course
-\def\coursename{Advanced Distributed Systems}
-\def\coursecode{5DV205}
-\def\coursegiventerm{HT18}
-\def\coursepoints{7.5 hp}
-\def\source{\url{https://github.com/Pixelguy95/minimal-blockchain}}
-\def\titleFrontPage{\coursename\\\coursepoints, \coursecode, \coursegiventerm}
-\def\graders{P-O Östberg (\url{p-o@cs.umu.se})\\}
-
-%Define assignment
-\def\assignmentnumber{Project Assignment}
-\def\assignmentname{Project Assignment}
-
-%Labpartners (separate with comma)
-\def\csuser{c14can, c14jmt}
-\def\casuser{caan0156, joma0245}
-\def\name{Carl-Johan Andersson, John-John Markstedt}
-
 %Header
 %\setlength{\headheight}{15pt}
 \setlength{\headheight}{27.11652pt}
@@ -80,10 +57,62 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{10pt}
 
+%Labpartners (separate with comma)
+\def\csuser{c14can}
+\def\casuser{caan0156}
+\def\name{Carl-Johan Andersson}
+
+
+%Define paper
+\def\university{Umeå University}
+\def\instution{Department of Computing Science}
+\def\pagetypename{Master thesis report}
+
+%Define course
+\def\coursename{Examensarbete för civilingenjörsexamen i teknisk datavetenskap}
+\def\coursecode{5DV143}
+\def\coursegiventerm{VT19}
+\def\coursepoints{30HP}
+\def\titleFrontPage{\coursename\\\coursepoints, \coursecode, \coursegiventerm}
+\def\usupervisor{Jan-Erik Moström (\url{jem@cs.umu.se})\\}
+\def\csupervisor{Oskar Janssson (\url{oskar.jansson@cinnober.com})\\}
+
+%Define assignment
+\def\assignmentname{Planning for master-thesis}
+
+
 \begin{document}
 %Begining of the documents
 
 %Frontpage
+\begin{titlepage}
+	\thispagestyle{empty}
+	\noindent {\large \MakeUppercase\university \\
+		\instution \\
+		\pagetypename \\
+	}
+	
+	\begin{center}
+		\Large{\textbf{\titleFrontPage}}\\[7pt]
+		
+		\Large{\assignmentname}\\[40.0pt]
+		
+		\begin{tabular}{p{2cm}p{9.5cm}}
+			\hline
+			Name &  \hfill \name\\\hline
+			CAS & \hfill \casuser @umu.se \\\hline
+			CS & \hfill \csuser  @cs.umu.se \\\hline
+			Date & \hfill \datemade\\ \hline
+		\end{tabular}\\
+		
+		\vfill
+		
+		\large{\textbf{University Supervisor\\}\usupervisor}
+		\large{\textbf{Company Supervisor\\}\csupervisor}
+	\end{center}
+	\thispagestyle{empty}
+\end{titlepage}
+
 
 \newcommand{\Section}[1]{\section{#1}\vspace{-15pt}}
 \newcommand{\Subsection}[1]{\vspace{-4pt}\subsection{#1}\vspace{-15pt}}
