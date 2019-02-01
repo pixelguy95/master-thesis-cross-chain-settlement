@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/btcsuite/btcd/chaincfg"
+
 	"errors"
 
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 )
 
 // CustomRPC a wrapper around the rpcclient
@@ -152,9 +155,7 @@ func (c *CustomRPC) GetNewP2PKHAddress() string {
 }
 
 // GetNewPubKey returns a new pure pubkey
-func (c *CustomRPC) GetNewPubKey() string {
-
-	fmt.Print("Generating new pub-key: ")
+func (c *CustomRPC) GetNewPubKey() (*btcutil.AddressPubKey, error) {
 
 	param1, _ := json.Marshal("")
 	param2, _ := json.Marshal("legacy")
@@ -165,6 +166,8 @@ func (c *CustomRPC) GetNewPubKey() string {
 	address := new(string)
 	json.Unmarshal(rawData, &address)
 
+	fmt.Printf("Generating new pub-key from %s: ", *address)
+
 	param1, _ = json.Marshal(address)
 	paramsRaw = []json.RawMessage{param1}
 
@@ -174,7 +177,15 @@ func (c *CustomRPC) GetNewPubKey() string {
 	json.Unmarshal(rawData, &pubkey)
 	fmt.Printf("%s\n", pubkey.PubKey)
 
-	return *address
+	asBytes, _ := hex.DecodeString(pubkey.PubKey)
+	key, error := btcutil.NewAddressPubKey(asBytes, &chaincfg.TestNet3Params)
+
+	if error != nil {
+		fmt.Println(error)
+		return nil, error
+	}
+
+	return key, nil
 }
 
 // SignRawTransactionWithWallet signs a transaction

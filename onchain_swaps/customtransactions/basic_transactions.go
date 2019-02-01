@@ -52,7 +52,7 @@ func gatherFunds(tx *wire.MsgTx, client *rpcclient.Client) (uint64, error) {
 	// Summing and adding every available input
 	sum := uint64(0)
 	for _, out := range unspent {
-		tx.AddTxIn(wire.NewTxIn(generateInputIndex(out.TxID, out.Vout), nil, nil))
+		tx.AddTxIn(wire.NewTxIn(GenerateInputIndex(out.TxID, out.Vout), nil, nil))
 		sum += uint64(out.Amount * 100000000)
 	}
 
@@ -77,7 +77,8 @@ func createP2PKHScript(scriptAddress []byte) []byte {
 	return script
 }
 
-func generateInputIndex(txid string, outputIndex uint32) *wire.OutPoint {
+// GenerateInputIndex generates an input ndex from txid and vout index
+func GenerateInputIndex(txid string, outputIndex uint32) *wire.OutPoint {
 	prevHash, _ := hex.DecodeString(txid)
 	prevHash = reverse(prevHash)
 	prevTxHash, _ := chainhash.NewHash(prevHash)

@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/btcsuite/btcd/chaincfg"
+
+	"github.com/btcsuite/btcutil"
+
 	"encoding/hex"
 
 	"./customtransactions"
@@ -35,20 +39,20 @@ func main() {
 	client.Connect(1)
 	clientWraper := rpcutils.New(client)
 
-	clientWraper.GetNewPubKey()
-	return
-
 	clientWraper.UnloadAllWallets()
 	clientWraper.LoadWallet("cj_wallet")
 
-	tx, error := customtransactions.GenerateP2PKHTransaction("mhqovpK2dcjUvdmn75ZgUcMi5FCmviVHmb", 10000, client)
-	if error != nil {
-		fmt.Println(error)
-	}
+	//reciverAsBytes, _ := hex.DecodeString("0349c9b0c947ea937858106c2f1ac465d456dba7239875eac6bb78ee32d574c607")
+	//reciver, _ := btcutil.NewAddressPubKey(reciverAsBytes, &chaincfg.TestNet3Params)
+	//swap, error := customtransactions.GenerateAtomicSwapTransaction(reciver, 100000, client)
 
-	//clientWraper.SignRawTransactionWithWallet(tx)
+	reciverAsBytes, _ := hex.DecodeString("0349c9b0c947ea937858106c2f1ac465d456dba7239875eac6bb78ee32d574c607")
+	bkey, _ := btcutil.NewAddressPubKey(reciverAsBytes, &chaincfg.TestNet3Params)
 
-	//client.DumpPrivKey()
+	fmt.Println(bkey.EncodeAddress())
+
+	out := customtransactions.GenerateInputIndex("48d077ab5e98b29a3a54ffcc59e9f1ebc9ff802f5c9ce68efb3e626af1b00e6a", 1)
+	tx, _ := customtransactions.GenerateAtomicClaimWithSecret(out, 100000, client)
 
 	buf := new(bytes.Buffer)
 	tx.SerializeNoWitness(buf)
