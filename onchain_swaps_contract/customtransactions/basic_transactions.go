@@ -16,7 +16,7 @@ import (
 )
 
 // DefaultFee is the default fee that will be payed in a transaction
-const DefaultFee uint64 = 5000
+const DefaultFee uint64 = 2000
 
 // GenerateP2PKHTransaction creates a new P2PKH transaction with some parameters
 func GenerateP2PKHTransaction(payTo string, amount uint64, client *rpcclient.Client) (*wire.MsgTx, error) {
@@ -32,11 +32,11 @@ func GenerateP2PKHTransaction(payTo string, amount uint64, client *rpcclient.Cli
 	sum, _ := gatherFunds(tx, client)
 
 	// Output to reciver
-	tx.AddTxOut(wire.NewTxOut(int64(amount), createP2PKHScript(payToAddress.ScriptAddress())))
+	tx.AddTxOut(wire.NewTxOut(int64(amount), CreateP2PKHScript(payToAddress.ScriptAddress())))
 
 	// Change output
 	change := sum - amount - DefaultFee
-	tx.AddTxOut(wire.NewTxOut(int64(change), createP2PKHScript(changeToAddress.ScriptAddress())))
+	tx.AddTxOut(wire.NewTxOut(int64(change), CreateP2PKHScript(changeToAddress.ScriptAddress())))
 
 	return tx, nil
 }
@@ -59,11 +59,8 @@ func gatherFunds(tx *wire.MsgTx, client *rpcclient.Client) (uint64, error) {
 	return sum, nil
 }
 
-// createP2PKH creates a basic P2PKH transaction
-// Input should be the public key you want to send too
-// You can get the the raw publickey from an address with:
-// bitcoind getaddressinfo [address]
-func createP2PKHScript(scriptAddress []byte) []byte {
+// CreateP2PKHScript creates a basic P2PKH transaction
+func CreateP2PKHScript(scriptAddress []byte) []byte {
 
 	builder := txscript.NewScriptBuilder()
 

@@ -1,6 +1,7 @@
 package customtransactions
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"time"
@@ -13,23 +14,15 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
-const secretLenght int64 = 6
+const secretLenght int64 = 32
 
-// AtomicSwapWithSecret is a basic defenition of a atomic swap
-// contains the secret so be careful with who you share with
-type AtomicSwapWithSecret = struct {
-	Tx         *wire.MsgTx
-	Secret     []byte // Should make this [32]byte too
-	SecretHash [32]byte
-	Sender     *btcutil.AddressPubKey
-	Reciver    *btcutil.AddressPubKey
-	Amount     uint64
-}
+var config = &chaincfg.TestNet3Params
 
 // AtomicSwapContractDetails is a basic defenition of a atomic swap contract
 // contains the secret so be careful with who you share with
 type AtomicSwapContractDetails = struct {
-	Contract        *wire.MsgTx
+	Contract        []byte
+	ContractTx      *wire.MsgTx
 	Refund          *wire.MsgTx
 	Secret          []byte // Should make this [32]byte too
 	SecretHash      [32]byte
@@ -43,45 +36,71 @@ func GenerateAtomicSwapContract(reciver btcutil.Address, amount uint64, client *
 
 	clientWraper := rpcutils.New(client)
 
-	// Create change address
-	changeTo := clientWraper.GetNewP2PKHAddress()
-	changeAddress, _ := btcutil.DecodeAddress(changeTo, &chaincfg.TestNet3Params)
-
-	// Create refund address and dump private key for signing later
+	//The address that will be used for refunds
 	refundTo := clientWraper.GetNewP2PKHAddress()
-	refundAddress, _ := btcutil.DecodeAddress(refundTo, &chaincfg.TestNet3Params)
-	refundPrivKey, error := client.DumpPrivKey(refundAddress)
+	refundAddress, _ := btcutil.DecodeAddress(refundTo, config)
 
-	if error != nil {
-		fmt.Println(error)
-		return nil, error
-	}
-
-	// Secret and hash of secret
-	// TODO use random bytes
-	secret := []byte("secret")
+	secret := make([]byte, 32)
+	rand.Read(secret)
 	secretHash := sha256.Sum256(secret)
 
 	//*** CONTRACT ***//
-	//Create contract tx
+	contract, locktime := createNewContract(refundAddress.ScriptAddress(), reciver.ScriptAddress(), secretHash)
+
+	//*** CONTRACT TRANSACTION ***//
+	contractTx := createContractTx(contract, amount, client)
+
+	//*** REFUND ***//
+	refundTx, _ := createRefundTx(contractTx, contract, amount, locktime, refundAddress, client)
+
+	swapDetails := &AtomicSwapContractDetails{
+		Contract:        contract,
+		ContractTx:      contractTx,
+		Refund:          refundTx,
+		Secret:          secret,
+		SecretHash:      secretHash,
+		RefundAddress:   &refundAddress,
+		ReceiverAddress: &reciver,
+		Amount:          amount,
+	}
+
+	return swapDetails, nil
+}
+
+func createContractTx(contract []byte, amount uint64, client *rpcclient.Client) *wire.MsgTx {
+
+	clientWraper := rpcutils.New(client)
+
+	// Create change address
+	changeTo := clientWraper.GetNewP2PKHAddress()
+	changeAddress, _ := btcutil.DecodeAddress(changeTo, config)
+
+	P2SHAddressContract, _ := btcutil.NewAddressScriptHash(contract, config)
+	contractTxPkScript, _ := txscript.PayToAddrScript(P2SHAddressContract)
+
+	//Create contract tx and fund it
 	contractTx := wire.NewMsgTx(2)
 	sum, _ := gatherFunds(contractTx, client)
 
 	//Add change output
 	change := int64(sum - DefaultFee - amount)
-	changeOut := wire.NewTxOut(change, createP2PKHScript(changeAddress.ScriptAddress()))
+	changeOut := wire.NewTxOut(change, CreateP2PKHScript(changeAddress.ScriptAddress()))
 	contractTx.AddTxOut(changeOut)
 
-	//Add contract output
-	locktime := time.Now().Add(10 * time.Minute).Unix()
-	contractScript := createAtomicSwapContractScript(refundAddress.ScriptAddress(), reciver.ScriptAddress(), secretHash, locktime)
-	contractOut := wire.NewTxOut(int64(amount), contractScript)
+	contractOut := wire.NewTxOut(int64(amount), contractTxPkScript)
 	contractTx.AddTxOut(contractOut)
 
 	//Sign contract tx with wallet
 	contractTx, _ = clientWraper.SignRawTransactionWithWallet(contractTx)
 
-	//*** REFUND ***//
+	return contractTx
+}
+
+func createRefundTx(contractTx *wire.MsgTx, contract []byte, amount uint64, locktime int64, refundAddress btcutil.Address, client *rpcclient.Client) (*wire.MsgTx, error) {
+
+	// Create refund address and dump private key for signing later
+	refundPrivKey, error := client.DumpPrivKey(refundAddress)
+
 	//Create refund transaction
 	refundTx := wire.NewMsgTx(2)
 	refundAmount := int64(amount - DefaultFee)
@@ -90,7 +109,7 @@ func GenerateAtomicSwapContract(reciver btcutil.Address, amount uint64, client *
 	refundTx.LockTime = uint32(locktime + 1)
 
 	// Output from refund
-	refundOut := wire.NewTxOut(refundAmount, createP2PKHScript(refundAddress.ScriptAddress()))
+	refundOut := wire.NewTxOut(refundAmount, CreateP2PKHScript(refundAddress.ScriptAddress()))
 	refundTx.AddTxOut(refundOut)
 
 	// Add contract as input
@@ -101,30 +120,21 @@ func GenerateAtomicSwapContract(reciver btcutil.Address, amount uint64, client *
 	refundTx.AddTxIn(txIn)
 
 	//Create signature
-	signature, pubKey, error := createSignature(refundTx, 0, contractScript, refundPrivKey)
+	signature, pubKey, error := CreateSignature(refundTx, 0, contract, refundPrivKey)
 	if error != nil {
 		fmt.Println(error)
 		return nil, error
 	}
 
 	//Create new refund script with signature and pubkey
-	refundInputScript := createAtomicSwapRefundScript(signature, pubKey)
+	refundInputScript := createAtomicSwapRefundScript(signature, pubKey, contract)
 	refundTx.TxIn[0].SignatureScript = refundInputScript
 
-	contract := &AtomicSwapContractDetails{
-		Contract:        contractTx,
-		Refund:          refundTx,
-		Secret:          secret,
-		SecretHash:      secretHash,
-		RefundAddress:   &refundAddress,
-		ReceiverAddress: &reciver,
-		Amount:          amount,
-	}
-
-	return contract, nil
+	return refundTx, nil
 }
 
-func createSignature(tx *wire.MsgTx, inIndex int, contractScript []byte, signingKey *btcutil.WIF) (signature []byte, pubkey []byte, e error) {
+// CreateSignature signs a new transaction (preferably a P2SH tx) and returns a signature and public key
+func CreateSignature(tx *wire.MsgTx, inIndex int, contractScript []byte, signingKey *btcutil.WIF) (signature []byte, pubkey []byte, e error) {
 
 	signature, error := txscript.RawTxInSignature(tx, inIndex, contractScript, txscript.SigHashAll, signingKey.PrivKey)
 	if error != nil {
@@ -133,6 +143,11 @@ func createSignature(tx *wire.MsgTx, inIndex int, contractScript []byte, signing
 	}
 
 	return signature, signingKey.PrivKey.PubKey().SerializeCompressed(), nil
+}
+
+func createNewContract(refund []byte, receiver []byte, secretHash [32]byte) ([]byte, int64) {
+	locktime := time.Now().Add(48 * time.Hour).Unix() // Refund locktime
+	return createAtomicSwapContractScript(refund, receiver, secretHash, locktime), locktime
 }
 
 // Creates the script that performs the actual swap
@@ -182,13 +197,14 @@ func createAtomicSwapContractScript(meHashKey []byte, receiverHashKey []byte, se
 }
 
 // Creates the script that performs the actual swap
-func createAtomicSwapRefundScript(signature []byte, pubKey []byte) []byte {
+func createAtomicSwapRefundScript(signature []byte, pubKey []byte, contract []byte) []byte {
 
 	builder := txscript.NewScriptBuilder()
 
 	builder.AddData(signature)
 	builder.AddData(pubKey)
 	builder.AddInt64(0)
+	builder.AddData(contract)
 
 	script, _ := builder.Script()
 	return script
