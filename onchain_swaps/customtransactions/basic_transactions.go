@@ -16,7 +16,7 @@ import (
 )
 
 // DefaultFee is the default fee that will be payed in a transaction
-const DefaultFee uint64 = 500
+const DefaultFee uint64 = 5000
 
 // GenerateP2PKHTransaction creates a new P2PKH transaction with some parameters
 func GenerateP2PKHTransaction(payTo string, amount uint64, client *rpcclient.Client) (*wire.MsgTx, error) {
@@ -84,6 +84,12 @@ func GenerateInputIndex(txid string, outputIndex uint32) *wire.OutPoint {
 	prevTxHash, _ := chainhash.NewHash(prevHash)
 	prevTxHash.SetBytes(prevHash)
 
+	return wire.NewOutPoint(prevTxHash, outputIndex)
+}
+
+// GenerateInputIndexWithByteHash generates an input ndex from txid and vout index
+func GenerateInputIndexWithByteHash(txid []byte, outputIndex uint32) *wire.OutPoint {
+	prevTxHash, _ := chainhash.NewHash(txid)
 	return wire.NewOutPoint(prevTxHash, outputIndex)
 }
 

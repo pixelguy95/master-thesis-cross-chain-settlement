@@ -191,7 +191,7 @@ func (c *CustomRPC) GetNewPubKey() (*btcutil.AddressPubKey, error) {
 // SignRawTransactionWithWallet signs a transaction
 func (c *CustomRPC) SignRawTransactionWithWallet(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
-	fmt.Print("Signing raw transaction")
+	fmt.Println("Signing raw transaction with wallet")
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
@@ -209,7 +209,10 @@ func (c *CustomRPC) SignRawTransactionWithWallet(tx *wire.MsgTx) (*wire.MsgTx, e
 
 	reply := new(SignRawTransactionWithWalletReply)
 	json.Unmarshal(rawData, &reply)
-	fmt.Println(reply)
 
-	return nil, nil
+	ret := new(wire.MsgTx)
+	txbytes, _ := hex.DecodeString(reply.Hex)
+	ret.DeserializeNoWitness(bytes.NewReader(txbytes))
+
+	return ret, nil
 }
