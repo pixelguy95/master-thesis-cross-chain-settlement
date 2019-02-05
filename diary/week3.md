@@ -4,8 +4,8 @@ After a lot of struggle I finally got atomic swaps to work fully on the bitcoin 
 
 ## Swap redeemed with secret
 
+`ea251c206f95fbdff1cb815d5ea2ad7fa5c791b25f00914f3a131249050e6a6a`
 `821203b716d98a17f2a682fcfd8c6665e62eb03821c131839f035f8c2220a17f`
-`0d945421466344f1fc693bd3795b745ce8ce0c80e56a735f27e94c050ee46120`
 
 ## Swap redeemed with timelocked refund
 
