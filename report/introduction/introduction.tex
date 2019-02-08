@@ -47,7 +47,7 @@ The most common transaction made on the blockchain is one where you ''pay to'' a
 	\centering
 	\includegraphics[width=0.5\textwidth]{introduction/images/Secp256k1.png}
 	\caption{The \texttt{Secp256k1} plotted over real numbers. Note that the real curve is over a field, and thus looks more like a scattering of random points}
-	\label{fig:blockchain}
+	\label{fig:eccbasic}
 \end{figure}
 
 The elliptic curve used can hold different parameters that defines it, certain elliptic curves are standardized and have their own names. The curve used in bitcoin is named \texttt{Secp256k1}.
@@ -65,6 +65,7 @@ A block could be added to the chain by anyone in the world. However it will only
 	\label{fig:blockchain}
 \end{figure}
 
+%The section on SHA256 can be improved
 \Subsubsection{Proof of work}
 Proof of work is, just like the digital signatures, based in cryptographic mathematics. Before we go on you first need to understand what a hashing algorithm does, the hashing algorithm used in bitcoin is called \texttt{SHA256}. \texttt{SHA256} takes in data of any size and produces a sort of finger print of 256 bits. 
 
@@ -86,12 +87,42 @@ There is a term in bitcoin called mining difficulty, or just difficulty. This is
 
 The difficulty of mining a block is adjusted about every 2 weeks. The difficulty is so that the combined hashpower of the entire world is enough to mine one block every 10 minutes on average. 
 
+The accepted order of transactions is the order going backwards from the latest block on the longest chain. The longest chain is always the one that the majority is mining towards. This is simplified to the extreme but what it basically means is that as long as you trust 51\% of the participants in the network you can also trust that the order of transactions is correct. This mechanism prevents things like double spending the same money and holds a property called emergent consensus, which means that eventually the entire netowrk will agree on the order of transactions.
+
+In figure \ref{fig:blockchain2} is a diagram showing the longest chain, meaning the chain with most proof of work. The block in green is the latest block on that chain. The yellow block is what is known as a stale block, a block that is part of the chain but not part of the longest chain of blocks. Transactions in a stale block are not considered valid, and eventually they can be pruned (deleted) because they do not effect the future in any way. A stale block occurs if a new block is found in different parts of the network at almost the same time. Then the network will be split, each node tries to find the next block on the chain of whatever block they received first. In the case shown below the chain on the left ''won'' and the green block is now the longest chain.
+
+The red block in figure \ref{fig:blockchain2} is what is known as an orphan block, that is it has no known parent in the chain. This can happen if someone mines a block that is malformed or when building the chain for a new node and the blocks are received out of order.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.2\textwidth]{introduction/images/more_blockchain.png}
+	\caption{A diagram showing the longest chain, The green block is the latest block on the longest chain. The red block is a an orphan block, the yellow block is a stale block}
+	\label{fig:blockchain2}
+\end{figure}
+
+
 \Subsubsection{Software}
+Just like how you can use regular money without knowing the underlying process and technology of for example the banking system, you can use bitcoin with out knowing the details of how it works. There is plenty of software that handles wallets transactions etc for you. 
+
 \Subsubsection{Programmable transactions}
+Bitcoin has another feature that makes it very versatile in what it can do and that is that every transaction is programmable. As mentioned earlier the most common transaction is sending the money to someones public key. What really goes on here is that the person who wants to spend whatever money was sent to them has to prove programmatic that they own the private key related to that public key. 
 
+This is not the only type of transaction possible, bit con has it's own little programming language called \texttt{Script}. Any type of transaction that can be described in script is possible as a transaction. This is basis for both lightning netowrk and atomic swap, so it is very central to the entire project. 
 
-
-
+%Lightning netowrk white paper
+%https://lightning.network/lightning-network-paper.pdf
+%https://www.comp.nus.edu.sg/~prateeks/papers/Bitcoin-scaling.pdf
 \Subsection{Lightning network}
+One of the biggest problems facing bitcoin is scalability. At time of writing onchain transactions is capped at about $\approx 7$ T/s (transactions er second). This has to do with network propagation and the hard cap on block sizes, a block can only contain so many transactions before it is full. There are a couple of propsed solutions to this however, and lightning is one of them. 
+
+Lightning network is a relatively recent development in the bitcoin community. Many types of experimental transactions have been known for a long time. But in January of 2016 a white paper was released detailing a brand new type. It showed that with a few changes to the bitcoin protocol a new type of transaction that opens a channel between two parties ca be made. In this channel an unlimited number of transactions could be potentially made between the two parties. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.55\textwidth]{introduction/images/mesh_network.png}
+	\caption{}
+	\label{fig:blockchain2}
+\end{figure}
+
 \Subsection{Atomic swaps}
 \Subsection{The goal of the project}

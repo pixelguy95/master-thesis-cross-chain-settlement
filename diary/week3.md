@@ -12,4 +12,6 @@ After a lot of struggle I finally got atomic swaps to work fully on the bitcoin 
 `6bb022a1c7b908af31f05dff39b05a2f3f58e6c418ce475368a58d2763945327`
 `12fb72b46974ba0ddf297c891b2d0e9a9dd53a8542d08a62b100bf792ac40a25`
 
-Tommorow (Wednesday) will be spent either completing the atomic swap on the litecoin side or writing a bit on the report.
+Wednesday, Thursday and Friday was spent reading about lightning, more on swaps and segregated witness. As well as writing several pages on the report. A lot of what was writen has to be cleaned up and sources needs to be added. 
+
+Next week I plan to finnish the atomic sawp by running a liteocin node and constructiong the appropriate transactions.
