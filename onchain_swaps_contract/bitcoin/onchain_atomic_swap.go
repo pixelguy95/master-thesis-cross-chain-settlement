@@ -5,15 +5,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/btcsuite/btcd/txscript"
-
 	"github.com/btcsuite/btcd/chaincfg"
-
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 
 	"./customtransactions"
 	"./rpcutils"
-	"github.com/btcsuite/btcd/rpcclient"
 )
 
 var connCfg = &rpcclient.ConnConfig{
