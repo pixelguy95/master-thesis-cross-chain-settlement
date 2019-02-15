@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 
 	"./customtransactions"
@@ -27,10 +28,12 @@ func main() {
 
 	fmt.Println(client.GetBlockCount())
 
-	receiver, _ := ltcutil.DecodeAddress("mpkEXru48AA3k5Z6zU1hmUrzra1WwzHuj3", &chaincfg.TestNet4Params)
-	contractDetails, _ := customtransactions.GenerateNewAtomicSwapContract(receiver, 100000, client)
+	receiver, _ := ltcutil.DecodeAddress("msAAFBn8WD8T4aFsqLKe8LpEA5DaT7Wzwg", &chaincfg.TestNet4Params)
+	contract, _ := hex.DecodeString("6382012088a8208ecae302621c1b9f73e49d076a3b52d59e9b1fd553ac15b9b46773e4aa25bc4d8876a914b221e68c4e811390c1d491b0592fd99b2d2a253467047915685cb17576a914d749fe1d9c31aa51d6babecaa32ae3c568952c346888ac")
 
-	fmt.Printf("Secret hex: %x\n\n", contractDetails.Secret)
+	contractDetails, _ := customtransactions.GenerateAtomicSwapFromContract(receiver, 100000, contract, client)
+
+	//fmt.Printf("Secret hex: %x\n\n", contractDetails.Secret)
 
 	fmt.Println("Contract:")
 	fmt.Printf("%x\n\n", contractDetails.Contract)
