@@ -29,7 +29,8 @@ func main() {
 	fmt.Println(client.GetBlockCount())
 
 	receiver, _ := ltcutil.DecodeAddress("msAAFBn8WD8T4aFsqLKe8LpEA5DaT7Wzwg", &chaincfg.TestNet4Params)
-	contract, _ := hex.DecodeString("6382012088a8208ecae302621c1b9f73e49d076a3b52d59e9b1fd553ac15b9b46773e4aa25bc4d8876a914b221e68c4e811390c1d491b0592fd99b2d2a253467047915685cb17576a914d749fe1d9c31aa51d6babecaa32ae3c568952c346888ac")
+	contract, _ := hex.DecodeString("6382012088a820a2303419b90d0aeec2bb4847bba4456a2bdaee182849b03e1236b2872f7291b58876a914b221e68c4e811390c1d491b0592fd99b2d2a253467045f036d5cb17576a9143a7afa827dce4bb67428336c75f1af4361f6d6436888ac")
+	//0220e192922b445359ccee222d0e9ddc664e519e6cfbf2582725c1beacdd10df
 
 	contractDetails, _ := customtransactions.GenerateAtomicSwapFromContract(receiver, 100000, contract, client)
 

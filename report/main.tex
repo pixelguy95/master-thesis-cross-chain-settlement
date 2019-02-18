@@ -1,5 +1,5 @@
 %\documentclass[a4paper,11pt]{IEEEtran}
-\documentclass[11pt, titlepage, oneside, a4paper]{article}
+\documentclass[11pt, titlepage, oneside, a4paper]{report}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{listings} % http://ctan.org/pkg/listings
@@ -27,7 +27,7 @@
 \usepackage{enumitem}
 \usepackage{subcaption}
 \usepackage{multicol}
-\usepackage[top=50pt,bottom=50pt,left=48pt,right=46pt]{geometry}
+\usepackage[top=50pt,bottom=50pt,left=85pt,right=85pt]{geometry}
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -47,6 +47,15 @@
 \DeclareFloatingEnvironment[placement={ht!},name=List]{mylist}
 \DeclareFloatingEnvironment[placement={ht!},name=Language]{lang}
 \setlist[itemize]{noitemsep, topsep=0pt}
+
+\def\bitcoinA{%
+	\leavevmode
+	\vtop{\offinterlineskip %\bfseries
+		\setbox0=\hbox{B}%
+		\setbox2=\hbox to\wd0{\hfil\hskip-.03em
+			\vrule height .3ex width .15ex\hskip .08em
+			\vrule height .3ex width .15ex\hfil}
+		\vbox{\copy2\box0}\box2}}
 
 \lstset{ %
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
@@ -141,6 +150,24 @@
 % TOC - Table Of Contents
 \setcounter{secnumdepth}{2}
 \setcounter{tocdepth}{2}
+
+\chapter*{Abstract}
+This is empty for now
+
+\chapter*{Glossary}
+\textbf{Crypto currency} - A currency backed not by centralized authorities but by mathematical evidence and clever mechanisms\\
+\textbf{Bitcoin} - The very first and most mature cryptocurrency on earth\\
+\textbf{satoshi} - The smallest fraction of a bitcoin. $100.000.000$ satoshis = $1$\bitcoinA\\ 
+\textbf{Satoshi Nakamoto} - The pseudonym used by the creator of bitcoin\\
+\textbf{Proof-of-work} - A system where a someone can prove mathematically that work was put into doing something.\\
+\textbf{Mining} - In this context refers to looking for a valid hash in a proof-of-work system. Most often by checking random numbers in the nonce field until a valid hash is found\\
+\textbf{Proof-of-work} - afwaf\\
+\textbf{Proof-of-work} - afwaf\\
+\textbf{Proof-of-work} - afwaf\\
+\textbf{Proof-of-work} - afwaf\\
+\textbf{Proof-of-work} - afwaf\\
+\textbf{Atomic (Adjective)} - Something that only has two outcomes. Either completed fully or no changes to the state at all. An atomic task can not be half completed\\
+
 \tableofcontents
 \thispagestyle{empty}
 \newpage
@@ -154,11 +181,7 @@
 
 
 
-\section*{Abstract}
-wafawf
-\newpage
 
-\begin{multicols}{2}
 
 %See introduction.tex
 \input{introduction/introduction}
@@ -170,12 +193,10 @@ wafawf
 
 
 
-\Section{Implementation}
-\Section{Comparison}
-\Section{Conclusion \& Discussion}
-\Section{Future research}
-
-\end{multicols}
+\chapter{Implementation}
+\chapter{Comparison}
+\chapter{Conclusion \& Discussion}
+\chapter{Future research}
 
 \twocolumn
 

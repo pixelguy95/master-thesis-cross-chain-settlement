@@ -1,11 +1,34 @@
 
-\Section{Background}
-\Subsection{Bitcoin}
-\Subsection{ECDSA}
-\Subsection{Transactions}
-\Subsubsection{Pay to public key hash (P2PKH)}
-\Subsubsection{Pay to script hash (P2SH)}
-\Subsection{Script}
-\Subsection{Lightning network}
-\Subsection{On-chain Atomic swaps}
-\Subsection{Off-chain atomic swaps}
+\chapter{Bitcoin and Smart contracts}
+
+\Section{Bitcoin: a peer to peer electronic cash}
+As described in the title of the original white paper bitcoin is a peer to peer electronic cash system, which does not rely on any centralized third-party to neither verify the validity of any transactions or handling of transaction completion. Instead it is entirely decentralized and trust-less. The mechanisms and mathematics that makes this possible is a relatively recent discovery in computer-science. 
+
+%This could be expanded a bit
+\Subsection{Network wide consensus}
+One of the main problems facing decentralized currencies before bitcoin was thought up is the byzantine generals problem (Byzantine fault). This refers to independent agents in a system being unable to reach a consensus on what has transpired and what actions to take next. The problem can be imagined as the network being split, where one subsection of the network believes transaction order \textbf{A} is correct while another non-overlapping subsection thinks transaction order \textbf{B} is correct. How can this be resolved, and how will a new node joining the network know which order is the right one.
+
+Bitcoin was the first cryptocurrency to properly solve this problem once and for all, with the help of something called proof-of-work. proof of work originates from the slightly older idea of hashcash. 
+
+Hashcash was/is a means to limit email spam and DDoS-attacks by a proof of work system. For example a sender could be required to produce a hash of message and nonce with a certain number of bits set to 0 at the start of the hash sequence. This (statistically) should take several attempts to produce. But correctness could be checked in a single step. Thus the hash sent together with the message could be considered proof of work, because there is no known way to produce such a valid hash of a message without trying it randomly, thus the only realistic way to have such a hash is if you worked for it. Looking for a valid hash in this kind of proof of work systems is often referred to as \textbf{mining}.
+
+Bitcoin used this proof of work concept for another purpose however. Rather than combating spam the proof of work mechanism is used for reaching consensus. When ever a new block is added to the chain it needs to meet a certain proof of work requirement, called difficulty. This difficulty is set so that it should take the combined hashing power of all participants on average 10 minutes to find a valid hash of the next block in the chain.
+
+There is a term called longest proof of work in bitcoin, this refers to the chain of blocks that has the most hash-power supporting it. The chain with the most work done is statistically the one with the most participants. As long as 51\% or more of the participants in the network are honest the longest chain can be trusted. So any new members can accept the chain with most work as the truth. 
+
+Contention for the longest chain can arise if a new block is found in two different parts of the network at (almost) the same time. This is not a problem and will eventually be resolved. If you imagine two blocks being mined in different parts of the network with the same parent block 
+
+
+
+%might be cut form the full report
+\Section{ECDSA}
+might be cut form the full report
+
+
+\Section{Transactions}
+\Subsection{Pay to public key hash (P2PKH)}
+\Subsection{Pay to script hash (P2SH)}
+\Section{Script}
+\Section{Lightning network}
+\Section{On-chain Atomic swaps}
+\Section{Off-chain atomic swaps}
