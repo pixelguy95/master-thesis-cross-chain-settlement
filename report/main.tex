@@ -2,6 +2,7 @@
 \documentclass[11pt, titlepage, oneside, a4paper]{report}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
+\usepackage[x11names]{xcolor}
 \usepackage{listings} % http://ctan.org/pkg/listings
 \usepackage{url}
 \usepackage{lastpage}
@@ -24,10 +25,20 @@
 \usepackage{newfloat}
 \usepackage{listings}
 \usepackage{color}
+
 \usepackage{enumitem}
 \usepackage{subcaption}
 \usepackage{multicol}
 \usepackage[top=50pt,bottom=50pt,left=85pt,right=85pt]{geometry}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{framed}
+\usepackage{lipsum} % for dummy text only
+\usepackage[alpine,misc]{ifsym}
+
+\input{insbox.tex}
+
+
 
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
@@ -56,6 +67,11 @@
 			\vrule height .3ex width .15ex\hskip .08em
 			\vrule height .3ex width .15ex\hfil}
 		\vbox{\copy2\box0}\box2}}
+
+\newcommand\invisiblesection[1]{%
+	\refstepcounter{section}%
+	\addcontentsline{toc}{section}{\protect\numberline{\thesection}#1}%
+	\sectionmark{#1}}
 
 \lstset{ %
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument

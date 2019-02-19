@@ -16,14 +16,34 @@ Bitcoin used this proof of work concept for another purpose however. Rather than
 
 There is a term called longest proof of work in bitcoin, this refers to the chain of blocks that has the most hash-power supporting it. The chain with the most work done is statistically the one with the most participants. As long as 51\% or more of the participants in the network are honest the longest chain can be trusted. So any new members can accept the chain with most work as the truth. 
 
-Contention for the longest chain can arise if a new block is found in two different parts of the network at (almost) the same time. This is not a problem and will eventually be resolved. If you imagine two blocks being mined in different parts of the network with the same parent block 
+%https://bitcoin.org/en/alert/2013-03-11-chain-fork
+%https://gist.github.com/anonymous/3635514
+%https://bitcoin.stackexchange.com/questions/3343/what-is-the-longest-blockchain-fork-that-has-been-orphaned-to-date
+%https://github.com/bitcoin/bips/blob/master/bip-0050.mediawiki
+
+\Subsubsection{Splits}
+Contention for the longest chain can arise if a new block is found in two different parts of the network at (almost) the same time. This is not a problem and will eventually be resolved. If you imagine two blocks (\textbf{A1} and \textbf{B1}) being mined in different parts of the network with the same parent block and half the network got \textbf{A1} first and the other half of the network got \textbf{B1} first. While the entire network will accept all valid blocks they will only mine towards continuing the chain on the block they received first. So if a new block \textbf{A2} with the parent block \textbf{A1} is found first the chain formed by block \textbf{B1} will be considered invalid and the network continues the chain on the \textbf{A} side.\\
+
+\InsertBoxR{0}{
+	\footnotesize\setlength\fboxsep{10pt}\setlength\fboxrule{1pt}
+	\fcolorbox{IndianRed3}{SkyBlue1}{\begin{minipage}{2.1in}
+			\invisiblesection{\textit{Side Bar}}
+			\subsection*{How long was the longest split?}
+			The longest splits that occurred by chance were 4 block long and has occurred at least at 3 different occasions. \\\\The longest split ever was caused by an update to the bitcoin core reference implementation (\textbf{0.8.0}) that rejected a block that the other implementations did not reject, the nodes accepting the new block keept building on it while those who had updated built on a different chain. The split lasted for 52 blocks before it was resolved.
+	\end{minipage}}
+}[7]
 
 
+Such contention is called a split, or a fork, and happens naturally once every week or so. 
+
+
+\Subsection{Forks}
+\InsertBoxR{1}{}[3]
+\lipsum[1-2]
 
 %might be cut form the full report
 \Section{ECDSA}
 might be cut form the full report
-
 
 \Section{Transactions}
 \Subsection{Pay to public key hash (P2PKH)}
