@@ -34,6 +34,8 @@ The most common transaction made on the blockchain is one where you ''pay to'' a
 
 The elliptic curve used can hold different parameters that defines it, certain elliptic curves are standardized and have their own names. The curve used in bitcoin is named \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}
 
+The typical curve used in Elliptic curve cryptography is on the form $y^2=x^3+ax+b$. The \texttt{Secp256k1} is defined with $a=0$ and $b=7$, making the full \texttt{Secp256k1} equation: $y^2=x^3+7$. Which is plotted in figure \ref*{fig:eccbasic}. For more in depth on elliptic curve cryptography see section \ref{ecdsa}
+
 %Mastering bitcoin
 \Subsection{Blocks and the blockchain}
 A block is fairly simple to understand, it is simply a datatype or structure that holds information about it self, all the transactions that can fit and the previous block in the chain (more on that in a bit). Because every block holds information about the previous block you can follow all blocks backwards in time all the way back to the original, also called the genesis block.\cite{genesis} This is what is referred to as the blockchain. 
