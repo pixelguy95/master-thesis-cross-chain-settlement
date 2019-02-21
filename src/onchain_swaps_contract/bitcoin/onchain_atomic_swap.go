@@ -41,7 +41,7 @@ func main() {
 	clientWraper.UnloadAllWallets()
 	clientWraper.LoadWallet("cj_wallet")
 
-	receiver, _ := btcutil.DecodeAddress("mwkqBer1kAo3JJ45tkVWTSgBzDfpB6VnZy", &chaincfg.TestNet3Params)
+	receiver, _ := btcutil.DecodeAddress("mycZ1rQhH9CzepUyZK5xvTQe1mHaNX3c3V", &chaincfg.TestNet3Params)
 	contractDetails, _ := customtransactions.GenerateAtomicSwapContract(receiver, 100000, client)
 
 	stuff, _ := txscript.ExtractAtomicSwapDataPushes(0, contractDetails.Contract)

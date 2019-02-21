@@ -12,8 +12,8 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 
-	"../onchain_swaps_contract/customtransactions"
-	"../onchain_swaps_contract/rpcutils"
+	"../../onchain_swaps_contract/bitcoin/customtransactions"
+	"../../onchain_swaps_contract/bitcoin/rpcutils"
 	"github.com/btcsuite/btcd/rpcclient"
 )
 
