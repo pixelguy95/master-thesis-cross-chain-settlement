@@ -11,7 +11,7 @@ Restructured the report a bit, started writing on the more technical stuff.
 2. Bob puts contract transaction on litecoin blockchain\
    `d30845206b1cf09821bb9b321b15021b54429a682b5f5d7c5ffd0c8c909bc065`
 
-3. Alice redeems litecoins\  
+3. Alice redeems litecoins\
    `5d322c622f177916139792cb7fc957e34340888e5bc578466214997089110bde`
 
 4. Bob redeems bitcoins\

@@ -57,5 +57,21 @@ Lets say $x=200$ in binary terms this could be written as $x=128+64+8$ or $x=2^7
 
 
 \Subsection{Private and public key}
+Just as \texttt{RSA} cryptography, ECC relies on public-private key encryption and signatures. The public key can be shared freely to everyone, while the private key should, as the name implies, be kept private. Each unique private key has a corresponding public key, through mathematics it can be proven that someone holds the private key paired with a certain public key, without actually revealing the private key. 
+
+In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any $k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is represented by a point in 2D space}, more specifically a point that falls on the curve. To generate a public key P from a private key k you perform $kG = P$ as described in the section above.\\\\\\
+
 \Subsubsection{Compressed key}
+\begin{wrapfigure}{r}{0.3\textwidth}
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{background/images/key_compression.png}
+	\end{center}
+	\caption{How to compress the public key in ecc}
+\end{wrapfigure}
+
+The public key is quite large, with two 256-bit numbers representing coordinates. But there is a clever trick we can use to compress the size of the key. Take the \texttt{Secp256k1} curve for example ($Y^2=x^3+ax+b$). It is mirrored around the x-axis, meaning that for each x value there are two possible y values. Thus a public key can be represented by only it's x value plus a prefix telling you which resulting y-value to choose. 
+
+Note that because y and x is over $\mathbb{F}_{p}$ there is no negative value, instead the y value is referred to as even or odd. 
+
 \Subsection{ECDSA}
+The main usage of ECC in cryptocurrency 
