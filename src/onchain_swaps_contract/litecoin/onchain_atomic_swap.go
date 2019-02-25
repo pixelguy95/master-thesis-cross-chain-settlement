@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"./customtransactions"
+	
 	"github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/rpcclient"
 	"github.com/ltcsuite/ltcutil"

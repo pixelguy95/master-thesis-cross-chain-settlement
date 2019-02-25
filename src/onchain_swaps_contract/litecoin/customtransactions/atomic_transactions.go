@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"../rpcutils"
+	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/litecoin"
 
 	//Litecoin imports
 	"github.com/ltcsuite/ltcd/chaincfg"

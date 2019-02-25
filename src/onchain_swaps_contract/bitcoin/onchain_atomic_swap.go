@@ -5,17 +5,18 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 
 	"./customtransactions"
-	"./rpcutils"
 )
 
 var connCfg = &rpcclient.ConnConfig{
-	Host:         "localhost:18332",
+	Host:         "192.168.1.5:18332",
 	HTTPPostMode: true,
 	DisableTLS:   true,
 	User:         "pi",

@@ -4,7 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"../rpcutils"
+	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/litecoin"
+	
 	"github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcd/chaincfg/chainhash"
 	"github.com/ltcsuite/ltcd/rpcclient"

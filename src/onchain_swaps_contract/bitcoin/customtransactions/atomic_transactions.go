@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"../rpcutils"
+	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
