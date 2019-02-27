@@ -16,7 +16,7 @@ import (
 )
 
 var connCfg = &rpcclient.ConnConfig{
-	Host:         "192.168.1.5:18332",
+	Host:         "localhost:18332",
 	HTTPPostMode: true,
 	DisableTLS:   true,
 	User:         "pi",
@@ -35,6 +35,7 @@ func main() {
 	if error != nil {
 		fmt.Println(error)
 	}
+	txscript.RawTxInWitnessSignature
 
 	client.Connect(1)
 	clientWraper := rpcutils.New(client)
