@@ -59,13 +59,14 @@ Lets say $x=200$ in binary terms this could be written as $x=128+64+8$ or $x=2^7
 \Subsection{Private and public key}
 Just as \texttt{RSA} cryptography, ECC relies on public-private key encryption and signatures. The public key can be shared freely to everyone, while the private key should, as the name implies, be kept private. Each unique private key has a corresponding public key, through mathematics it can be proven that someone holds the private key paired with a certain public key, without actually revealing the private key. 
 
-In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any $k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is represented by a point in 2D space}, more specifically a point that falls on the curve. To generate a public key P from a private key k you perform $kG = P$ as described in the section above.\\\\\\
+In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any $k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is represented by a point in 2D space}, more specifically a point that falls on the curve. To generate a public key P from a private key k you perform $kG = P$ as described in the section above.
 
 \Subsubsection{Compressed key}
 \begin{wrapfigure}{r}{0.3\textwidth}
 	\begin{center}
 		\includegraphics[width=0.4\textwidth]{background/images/key_compression.png}
 	\end{center}
+	\vspace{-8mm}
 	\caption{How to compress the public key in ecc}
 \end{wrapfigure}
 
@@ -74,4 +75,24 @@ The public key is quite large, with two 256-bit numbers representing coordinates
 Note that because y and x is over $\mathbb{F}_{p}$ there is no negative value, instead the y value is referred to as even or odd. 
 
 \Subsection{ECDSA}
-The main usage of ECC in cryptocurrency is for proving ownership of coins. Proof of ownership can be done 
+The main usage of ECC in cryptocurrency is for proving ownership of coins. The proof relies on elliptic curve mathematics like before. Lets say \textbf{Alice} has a message $m$ and want to send it to \textbf{Bob} and also prove that the message came from her. First of let's establish some variables: $k_A$ is the private key belonging to Alice, from that private key $P_A$ was generated (The public key), that Bob knows about. 
+
+\Subsubsection{Signing}
+First calculate the hash of the message:
+$$e=HASH(m)$$
+If $e$ has a bit-length (numbers in binary representation) that is longer than the bit-length of order $n$ of the curve used. $e$ has to be trimmed down so that the bit-lenghts match
+
+Select a cryptographically-secure random number $z$ that falls in the range $[1, n-1]$ and calculate a new curve point: $(x_1, y_1) = z \times G$
+
+Calculate $r$ and $s$ such that: $r = (x_1 \mod n)$ and $s = (z^{-1} (e + r \times k_A) \mod n)$. if either $r$ or $s$ ends up being 0, generate a new $z$ and try again.
+
+The signature will be the point $(r, s) = S_A$.
+
+\Subsubsection{Signature validation}
+If \textbf{Bob} wants to verify that it was actually \textbf{Alice} that signed the message $m$. He first has to do a sanity check on the signature $S_A$ to make sure that it is a valid point on the curve and that $s$ and $r$ is within the range $[1, n-1]$ etc... 
+
+Calculate the hash $e$ of $m$ the same way as it was done during the signing process. Calculate $$w=(s^{-1} \mod n)$$ and $$u_1 = (ew \mod n)$$ $$u_2 = (rw \mod n)$$
+
+From $u_1$ and $u_2$ calculate the point $(x_1, y_1) = u_1 \times G + u_2 \times S_A$ 
+
+The signature is valid if and only if $r = x_1 \mod n$
