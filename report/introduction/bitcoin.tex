@@ -88,8 +88,17 @@ consensus is reached in the network.\cite{antonopoulos_2017}
 	\label{fig:blockchain}
 \end{figure}
 
+\Subsubsection{Block-header}
+Each block has a section of data called a header. The header contains meta-data about the block itself such as the version number, the id of the previous block in the chain, a timestamp of when the block was minded, the merkele root of all transactions (serves as proof of what transactions was included in the block) and a 32-bit field called nonce. 
+
+The size of the header is always 80-bytes, a blocks id\footnote{Block id and block hash refers to the same thing. The terms might be mixed throughout the report.} is equal to the hash of it's header. For example the genesis block in the bitcoin blockchain has the id:
+
+\texttt{000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f}
+
+Something that you will find with all block-ids is that they always has a couple of leading zeroes. This is a side-effect  caused by mining and proof-of-work as explained in section \ref{intro-proof}.
+
 %The section on SHA256 can be improved
-\Subsection{Proof of work}
+\Subsection{Proof of work}\label{intro-proof}
 Proof of work is, just like the digital signatures, based in cryptographic
 mathematics. Before we go on you first need to understand what a hashing
 algorithm does, the hashing algorithm used in bitcoin is called \texttt{SHA256}.
@@ -116,10 +125,10 @@ find what the original data that produced it was.
 There is a term in bitcoin called mining difficulty, or just difficulty. This
 is a large number, 256 bits to be exact. When you want to add a new block to
 the chain you have to do something called mining, this is a process where you
-change certain variables in the block until the hash of the block header (Think
+change the nonce-bits in the block-header until the id of the block (Think
 of this a number) is less than the target difficulty. The term hashpower refers
 to how many times the machine you are using to mine blocks can test a certain
-combination of variables per second, or H/s.
+combination of variables per second, or H/s (Hashes per second).
 
 The difficulty of mining a block is adjusted about every 2 weeks. The difficulty
 is so that the combined hashpower of the entire world is enough to mine one
