@@ -1,5 +1,13 @@
 \Section{Basics on Bitcoin}
-Most people, even the layman with no blockchain experience, have at least heard of bitcoin. But the exact details of how it works is not common knowledge. Described in a single sentence: bitcoin is a currency where a communal ledger that is shared between the whole world. The ledger holds the information on who owns what in terms of money or other assets. The regular monetary system we are used to has a centralized authority, for example a central bank, who decides how much money is in circulation, who can transact with who etc. The monetary system presented by bitcoin has no centralized authority, instead it relies on decentralized, trust-less verification.
+Most people, even the layman with no blockchain experience, have at least heard
+of bitcoin. But the exact details of how it works is not common knowledge.
+Described in a single sentence: bitcoin is a currency where a communal ledger
+that is shared between the whole world. The ledger holds the information on who
+owns what in terms of money or other assets. The regular monetary system we are
+used to has a centralized authority, for example a central bank, who decides
+how much money is in circulation, who can transact with who etc. The monetary
+system presented by bitcoin has no centralized authority, instead it relies on
+decentralized, trust-less verification.
 
 These usually are the main concerns people have with distributed ledgers:
 \begin{itemize}
@@ -19,28 +27,59 @@ These questions will be given ansers in the sections below.
 % More could be writen on why a signature could not be forged
 % More on how secure 256 bit is
 \Subsection{Digital signatures}
-Bitcoin would not be possible at all without the underlying cryptographic mathematics. When it comes to proving ownership in bitcoin ECDSA (Elliptic curve digital signature algorithm)\cite{ecc_def} is used. Elliptic curve cryptography will not be covered in depth here but the basic idea is that you have a private and public key. The public key can be shared with anyone without danger, the public key can be derived from the private key, but not the other way around, this is something called trap-door mathematics.\cite{ecc_def}\cite{antonopoulos_2017} This means that it is easy to go one way via equations. But going back is nearly impossible. 
+Bitcoin would not be possible at all without the underlying cryptographic
+mathematics. When it comes to proving ownership in bitcoin ECDSA (Elliptic curve
+digital signature algorithm)\cite{ecc_def} is used. Elliptic curve cryptography
+will not be covered in depth here but the basic idea is that you have a private
+and public key. The public key can be shared with anyone without danger, the
+public key can be derived from the private key, but not the other way around,
+this is something called trap-door mathematics.\cite{ecc_def}\cite{antonopoulos_2017}
+This means that it is easy to go one way via equations. But going back is
+nearly impossible.
 
-The reason for it not being completely impossible is because any potential attacker could always just keep guessing private keys until the right one is found. However with a sufficiently large private key, let's say 256-bits, and a computer that could check one billion billion ($10^{18}$) private keys every second (If such a machine could exist at all) it would still take $\frac{(2^{256} / 10^{18})}{(60\cdot60\cdot24\cdot365)}\approx3.67\cdot10^{51}$ years to check all possible private keys.
+The reason for it not being completely impossible is because any potential
+attacker could always just keep guessing private keys until the right one is
+found. However with a sufficiently large private key, let's say 256-bits, and a
+computer that could check one billion billion ($10^{18}$) private keys every
+second (If such a machine could exist at all) it would still take
+$\frac{(2^{256} / 10^{18})}{(60\cdot60\cdot24\cdot365)}\approx3.67\cdot10^{51}$
+years to check all possible private keys.
 
-The most common transaction made on the blockchain is one where you ''pay to'' a public key. Who ever holds the private key paired with that public key can then via a mathematical equation prove that they hold the private key without actually revealing the private key.\cite{quantabytes}
+The most common transaction made on the blockchain is one where you ''pay to''
+a public key. Who ever holds the private key paired with that public key can
+then via a mathematical equation prove that they hold the private key without
+actually revealing the private key.\cite{quantabytes}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.5\textwidth]{introduction/images/Secp256k1.png}
-	\caption{The \texttt{Secp256k1} plotted over real numbers. Note that the real curve is over a field, and thus looks more like a scattering of random points}
+	\caption{The \texttt{Secp256k1} plotted over real numbers. Note that the real
+	curve is over a field, and thus looks more like a scattering of random points}
 	\label{fig:eccbasic}
 \end{figure}
 
-The elliptic curve used can hold different parameters that defines it, certain elliptic curves are standardized and have their own names. The curve used in bitcoin is named \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}
+The elliptic curve used can hold different parameters that defines it, certain
+elliptic curves are standardized and have their own names. The curve used in
+bitcoin is named \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}
 
-The typical curve used in Elliptic curve cryptography is on the form $y^2=x^3+ax+b$. The \texttt{Secp256k1} is defined with $a=0$ and $b=7$, making the full \texttt{Secp256k1} equation: $y^2=x^3+7$. Which is plotted in figure \ref*{fig:eccbasic}. For more in depth on elliptic curve cryptography see section \ref{ecdsa}
+The typical curve used in Elliptic curve cryptography is on the form
+$y^2=x^3+ax+b$. The \texttt{Secp256k1} is defined with $a=0$ and $b=7$, making
+the full \texttt{Secp256k1} equation: $y^2=x^3+7$. Which is plotted in figure
+\ref*{fig:eccbasic}. For more in depth on elliptic curve cryptography see
+section \ref{ecdsa}
 
 %Mastering bitcoin
 \Subsection{Blocks and the blockchain}
-A block is fairly simple to understand, it is simply a datatype or structure that holds information about it self, all the transactions that can fit and the previous block in the chain (more on that in a bit). Because every block holds information about the previous block you can follow all blocks backwards in time all the way back to the original, also called the genesis block.\cite{genesis} This is what is referred to as the blockchain. 
+A block is fairly simple to understand, it is simply a datatype or structure
+that holds information about it self, all the transactions that can fit and the
+previous block in the chain (more on that in a bit). Because every block holds
+information about the previous block you can follow all blocks backwards in time
+all the way back to the original, also called the genesis block.\cite{genesis}
+This is what is referred to as the blockchain.
 
-A block could be added to the chain by anyone in the world. However it will only be accepted if it has sufficient proof of work, and this is the key to how consensus is reached in the network.\cite{antonopoulos_2017}
+A block could be added to the chain by anyone in the world. However it will only
+be accepted if it has sufficient proof of work, and this is the key to how
+consensus is reached in the network.\cite{antonopoulos_2017}
 
 \begin{figure}[H]
 	\centering
@@ -51,46 +90,93 @@ A block could be added to the chain by anyone in the world. However it will only
 
 %The section on SHA256 can be improved
 \Subsection{Proof of work}
-Proof of work is, just like the digital signatures, based in cryptographic mathematics. Before we go on you first need to understand what a hashing algorithm does, the hashing algorithm used in bitcoin is called \texttt{SHA256}. \texttt{SHA256} takes in data of any size and produces a sort of finger print of 256 bits. 
+Proof of work is, just like the digital signatures, based in cryptographic
+mathematics. Before we go on you first need to understand what a hashing
+algorithm does, the hashing algorithm used in bitcoin is called \texttt{SHA256}.
+\texttt{SHA256} takes in data of any size and produces a sort of finger print
+of 256 bits.
 
-For example the \texttt{SHA256} of the text ''cool'': 
+For example the \texttt{SHA256} of the text ''cool'':
 
 \fbox{\begin{minipage}{\textwidth}
 	\texttt{echo "cool" | openssl sha256}
 \end{minipage}}
 
-Produces: 
+Produces:
 
 \fbox{\begin{minipage}{\textwidth}
 		\texttt{27c16ce7e3861da034af1bb356d6a4f38cb84fa65d51fa62f69727143b4c6b60}
 \end{minipage}}
 
-The text produced is actually bytes represented in a hexadecimal number system, in fact the entire string can be considered to be a very large number. Just like with the digital signature there is no known viable way that can take a hash and find what the original data that produced it was. 
+The text produced is actually bytes represented in a hexadecimal number system,
+in fact the entire string can be considered to be a very large number. Just like
+with the digital signature there is no known viable way that can take a hash and
+find what the original data that produced it was.
 
-There is a term in bitcoin called mining difficulty, or just difficulty. This is a large number, 256 bits to be exact. When you want to add a new block to the chain you have to do something called mining, this is a process where you change certain variables in the block until the hash of the block header (Think of this a number) is less than the target difficulty. The term hashpower refers to how many times the machine you are using to mine blocks can test a certain combination of variables per second, or H/s.
+There is a term in bitcoin called mining difficulty, or just difficulty. This
+is a large number, 256 bits to be exact. When you want to add a new block to
+the chain you have to do something called mining, this is a process where you
+change certain variables in the block until the hash of the block header (Think
+of this a number) is less than the target difficulty. The term hashpower refers
+to how many times the machine you are using to mine blocks can test a certain
+combination of variables per second, or H/s.
 
-The difficulty of mining a block is adjusted about every 2 weeks. The difficulty is so that the combined hashpower of the entire world is enough to mine one block every 10 minutes on average.\cite{antonopoulos_2017}
+The difficulty of mining a block is adjusted about every 2 weeks. The difficulty
+is so that the combined hashpower of the entire world is enough to mine one
+block every 10 minutes on average.\cite{antonopoulos_2017}
 
-The accepted order of transactions is the order going backwards from the latest block on the longest chain. The longest chain is always the one that the majority is mining towards. This is simplified to the extreme but what it basically means is that as long as you trust 51\% of the participants in the network you can also trust that the order of transactions is correct. This mechanism prevents things like double spending the same money and holds a property called emergent consensus, which means that eventually the entire network will agree on the order of transactions.
+The accepted order of transactions is the order going backwards from the latest
+block on the longest chain. The longest chain is always the one that the majority
+is mining towards. This is simplified to the extreme but what it basically
+means is that as long as you trust 51\% of the participants in the network you
+can also trust that the order of transactions is correct. This mechanism
+prevents things like double spending the same money and holds a property called
+emergent consensus, which means that eventually the entire network will agree
+on the order of transactions.
 
-In figure \ref{fig:blockchain2} is a diagram showing the longest chain, meaning the chain with most proof of work. The block in green is the latest block on that chain. The yellow block is what is known as a stale block, a block that is part of the chain but not part of the longest chain of blocks. Transactions in a stale block are not considered valid, and eventually they can be pruned (deleted) because they do not effect the future in any way. A stale block occurs if a new block is found in different parts of the network at almost the same time. Then the network will be split, each node tries to find the next block on the chain of whatever block they received first. In the case shown below the chain on the left ''won'' and the green block is now the longest chain.
+In figure \ref{fig:blockchain2} is a diagram showing the longest chain, meaning
+the chain with most proof of work. The block in green is the latest block on
+that chain. The yellow block is what is known as a stale block, a block that is
+part of the chain but not part of the longest chain of blocks. Transactions in
+a stale block are not considered valid, and eventually they can be pruned
+(deleted) because they do not effect the future in any way. A stale block occurs
+if a new block is found in different parts of the network at almost the same
+time. Then the network will be split, each node tries to find the next block on
+the chain of whatever block they received first. In the case shown below the
+chain on the left ''won'' and the green block is now the longest chain.
 
-The red block in figure \ref{fig:blockchain2} is what is known as an orphan block, that is it has no known parent in the chain. This can happen if someone mines a block that is malformed or when building the chain for a new node and the blocks are received out of order.
+The red block in figure \ref{fig:blockchain2} is what is known as an orphan
+block, that is it has no known parent in the chain. This can happen if someone
+mines a block that is malformed or when building the chain for a new node and
+the blocks are received out of order.
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.2\textwidth]{introduction/images/more_blockchain.png}
-	\caption{A diagram showing the longest chain, The green block is the latest block on the longest chain. The red block is a an orphan block, the yellow block is a stale block}
+	\caption{A diagram showing the longest chain, The green block is the latest
+	block on the longest chain. The red block is a an orphan block, the yellow
+	block is a stale block}
 	\label{fig:blockchain2}
 \end{figure}
 
 
 \Subsection{Software}
-Just like how you can use regular money without knowing the underlying process and technology of for example the banking system, you can use bitcoin with out knowing the details of how it works. There is plenty of software that handles wallets, transactions etc for you. 
+Just like how you can use regular money without knowing the underlying process
+and technology of for example the banking system, you can use bitcoin with out
+knowing the details of how it works. There is plenty of software that handles
+wallets, transactions etc for you.
 
 A good example is mycelium wallet for Android.
 
 \Subsection{Programmable transactions}
-Bitcoin has another feature that makes it very versatile in what it can do and that is that every transaction is programmable. As mentioned earlier the most common transaction is sending the money to someones public key. What really goes on here is that the person who wants to spend whatever money was sent to them has to prove programmatic that they own the private key related to that public key. 
+Bitcoin has another feature that makes it very versatile in what it can do and
+that is that every transaction is programmable. As mentioned earlier the most
+common transaction is sending the money to someones public key. What really
+goes on here is that the person who wants to spend whatever money was sent to
+them has to prove programmatic that they own the private key related to that
+public key.
 
-This is not the only type of transaction possible, bit con has it's own little programming language called \texttt{Script}. Any type of transaction that can be described in script is possible as a transaction. This is basis for both lightning netowrk and atomic swap, so it is very central to the entire project. 
+This is not the only type of transaction possible, bit con has it's own little
+programming language called \texttt{Script}. Any type of transaction that can
+be described in script is possible as a transaction. This is basis for both
+lightning netowrk and atomic swap, so it is very central to the entire project.
