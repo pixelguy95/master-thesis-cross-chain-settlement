@@ -1,31 +1,40 @@
 
-\Section{Lightning network}
+\Section{Payment channels}
 One of the biggest problems facing bitcoin is scalability. At time of writing
 onchain transactions is capped at about $\approx 7$ T/s (transactions er second).\cite{scaling}
 This has to do with network propagation and the hard cap on block sizes, a block
 can only contain so many transactions before it is full. There are a couple of
-propsed solutions to this however, and lightning is one of them.
+propsed solutions to this however, and one of them is connected payment channels
 
+First off, a payment channel in bitcoin is a type off trick using programmable transactions, 
+were two users can open a bidirectional payment channel where an infinite number of transactions 
+could be trustlessly exchanged without using the blockchain. 
+
+A channel can be opend by one or both participants by using a funding transaction. The funding 
+transaction requires the signature of both participants to spend and is transmited to the blockchain. 
+After that the participants in the channel exchange commitment transactions that represent exchange in money.
+Any of the commitment transactions could be broadcast to the blockchain whenever a participant 
+want to close the channel. Once a channel has been closed it cannot be used for further transactions.
+Clever mecahnizms exists in the creation of these channels that makes it so one participant 
+can't cheat the system and spent moeny that does not belong to them.
+
+Just payment channels alone were not enough to fix the scaling problem however, as a payment channel 
+only allows two parties to exhange unlimited transactions. A proposed extension to the 
+payment channels is the lightning network.
+
+\Subsection{Lightning network}
 Lightning network is a relatively recent development in the bitcoin community.
-Many types of experimental transactions have been known for a long time. But in
-January of 2016 a white paper was released detailing a brand new type.\cite{lightningnetwork_2019}
+Payment channels has been known about for a while. But in
+January of 2016 a white paper was released detailing a promising new extension.\cite{lightningnetwork_2019}
 It showed that with a few changes to the bitcoin protocol a new type of
-transaction that opens a channel between two parties ca be made. In this channel
-an unlimited number of transactions could be potentially made between the two
-parties. \cite{lightningnetwork_2019}
+payment channel could be opened that allows transactions to propagate through multiple channels.\cite{lightningnetwork_2019}
 
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.70\textwidth]{introduction/images/mesh_network.png}
 	\caption{A basic overview of a lightning network, each node represent someone
 	and each edge represents a channel between two people.}
-	\label{fig:blockchain3}
+	\label{fig:mesh}
 \end{figure}
 
-The name lightning network most likely a combination of lightning, as in
-lightning fast transactions. And network from the network that is formed by
-participants and their channels. One very useful feature of lightning network
-is that two parties do not need to have direct channel between them to be able
-to transact. Transactions can safely and atomically travel through the network
-via other participants, as long as there is a path between the two and there is
-enough funds in all the channels in between.\cite{lightningnetwork_2019}
+Lightning network is really just a network of peers connected via payment channels. In figure \ref{fig:mesh} is an example. Let's say that Alice (node A) want to send a traansaction to Qbert (node Q) but they have no direct payment channel between them. With lightning network they can send the transaction via the peers that are between them. 

@@ -89,13 +89,22 @@ consensus is reached in the network.\cite{antonopoulos_2017}
 \end{figure}
 
 \Subsubsection{Block-header}
-Each block has a section of data called a header. The header contains meta-data about the block itself such as the version number, the id of the previous block in the chain, a timestamp of when the block was minded, the merkele root of all transactions (serves as proof of what transactions was included in the block) and a 32-bit field called nonce. 
+Each block has a section of data called a header. The header contains meta-data 
+about the block itself such as the version number, the id of the previous block 
+in the chain, a timestamp of when the block was minded, the merkele root of 
+all transactions (serves as proof of what transactions was included in the block) 
+and a 32-bit field called nonce. 
 
-The size of the header is always 80-bytes, a blocks id\footnote{Block id and block hash refers to the same thing. The terms might be mixed throughout the report.} is equal to the hash of it's header. For example the genesis block in the bitcoin blockchain has the id:
+The size of the header is always 80-bytes, a blocks id\footnote{Block id and 
+block hash refers to the same thing. The terms might be mixed throughout the report.} 
+is equal to the hash of it's header. For example the genesis block in the 
+bitcoin blockchain has the id:
 
 \texttt{000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f}
 
-Something that you will find with all block-ids is that they always has a couple of leading zeroes. This is a side-effect  caused by mining and proof-of-work as explained in section \ref{intro-proof}.
+Something that you will find with all block-ids is that they always has a couple 
+of leading zeroes. This is a side-effect  caused by mining and proof-of-work 
+as explained in section \ref{intro-proof}.
 
 %The section on SHA256 can be improved
 \Subsection{Proof of work}\label{intro-proof}
