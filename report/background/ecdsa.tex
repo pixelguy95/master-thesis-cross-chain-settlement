@@ -141,7 +141,7 @@ if either $r$ or $s$ ends up being 0, generate a new $z$ and try again.
 
 The signature will be the point $(r, s) = S_A$.
 
-\Subsubsection{Signature validation}
+\Subsubsection{Signature validation}\label{signature_validation}
 If \textbf{Bob} wants to verify that it was actually \textbf{Alice} that signed the message $m$. 
 He first has to do a sanity check on the signature $S_A$ to make sure that it is a valid point on 
 the curve and that $s$ and $r$ is within the range $[1, n-1]$ etc... 

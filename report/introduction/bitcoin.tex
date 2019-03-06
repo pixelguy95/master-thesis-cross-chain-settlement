@@ -1,17 +1,18 @@
 \Section{Basics on Bitcoin}
 Most people, even the layman with no blockchain experience, have at least heard
-of bitcoin. But the exact details of how it works is not common knowledge.
-Described in a single sentence: bitcoin is a currency where a communal ledger
-that is shared between the whole world. The ledger holds the information on who
-owns what in terms of money or other assets. The regular monetary system we are
+of Bitcoin. But the exact details of how it works is not common knowledge.
+Described in a single sentence: Bitcoin is a currency where a communal ledger,
+that is shared between all participants in the whole world, dictates who owns what in terms of money or other assets. 
+The regular monetary system we are
 used to has a centralized authority, for example a central bank, who decides
 how much money is in circulation, who can transact with who etc. The monetary
-system presented by bitcoin has no centralized authority, instead it relies on
+system presented by Bitcoin has no centralized authority, instead it relies on
 decentralized, trust-less verification.
 
 These usually are the main concerns people have with distributed ledgers:
 \begin{itemize}
 	\item How is spending someone else's money prevented?
+	\item What prevents someone from ''printing'' more Bitcoins?
 	\item How is spending the same money in different places in the world prevented?
 	\item How is the consensus on the order of transactions reached?
 	\item How do I interact with it?
@@ -28,7 +29,7 @@ These questions will be given ansers in the sections below.
 % More on how secure 256 bit is
 \Subsection{Digital signatures}
 Bitcoin would not be possible at all without the underlying cryptographic
-mathematics. When it comes to proving ownership in bitcoin ECDSA (Elliptic curve
+mathematics. When it comes to proving ownership in Bitcoin ECDSA (Elliptic curve
 digital signature algorithm)\cite{ecc_def} is used. Elliptic curve cryptography
 will not be covered in depth here but the basic idea is that you have a private
 and public key. The public key can be shared with anyone without danger, the
@@ -60,7 +61,7 @@ actually revealing the private key.\cite{quantabytes}
 
 The elliptic curve used can hold different parameters that defines it, certain
 elliptic curves are standardized and have their own names. The curve used in
-bitcoin is named \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}
+Bitcoin is named \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}
 
 The typical curve used in Elliptic curve cryptography is on the form
 $y^2=x^3+ax+b$. The \texttt{Secp256k1} is defined with $a=0$ and $b=7$, making
@@ -71,7 +72,7 @@ section \ref{ecdsa}
 %Mastering bitcoin
 \Subsection{Blocks and the blockchain}
 A block is fairly simple to understand, it is simply a datatype or structure
-that holds information about it self, all the transactions that can fit and the
+that holds information about itself, all the transactions that can fit and the
 previous block in the chain (more on that in a bit). Because every block holds
 information about the previous block you can follow all blocks backwards in time
 all the way back to the original, also called the genesis block.\cite{genesis}
@@ -91,26 +92,25 @@ consensus is reached in the network.\cite{antonopoulos_2017}
 \Subsubsection{Block-header}
 Each block has a section of data called a header. The header contains meta-data 
 about the block itself such as the version number, the id of the previous block 
-in the chain, a timestamp of when the block was minded, the merkele root of 
+in the chain, a timestamp of when the block was mined, the merkle root of 
 all transactions (serves as proof of what transactions was included in the block) 
 and a 32-bit field called nonce. 
 
 The size of the header is always 80-bytes, a blocks id\footnote{Block id and 
 block hash refers to the same thing. The terms might be mixed throughout the report.} 
-is equal to the hash of it's header. For example the genesis block in the 
-bitcoin blockchain has the id:
+is equal to the hash of its header. For example the genesis block in the 
+Bitcoin blockchain has the id:
 
 \texttt{000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f}
 
-Something that you will find with all block-ids is that they always has a couple 
-of leading zeroes. This is a side-effect  caused by mining and proof-of-work 
-as explained in section \ref{intro-proof}.
+Something that you will find with all block-ids is that they always have leading zeroes. 
+This is a side-effect  caused by mining and proof-of-work as explained in section \ref{intro-proof}.
 
 %The section on SHA256 can be improved
 \Subsection{Proof of work}\label{intro-proof}
 Proof of work is, just like the digital signatures, based in cryptographic
 mathematics. Before we go on you first need to understand what a hashing
-algorithm does, the hashing algorithm used in bitcoin is called \texttt{SHA256}.
+algorithm does, the hashing algorithm used in Bitcoin is called \texttt{SHA256}.
 \texttt{SHA256} takes in data of any size and produces a sort of finger print
 of 256 bits.
 
@@ -131,7 +131,7 @@ in fact the entire string can be considered to be a very large number. Just like
 with the digital signature there is no known viable way that can take a hash and
 find what the original data that produced it was.
 
-There is a term in bitcoin called mining difficulty, or just difficulty. This
+There is a term in Bitcoin called mining difficulty, or just difficulty. This
 is a large number, 256 bits to be exact. When you want to add a new block to
 the chain you have to do something called mining, this is a process where you
 change the nonce-bits in the block-header until the id of the block (Think
@@ -140,7 +140,7 @@ to how many times the machine you are using to mine blocks can test a certain
 combination of variables per second, or H/s (Hashes per second).
 
 The difficulty of mining a block is adjusted about every 2 weeks. The difficulty
-is so that the combined hashpower of the entire world is enough to mine one
+is set so that the combined hashpower of the entire world is enough to mine one
 block every 10 minutes on average.\cite{antonopoulos_2017}
 
 The accepted order of transactions is the order going backwards from the latest
@@ -179,22 +179,21 @@ the blocks are received out of order.
 
 
 \Subsection{Software}
-Just like how you can use regular money without knowing the underlying process
-and technology of for example the banking system, you can use bitcoin with out
+Just like how you can use regular money  knowing the underlying process
+and technology of for example the banking system, you can use Bitcoin without
 knowing the details of how it works. There is plenty of software that handles
 wallets, transactions etc for you.
 
 A good example is mycelium wallet for Android.
 
 \Subsection{Programmable transactions}
-Bitcoin has another feature that makes it very versatile in what it can do and
-that is that every transaction is programmable. As mentioned earlier the most
+Another feature that Bitcoin has, which makes it very versatile, is that transactions are programmable 
+As mentioned earlier the most
 common transaction is sending the money to someones public key. What really
 goes on here is that the person who wants to spend whatever money was sent to
-them has to prove programmatic that they own the private key related to that
+them has to prove programmaticlly that they own the private key related to that
 public key.
 
-This is not the only type of transaction possible, bit con has it's own little
+This is not the only type of transaction possible, Bitcoin has its own little
 programming language called \texttt{Script}. Any type of transaction that can
-be described in script is possible as a transaction. This is basis for both
-lightning netowrk and atomic swap, so it is very central to the entire project.
+be described in script is possible as a transaction. This is basis for atomic swaps, payment channels and lightning network, which will be discussed in the following sections
