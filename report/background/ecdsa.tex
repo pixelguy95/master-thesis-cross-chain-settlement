@@ -152,3 +152,19 @@ $$w=(s^{-1} \mod n)$$ and $$u_1 = (ew \mod n)$$ $$u_2 = (rw \mod n)$$
 From $u_1$ and $u_2$ calculate the point $(x_1, y_1) = u_1 \times G + u_2 \times S_A$ 
 
 The signature is valid if and only if $r = x_1 \mod n$
+
+\Subsubsection{Addresses}
+While in using Bitcoin normally you don't see the public keys directly, instead you mostly see something that is called addresses. The address is what you use when you want to send money to someone (see section \ref{p2pkh}). What the address really is, is just a representation of their public key.  
+
+To transform a public key to an address you first hash it using \texttt{SHA256} then that result with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address. 
+
+For example:
+
+Compressed public key:\\
+\texttt{03b2319bf63ca8959794f79056283150f1b49d577b2c48bd9e4a18d616e6f99bb4}
+
+Hash160 of public key:\\
+\texttt{76a9147ecfe7db089f521c3f49de0ee866f8e0fee97d1788ac}
+
+Base58 of public key hash (Address):\\
+\texttt{ms5UVmKaaz8kiL7DbMA1NG3t6T4C4GmGzG}
