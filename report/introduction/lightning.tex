@@ -1,8 +1,8 @@
 
 \Section{Payment channels}
-One of the biggest problems facing Bitcoin is scalability. At time of writing
-onchain transactions is capped at about $\approx 7$ T/s (transactions per second).\cite{scaling}
-The throughput is limited by network propagation and a hard cap on block sizes., a block
+One of the biggest problems facing Bitcoin is scalability. At the time of writing
+onchain\footnote{See glossary} transactions is capped at about $\approx 7$ T/s (transactions per second).\cite{scaling}
+The throughput is limited by network propagation and a hard cap on block sizes, a block
 can only contain so many transactions before it is full. There are a couple of
 proposed solutions to this however, and one of them is connected payment channels
 
@@ -15,16 +15,16 @@ transaction requires the signature of both participants to spend and is transmit
 After that the participants in the channel exchange commitment transactions that represent exchange in money.
 Any of the commitment transactions could be broadcast to the blockchain whenever a participant 
 want to close the channel. Once a channel has been closed it cannot be used for further transactions.
-Clever mechanisms exists in the creation of these channels that makes it so one participant 
-can't cheat the system and spent moeny that does not belong to them.
+Mechanisms exists in the construction of these channels that makes it so one participant 
+can't cheat the system and spend money that does not belong to them.
 
-Just payment channels alone were not enough to fix the scaling problem however, as a payment channel 
+Payment channels alone were not enough to fix the scaling problem however, as a payment channel 
 only allows two parties to exchange unlimited transactions. A proposed extension to the 
 payment channels is the lightning network.
 
 \Subsection{Lightning network}
 Lightning network is a relatively recent development in the Bitcoin community.
-Payment channels has been known about for a while. But in
+How to construct payment channels has been known about for a while. But in
 January of 2016 a white paper was released detailing a promising new extension.\cite{lightningnetwork_2019}
 It showed that with a few changes to the Bitcoin protocol a new type of
 payment channel could be opened that allows transactions to propagate through multiple channels.\cite{lightningnetwork_2019}

@@ -79,7 +79,7 @@ all the way back to the original, also called the genesis block.\cite{genesis}
 This is what is referred to as the blockchain.
 
 A block could be added to the chain by anyone in the world. However it will only
-be accepted if it has sufficient proof of work, and this is the key to how
+be accepted if it has sufficient proof-of-work, and this is the key to how
 consensus is reached in the network.\cite{antonopoulos_2017}
 
 \begin{figure}[H]
@@ -107,8 +107,8 @@ Something that you will find with all block-ids is that they always have leading
 This is a side-effect  caused by mining and proof-of-work as explained in section \ref{intro-proof}.
 
 %The section on SHA256 can be improved
-\Subsection{Proof of work}\label{intro-proof}
-Proof of work is, just like the digital signatures, based in cryptographic
+\Subsection{Proof-of-work}\label{intro-proof}
+Proof-of-work is, just like digital signatures, based in cryptographic
 mathematics. Before we go on, you first need to understand what a hashing
 algorithm does, the hashing algorithm used in Bitcoin is called \texttt{SHA256}.
 \texttt{SHA256} takes in data of any size and produces a sort of finger print
@@ -135,19 +135,18 @@ There is a term in Bitcoin called mining difficulty, or just difficulty. This
 is a large number, 256 bits to be exact. When you want to add a new block to
 the chain you have to do something called mining, this is a process where you
 change the nonce-bits in the block-header until the id of the block (Think
-of this a number) is less than the target difficulty. The term hashpower refers
+of this as a number) is less than the target difficulty. The term hashpower refers
 to how many times the machine you are using to mine blocks can test a certain
 combination of variables per second, or H/s (Hashes per second).
 
-The difficulty of mining a block is adjusted about every 2 weeks. The difficulty
-is set so that the combined hashpower of the entire world is enough to mine one
-block every 10 minutes on average.\cite{antonopoulos_2017}
+The difficulty of mining a block is adjusted about every 2 weeks (every 2016th block to be exact). The difficulty
+is calculated by each individual node whenever the block count is a multiple of 2016, the nodes go by the timestamps in the blocks, and should thus all reach the same conclusion. The new calculated difficulty is the one all the next 2016 blocks have to reach to.\cite{antonopoulos_2017}
 
 The accepted order of transactions is the order going backwards from the latest
 block on the longest chain. The longest chain is always the one that the majority
-is mining towards. This is simplified to the extreme but what it basically
+is mining towards. What it basically
 means is that as long as you trust 51\% of the participants in the network you
-can also trust that the order of transactions is correct. This mechanism
+can also trust that the order of transactions is correct.\footnote{This is a simplification, but still holds true} This mechanism
 prevents things like double spending the same money and holds a property called
 emergent consensus, which means that eventually the entire network will agree
 on the order of transactions.
@@ -184,7 +183,8 @@ and technology of banking systems for example, you can use Bitcoin without
 knowing the details of how it works. There is plenty of software that handles
 wallets, transactions etc for you.
 
-A good example is mycelium wallet for Android.
+%Removed for now
+%A good example is mycelium wallet for Android.
 
 \Subsection{Programmable transactions}
 Another feature that Bitcoin has, which makes it very versatile, is that transactions are programmable.
@@ -196,4 +196,4 @@ public key.
 
 This is not the only type of transaction possible, Bitcoin has its own little
 programming language called \texttt{Script}. Any type of transaction that can
-be described in script is possible as a transaction. This is basis for atomic swaps, payment channels and lightning network, which will be discussed in the following sections
+be described in script is possible as a transaction. This is the basis for atomic swaps, payment channels and lightning network, which will be discussed in the following sections

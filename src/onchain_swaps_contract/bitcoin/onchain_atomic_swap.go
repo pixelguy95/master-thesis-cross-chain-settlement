@@ -35,7 +35,6 @@ func main() {
 	if error != nil {
 		fmt.Println(error)
 	}
-	txscript.RawTxInWitnessSignature
 
 	client.Connect(1)
 	clientWraper := rpcutils.New(client)
