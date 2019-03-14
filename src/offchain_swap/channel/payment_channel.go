@@ -3,7 +3,7 @@ package channel
 import (
 	"errors"
 
-	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
+	rpcutils "../../extensions/bitcoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
@@ -31,18 +31,30 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 
 	// Loads the wallet used for funding
 	clientWraper := rpcutils.New(client)
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(funder.WalletName)
 
 	// Create funding transaction
 	fundingTx := wire.NewMsgTx(2)
-	_, out, error := input.GenFundingPkScript(party1.FundingPublicKey.PubKey().SerializeCompressed(), party1.FundingPublicKey.PubKey().SerializeCompressed(), funder.UserBalance)
+
+	clientWraper.UnloadAllWallets()
+	clientWraper.LoadWallet(party1.WalletName)
+	party1PubKey, _ := clientWraper.GetPubKey(party1.FundingPublicKey.EncodeAddress())
+
+	clientWraper.UnloadAllWallets()
+	clientWraper.LoadWallet(party2.WalletName)
+	party2PubKey, _ := clientWraper.GetPubKey(party2.FundingPublicKey.EncodeAddress())
+
+	_, out, error := input.GenFundingPkScript(party1PubKey.ScriptAddress(), party2PubKey.ScriptAddress(), funder.UserBalance)
 
 	if error != nil {
 		return nil, error
 	}
 
 	fundingTx.AddTxOut(out)
+
+	clientWraper.UnloadAllWallets()
+	clientWraper.LoadWallet(funder.WalletName)
+	fundingTx, _ = clientWraper.FundRawTransaction(fundingTx)
+	fundingTx, _ = clientWraper.SignRawTransactionWithWallet(fundingTx)
 
 	channel = &Channel{
 		Party1:         party1,

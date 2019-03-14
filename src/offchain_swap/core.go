@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
@@ -55,5 +56,8 @@ func main() {
 		fmt.Println(error)
 	}
 
-	fmt.Println(pc.FundingTx)
+	fmt.Println()
+	buf := new(bytes.Buffer)
+	pc.FundingTx.Serialize(buf)
+	fmt.Printf("\n\n%x\n\n", buf)
 }
