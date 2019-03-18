@@ -1,14 +1,15 @@
 package channel
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 
 	rpcutils "../../extensions/bitcoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 )
 
@@ -29,7 +30,6 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 		return nil, errors.New("No funder for the channel")
 	}
 
-	// Loads the wallet used for funding
 	clientWraper := rpcutils.New(client)
 
 	// Create funding transaction
@@ -63,25 +63,15 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 		FundingTx:      fundingTx,
 	}
 
-	return channel, nil
-}
-
-// GenerateNewUserFromWallet generates a new channel user from a wallet
-func GenerateNewUserFromWallet(walletName string, client *rpcclient.Client) (*User, error) {
-	clientWraper := rpcutils.New(client)
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(walletName)
-
-	address, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
-	privKey, _ := client.DumpPrivKey(address)
-
-	user := &User{
-		FundingPublicKey:  address,
-		FundingPrivateKey: privKey,
-		UserBalance:       0,
-		Fundee:            true,
-		WalletName:        walletName,
+	commit1, _, err := channel.CreateStaticCommits(client)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
 	}
 
-	return user, nil
+	buf := new(bytes.Buffer)
+	commit1.Serialize(buf)
+	fmt.Printf("\nCommit:\n%x\n\n", buf)
+
+	return channel, nil
 }
