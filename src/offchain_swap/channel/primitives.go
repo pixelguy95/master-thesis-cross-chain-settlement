@@ -15,6 +15,7 @@ import (
 type User struct {
 	FundingPublicKey  btcutil.Address
 	FundingPrivateKey *btcutil.WIF
+	FundingSigner     *SimpleSigner
 	UserBalance       int64
 	Fundee            bool
 	WalletName        string
@@ -50,9 +51,14 @@ func GenerateNewUserFromWallet(walletName string, client *rpcclient.Client) (*Us
 	address, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
 	privKey, _ := client.DumpPrivKey(address)
 
+	signer := &SimpleSigner{
+		PrivateKey: privKey.PrivKey,
+	}
+
 	user := &User{
 		FundingPublicKey:  address,
 		FundingPrivateKey: privKey,
+		FundingSigner:     signer,
 		UserBalance:       0,
 		Fundee:            true,
 		WalletName:        walletName,
