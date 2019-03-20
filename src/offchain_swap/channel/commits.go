@@ -26,15 +26,28 @@ func (channel *Channel) CreateStaticCommits(client *rpcclient.Client) (*CommitWi
 		},
 	}
 
+	//PARTY 1 COMMIT
 	commitParty1, err := createStaticCommit(channel.Party1, channel.Party2, &fundingTxIn, client)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	channel.Party1.Commits = append(channel.Party1.Commits,
+		&CommitData{
+			HasHTLCOutput: false,
+			Data:          commitParty1})
+
+	//**************************************************************************************************
+	//PARTY2 COMMIT
 	commitParty2, err := createStaticCommit(channel.Party2, channel.Party1, &fundingTxIn, client)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	channel.Party2.Commits = append(channel.Party2.Commits,
+		&CommitData{
+			HasHTLCOutput: false,
+			Data:          commitParty2})
 
 	return commitParty1, commitParty2, nil
 }
@@ -88,8 +101,13 @@ func createStaticCommit(encumbered *User, unencumbered *User, fundingTxIn *wire.
 
 	commitTx.AddTxOut(&wire.TxOut{
 		PkScript: theirWitnessKeyHash,
-		Value:    int64(0),
+		Value:    int64(unencumbered.UserBalance),
 	})
+
+	if encumbered.UserBalance < 2000 {
+		commitTx.TxOut[0].Value = encumbered.UserBalance
+		commitTx.TxOut[1].Value = unencumbered.UserBalance - 2000
+	}
 
 	return &CommitWithoutHTLC{
 		CommitTx:                   commitTx,

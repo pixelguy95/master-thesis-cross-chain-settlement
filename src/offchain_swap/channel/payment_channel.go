@@ -5,15 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
-
 	rpcutils "../../extensions/bitcoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 )
 
@@ -61,113 +57,95 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 	fundingTx, _ = clientWraper.SignRawTransactionWithWallet(fundingTx)
 
 	channel = &Channel{
-		Party1:         party1,
-		Party2:         party2,
-		ChannelBalance: funder.UserBalance,
-		FundingTx:      fundingTx,
+		Party1:               party1,
+		Party2:               party2,
+		ChannelBalance:       funder.UserBalance,
+		FundingTx:            fundingTx,
+		FundingWitnessScript: witnessScript,
+		FundingMultiSigOut:   multiSigOut,
 	}
 
-	commit1, _, err := channel.CreateStaticCommits(client)
+	_, _, err = channel.CreateStaticCommits(client)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	// Generate a signature for their version of the initial commitment
-	// transaction.
-	signDesc := input.SignDescriptor{
-		WitnessScript: witnessScript,
-		Output:        multiSigOut,
-		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(commit1.CommitTx),
-		InputIndex:    0,
-	}
+	channel.SignCommitTx(false, 0, client)
+	channel.SignCommitTx(true, 0, client)
 
-	s := &SimpleSigner{
-		PrivateKey: party1.FundingPrivateKey.PrivKey,
-	}
+	/*
+		// Generate a signature for their version of the initial commitment
+		// transaction.
+		signDesc := input.SignDescriptor{
+			WitnessScript: witnessScript,
+			Output:        multiSigOut,
+			HashType:      txscript.SigHashAll,
+			SigHashes:     txscript.NewTxSigHashes(commit1.CommitTx),
+			InputIndex:    0,
+		}
 
-	signature1, err := s.SignOutputRaw(commit1.CommitTx, &signDesc)
-	if err != nil {
-		fmt.Println(err)
-		return nil, error
-	}
+		s := &SimpleSigner{
+			PrivateKey: party1.FundingPrivateKey.PrivKey,
+		}
 
-	s = &SimpleSigner{
-		PrivateKey: party2.FundingPrivateKey.PrivKey,
-	}
+		signature1, err := s.SignOutputRaw(commit1.CommitTx, &signDesc)
+		if err != nil {
+			fmt.Println(err)
+			return nil, error
+		}
 
-	signature2, err := s.SignOutputRaw(commit1.CommitTx, &signDesc)
-	if err != nil {
-		fmt.Println(err)
-		return nil, error
-	}
+		s = &SimpleSigner{
+			PrivateKey: party2.FundingPrivateKey.PrivKey,
+		}
 
-	fmt.Printf("\nSignature1\n%x\n", signature1)
-	fmt.Printf("\nSignature2\n%x\n", signature2)
+		signature2, err := s.SignOutputRaw(commit1.CommitTx, &signDesc)
+		if err != nil {
+			fmt.Println(err)
+			return nil, error
+		}
 
-	signature1 = append(signature1, byte(txscript.SigHashAll))
-	signature2 = append(signature2, byte(txscript.SigHashAll))
+		fmt.Printf("\nSignature1\n%x\n", signature1)
+		fmt.Printf("\nSignature2\n%x\n", signature2)
 
-	witness := input.SpendMultiSig(witnessScript, party1PubKey.ScriptAddress(), signature1, party2PubKey.ScriptAddress(), signature2)
-	commit1.CommitTx.TxIn[0].Witness = witness
+		signature1 = append(signature1, byte(txscript.SigHashAll))
+		signature2 = append(signature2, byte(txscript.SigHashAll))
+
+		witness := input.SpendMultiSig(witnessScript, party1PubKey.ScriptAddress(), signature1, party2PubKey.ScriptAddress(), signature2)
+		commit1.CommitTx.TxIn[0].Witness = witness
+	*/
 
 	buf := new(bytes.Buffer)
-	commit1.CommitTx.Serialize(buf)
-	fmt.Printf("\nCommit:\n%x\n\n", buf)
+	channel.Party1.Commits[0].Data.CommitTx.Serialize(buf)
+	fmt.Printf("\nCommit1:\n%x\n\n", buf)
 
-	revocation := input.DeriveRevocationPrivKey(party2.FundingPrivateKey.PrivKey, party1.RevokationSecrets[0].CommitSecret)
+	buf = new(bytes.Buffer)
+	channel.Party2.Commits[0].Data.CommitTx.Serialize(buf)
+	fmt.Printf("\nCommit2:\n%x\n\n", buf)
 
-	if revocation.PubKey().IsEqual(commit1.RevocationPub) {
-		fmt.Println("Correct revocation key")
-		fmt.Printf("%x\n", revocation.PubKey().SerializeCompressed())
-	} else {
-		fmt.Println("Incorrect revocation key")
-	}
-
-	s = &SimpleSigner{
-		PrivateKey: revocation,
-	}
-
-	//Revoke payout address
-	changeTo := clientWraper.GetNewP2PKHAddress()
-	changeAddress, _ := btcutil.DecodeAddress(changeTo, config)
-
-	revoke := wire.NewMsgTx(2)
-
-	commitInputPoint := wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
-			Hash:  commit1.CommitTx.TxHash(),
-			Index: 0,
-		},
-	}
-	revoke.AddTxIn(&commitInputPoint)
-	revoke.AddTxOut(wire.NewTxOut(party1.UserBalance-4000, customtransactions.CreateP2PKHScript(changeAddress.ScriptAddress())))
-
-	signDesc = input.SignDescriptor{
-		WitnessScript: commit1.TimeLockedRevocationScript,
-		Output:        commit1.CommitTx.TxOut[0],
-		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(revoke),
-		InputIndex:    0,
-	}
-
-	revokeSig, err := s.SignOutputRaw(revoke, &signDesc)
+	revoke, err := GenerateRevocation(party1, party2, 0, client)
 	if err != nil {
 		fmt.Println(err)
 		return nil, error
 	}
 
-	witness = make([][]byte, 3)
-	witness[0] = append(revokeSig, byte(signDesc.HashType))
-	witness[1] = []byte{1}
-	witness[2] = commit1.TimeLockedRevocationScript
+	if revoke != nil {
+		buf = new(bytes.Buffer)
+		revoke.Serialize(buf)
+		fmt.Printf("\nRevoke1:\n%x\n\n", buf)
+	}
 
-	revoke.TxIn[0].Witness = witness
+	revoke, err = GenerateRevocation(party2, party1, 0, client)
+	if err != nil {
+		fmt.Println(err)
+		return nil, error
+	}
 
-	buf = new(bytes.Buffer)
-	revoke.Serialize(buf)
-	fmt.Printf("\nRevoke:\n%x\n\n", buf)
+	if revoke != nil {
+		buf = new(bytes.Buffer)
+		revoke.Serialize(buf)
+		fmt.Printf("\nRevoke2:\n%x\n\n", buf)
+	}
 
 	return channel, nil
 }
