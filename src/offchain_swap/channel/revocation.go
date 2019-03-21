@@ -4,37 +4,45 @@ import (
 	"errors"
 	"fmt"
 
-	rpcutils "../../extensions/bitcoin"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
 // GenerateRevocation generates a commit revocation transaction between two parties
-func GenerateRevocation(encumbered, unencumbered *User, commitIndex uint, client *rpcclient.Client) (revocationTx *wire.MsgTx, err error) {
+func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpcclient.Client) error {
 
-	clientWraper := rpcutils.New(client)
-	revocation := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey.PrivKey, encumbered.RevokationSecrets[0].CommitSecret)
+	var encumbered *User
+	var unencumbered *User
+	if !reverse {
+		encumbered = c.Party1
+		unencumbered = c.Party2
+	} else {
+		encumbered = c.Party2
+		unencumbered = c.Party1
+	}
 
-	if !revocation.PubKey().IsEqual(encumbered.Commits[commitIndex].Data.RevocationPub) {
+	//TODO: Fix output amount to reflect channel balance
+	revocationOutputValue := encumbered.Commits[commitIndex].Data.CommitTx.TxOut[0].Value
+
+	if revocationOutputValue < int64(customtransactions.DefaultFee) {
+		fmt.Println("Revocation output value too small, no revoation tx needed!")
+		unencumbered.CommitRevokes = append(unencumbered.CommitRevokes, nil)
+		return nil
+	}
+
+	revocationPrivateKey := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey, encumbered.RevokationSecrets[0].CommitSecret)
+
+	if !revocationPrivateKey.PubKey().IsEqual(encumbered.Commits[commitIndex].Data.RevocationPub) {
 		fmt.Println("Incorrect revocation key")
-		return nil, errors.New("Incorrect revocation key")
+		return errors.New("Incorrect revocation key")
 	}
 
 	s := &SimpleSigner{
-		PrivateKey: revocation,
+		PrivateKey: revocationPrivateKey,
 	}
-
-	//Revoke payout address
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(unencumbered.WalletName)
-	changeTo := clientWraper.GetNewP2PKHAddress()
-	changeAddress, _ := btcutil.DecodeAddress(changeTo, config)
-
-	fmt.Println(changeAddress.EncodeAddress())
 
 	revoke := wire.NewMsgTx(2)
 
@@ -46,14 +54,7 @@ func GenerateRevocation(encumbered, unencumbered *User, commitIndex uint, client
 	}
 	revoke.AddTxIn(&commitInputPoint)
 
-	//TODO: Fix output amount to reflect channel balance
-	revocationOutputValue := encumbered.Commits[commitIndex].Data.CommitTx.TxOut[0].Value
-
-	if revocationOutputValue < int64(customtransactions.DefaultFee) {
-		fmt.Println("Revocation output value too small, no revoation tx needed!")
-		return nil, nil
-	}
-	revoke.AddTxOut(wire.NewTxOut(revocationOutputValue-int64(customtransactions.DefaultFee), customtransactions.CreateP2PKHScript(changeAddress.ScriptAddress())))
+	revoke.AddTxOut(wire.NewTxOut(revocationOutputValue-int64(customtransactions.DefaultFee), customtransactions.CreateP2PKHScript(unencumbered.PayOutAddress.ScriptAddress())))
 
 	signDesc := input.SignDescriptor{
 		WitnessScript: encumbered.Commits[commitIndex].Data.TimeLockedRevocationScript,
@@ -66,7 +67,7 @@ func GenerateRevocation(encumbered, unencumbered *User, commitIndex uint, client
 	revokeSig, err := s.SignOutputRaw(revoke, &signDesc)
 	if err != nil {
 		fmt.Println(err)
-		return nil, err
+		return err
 	}
 
 	witness := make([][]byte, 3)
@@ -76,5 +77,7 @@ func GenerateRevocation(encumbered, unencumbered *User, commitIndex uint, client
 
 	revoke.TxIn[0].Witness = witness
 
-	return revoke, nil
+	unencumbered.CommitRevokes = append(unencumbered.CommitRevokes, &CommitRevokeData{RevokeTx: revoke})
+
+	return nil
 }

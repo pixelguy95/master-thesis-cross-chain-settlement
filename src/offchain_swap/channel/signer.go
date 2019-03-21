@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	rpcutils "../../extensions/bitcoin"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/input"
@@ -73,7 +71,7 @@ func maybeTweakPrivKey(signDesc *input.SignDescriptor,
 }
 
 // SignCommitTx Signs a commit
-func (c *Channel) SignCommitTx(reverse bool, commitIndex uint, client *rpcclient.Client) error {
+func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 
 	var holder *User
 	var other *User
@@ -84,16 +82,6 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint, client *rpcclient
 		holder = c.Party2
 		other = c.Party1
 	}
-
-	clientWraper := rpcutils.New(client)
-
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(holder.WalletName)
-	holderPubKey, _ := clientWraper.GetPubKey(holder.FundingPublicKey.EncodeAddress())
-
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(other.WalletName)
-	//otherPubKey, _ := clientWraper.GetPubKey(other.FundingPublicKey.EncodeAddress())
 
 	// Generate a signature for their version of the initial commitment
 	// transaction.
@@ -106,7 +94,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint, client *rpcclient
 	}
 
 	s := &SimpleSigner{
-		PrivateKey: holder.FundingPrivateKey.PrivKey,
+		PrivateKey: holder.FundingPrivateKey,
 	}
 
 	// Signature from holder of commit
@@ -117,7 +105,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint, client *rpcclient
 	}
 
 	s = &SimpleSigner{
-		PrivateKey: other.FundingPrivateKey.PrivKey,
+		PrivateKey: other.FundingPrivateKey,
 	}
 
 	//Signature from the counter party
@@ -127,33 +115,12 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint, client *rpcclient
 		return err
 	}
 
-	fmt.Printf("\nSignature1\n%x\n", signature1)
-	fmt.Printf("\nSignature2\n%x\n", signature2)
-
 	signature1 = append(signature1, byte(txscript.SigHashAll))
 	signature2 = append(signature2, byte(txscript.SigHashAll))
 
-	witnessStack := make([][]byte, 4)
-	witnessStack[0] = nil
-	witnessStack[3] = c.FundingWitnessScript
-
-	pushes, _ := txscript.PushedData(c.FundingWitnessScript)
-	for index, data := range pushes {
-		if reflect.DeepEqual(data, holderPubKey.PubKey().SerializeCompressed()) {
-
-			if index == 0 {
-				witnessStack[1] = signature1
-				witnessStack[2] = signature2
-			} else {
-				witnessStack[1] = signature1
-				witnessStack[2] = signature2
-			}
-		}
-	}
-
 	//Below caused problems
-	//witness := input.SpendMultiSig(c.FundingWitnessScript, holderPubKey.ScriptAddress(), signature1, otherPubKey.ScriptAddress(), signature2)
-	holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness = witnessStack
+	witness := input.SpendMultiSig(c.FundingWitnessScript, holder.FundingPublicKey.SerializeCompressed(), signature1, other.FundingPublicKey.SerializeCompressed(), signature2)
+	holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness = witness
 
 	if !reflect.DeepEqual(c.Party1.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness, holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness) {
 		return errors.New("Witness didn't match somehow")

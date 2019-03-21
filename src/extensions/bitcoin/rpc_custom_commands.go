@@ -210,7 +210,6 @@ func (c *CustomRPC) GetPubKey(address string) (*btcutil.AddressPubKey, error) {
 
 	pubkey := new(PubKeyReply)
 	json.Unmarshal(rawData, &pubkey)
-	fmt.Printf("%s\n", pubkey.PubKey)
 
 	asBytes, _ := hex.DecodeString(pubkey.PubKey)
 	key, error := btcutil.NewAddressPubKey(asBytes, &chaincfg.TestNet3Params)
@@ -230,9 +229,8 @@ func (c *CustomRPC) SignRawTransactionWithWallet(tx *wire.MsgTx) (*wire.MsgTx, e
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
-	tx.SerializeNoWitness(buf)
+	tx.Serialize(buf)
 	hexEncoding := hex.EncodeToString(buf.Bytes())
-	fmt.Println(hex.EncodeToString(buf.Bytes()))
 	params, _ := json.Marshal(hexEncoding)
 	paramsRaw := []json.RawMessage{params}
 
@@ -260,7 +258,7 @@ func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
-	tx.SerializeNoWitness(buf)
+	tx.Serialize(buf)
 	hexEncoding := hex.EncodeToString(buf.Bytes())
 	param1, error := json.Marshal(hexEncoding)
 	param2, error := json.Marshal(&FundPosition{ChangePosition: 1})
@@ -279,9 +277,7 @@ func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
 	ret := new(wire.MsgTx)
 	txbytes, _ := hex.DecodeString(reply.Hex)
-	ret.DeserializeNoWitness(bytes.NewReader(txbytes))
-
-	fmt.Println(reply)
+	ret.Deserialize(bytes.NewReader(txbytes))
 
 	return ret, nil
 }

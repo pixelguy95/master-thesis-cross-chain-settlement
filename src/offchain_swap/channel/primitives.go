@@ -6,16 +6,20 @@ import (
 	rpcutils "../../extensions/bitcoin"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcutil"
 
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 )
 
 // User represents a party in a payment channel.
 type User struct {
 	/* The keys related to the funding of the channel */
-	FundingPublicKey  btcutil.Address
-	FundingPrivateKey *btcutil.WIF
+	FundingPublicKey  *btcec.PublicKey
+	FundingPrivateKey *btcec.PrivateKey
+
+	/* Whenever a channel closes, all funds should go to this address */
+	PayOutAddress btcutil.Address
+	PayoutPubKey  *btcutil.AddressPubKey
 
 	/* A construct that can be used to sign commits,
 	derived from the funding transaction */
@@ -39,12 +43,20 @@ type User struct {
 
 	/* Array of all commits so far in this channel */
 	Commits []*CommitData
+
+	/* Array of Commit-Revokes. Index 0 is the revoke for commit 0 etc...*/
+	CommitRevokes []*CommitRevokeData
 }
 
 // CommitData stores commits and their related data
 type CommitData struct {
 	HasHTLCOutput bool
 	Data          *CommitWithoutHTLC
+}
+
+// CommitRevokeData is a structure holding data related to revokes
+type CommitRevokeData struct {
+	RevokeTx *wire.MsgTx
 }
 
 // CommitRevokationSecret is part of what is needed to revoke a commit
@@ -65,28 +77,34 @@ type Channel struct {
 
 // PrintUser prints all info on user
 func (user *User) PrintUser() {
-	fmt.Printf("=== %s ===\n%s\n%s\n%t\n", user.WalletName, user.FundingPublicKey.String(), user.FundingPrivateKey.String(), user.Fundee)
+	fmt.Printf("=== %s ===\n%x\n%x\n%t\n", user.WalletName, user.FundingPublicKey.SerializeCompressed(), user.FundingPrivateKey.Serialize(), user.Fundee)
 }
 
 // GenerateNewUserFromWallet generates a new channel user from a wallet
-func GenerateNewUserFromWallet(walletName string, client *rpcclient.Client) (*User, error) {
+func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient.Client) (*User, error) {
 	clientWraper := rpcutils.New(client)
 	clientWraper.UnloadAllWallets()
 	clientWraper.LoadWallet(walletName)
 
-	address, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
-	privKey, _ := client.DumpPrivKey(address)
+	payoutAddress, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
+
+	//Payout address for unencumbered
+	payoutPubKey, _ := clientWraper.GetPubKey(payoutAddress.EncodeAddress())
+
+	privKey, _ := btcec.NewPrivateKey(btcec.S256())
 
 	signer := &SimpleSigner{
-		PrivateKey: privKey.PrivKey,
+		PrivateKey: privKey,
 	}
 
 	user := &User{
-		FundingPublicKey:  address,
+		FundingPublicKey:  privKey.PubKey(),
 		FundingPrivateKey: privKey,
+		PayOutAddress:     payoutAddress,
+		PayoutPubKey:      payoutPubKey,
 		FundingSigner:     signer,
 		UserBalance:       0,
-		Fundee:            true,
+		Fundee:            fundee,
 		WalletName:        walletName,
 		RevokePreImage:    []byte(walletName),
 	}

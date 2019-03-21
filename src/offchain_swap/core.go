@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
-
 	"./channel"
 	"github.com/btcsuite/btcd/rpcclient"
 )
@@ -33,16 +31,13 @@ func main() {
 	}
 
 	client.Connect(1)
-	clientWraper := rpcutils.New(client)
 
-	clientWraper.GetNewP2PKHAddress()
-
-	cj, _ := channel.GenerateNewUserFromWallet("cj_wallet", client)
+	cj, _ := channel.GenerateNewUserFromWallet("cj_wallet", true, client)
 	cj.PrintUser()
 
 	fmt.Println()
 
-	other, _ := channel.GenerateNewUserFromWallet("otherwallet", client)
+	other, _ := channel.GenerateNewUserFromWallet("otherwallet", false, client)
 	other.PrintUser()
 
 	fmt.Println()
@@ -59,5 +54,5 @@ func main() {
 	fmt.Println()
 	buf := new(bytes.Buffer)
 	pc.FundingTx.Serialize(buf)
-	fmt.Printf("\n\n%x\n\n", buf)
+	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
 }
