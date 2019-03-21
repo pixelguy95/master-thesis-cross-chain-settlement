@@ -1,9 +1,7 @@
 package channel
 
 import (
-	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
@@ -73,6 +71,8 @@ func maybeTweakPrivKey(signDesc *input.SignDescriptor,
 // SignCommitTx Signs a commit
 func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 
+	fmt.Printf("Signing commit transaction\t\t ")
+
 	var holder *User
 	var other *User
 	if !reverse {
@@ -100,6 +100,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 	// Signature from holder of commit
 	signature1, err := s.SignOutputRaw(holder.Commits[commitIndex].Data.CommitTx, &signDesc)
 	if err != nil {
+		Red.Printf("[FAILED]\n")
 		fmt.Println(err)
 		return err
 	}
@@ -111,6 +112,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 	//Signature from the counter party
 	signature2, err := s.SignOutputRaw(holder.Commits[commitIndex].Data.CommitTx, &signDesc)
 	if err != nil {
+		Red.Printf("[FAILED]\n")
 		fmt.Println(err)
 		return err
 	}
@@ -122,9 +124,6 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 	witness := input.SpendMultiSig(c.FundingWitnessScript, holder.FundingPublicKey.SerializeCompressed(), signature1, other.FundingPublicKey.SerializeCompressed(), signature2)
 	holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness = witness
 
-	if !reflect.DeepEqual(c.Party1.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness, holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness) {
-		return errors.New("Witness didn't match somehow")
-	}
-
+	Green.Printf("[DONE]\n")
 	return nil
 }

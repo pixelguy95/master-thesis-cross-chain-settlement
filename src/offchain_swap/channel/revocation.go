@@ -14,6 +14,8 @@ import (
 // GenerateRevocation generates a commit revocation transaction between two parties
 func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpcclient.Client) error {
 
+	fmt.Printf("Building revocation\t\t\t ")
+
 	var encumbered *User
 	var unencumbered *User
 	if !reverse {
@@ -28,6 +30,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	revocationOutputValue := encumbered.Commits[commitIndex].Data.CommitTx.TxOut[0].Value
 
 	if revocationOutputValue < int64(customtransactions.DefaultFee) {
+		Yellow.Printf("[NOT NEEDED]\n")
 		fmt.Println("Revocation output value too small, no revoation tx needed!")
 		unencumbered.CommitRevokes = append(unencumbered.CommitRevokes, nil)
 		return nil
@@ -36,6 +39,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	revocationPrivateKey := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey, encumbered.RevokationSecrets[0].CommitSecret)
 
 	if !revocationPrivateKey.PubKey().IsEqual(encumbered.Commits[commitIndex].Data.RevocationPub) {
+		Red.Printf("[FAILED]\n")
 		fmt.Println("Incorrect revocation key")
 		return errors.New("Incorrect revocation key")
 	}
@@ -66,6 +70,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 
 	revokeSig, err := s.SignOutputRaw(revoke, &signDesc)
 	if err != nil {
+		Red.Printf("[FAILED]\n")
 		fmt.Println(err)
 		return err
 	}
@@ -79,5 +84,6 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 
 	unencumbered.CommitRevokes = append(unencumbered.CommitRevokes, &CommitRevokeData{RevokeTx: revoke})
 
+	Green.Printf("[DONE]\n")
 	return nil
 }

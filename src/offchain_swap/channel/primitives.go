@@ -7,8 +7,20 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
+	"github.com/fatih/color"
 
 	"github.com/btcsuite/btcd/wire"
+)
+
+var (
+	// Yellow prints with yellow text
+	Yellow = color.New(color.FgYellow)
+
+	//Red prints with red text
+	Red = color.New(color.FgRed)
+
+	//Green prints with green text
+	Green = color.New(color.FgGreen)
 )
 
 // User represents a party in a payment channel.
