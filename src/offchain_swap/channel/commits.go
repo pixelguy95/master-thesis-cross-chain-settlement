@@ -8,14 +8,6 @@ import (
 	"github.com/lightningnetwork/lnd/input"
 )
 
-// CommitWithoutHTLC is a representation of a commit transaction with some companion data
-type CommitWithoutHTLC struct {
-	CommitTx                   *wire.MsgTx
-	TimeLockedRevocationScript []byte
-	UnencumberedScript         []byte
-	RevocationPub              *btcec.PublicKey
-}
-
 // CreateStaticCommits creates both commits with no HTLC output
 func (channel *Channel) CreateStaticCommits(client *rpcclient.Client) error {
 
@@ -32,10 +24,7 @@ func (channel *Channel) CreateStaticCommits(client *rpcclient.Client) error {
 		return err
 	}
 
-	channel.Party1.Commits = append(channel.Party1.Commits,
-		&CommitData{
-			HasHTLCOutput: false,
-			Data:          commitParty1})
+	channel.Party1.Commits = append(channel.Party1.Commits, commitParty1)
 
 	//**************************************************************************************************
 	//PARTY2 COMMIT
@@ -44,16 +33,13 @@ func (channel *Channel) CreateStaticCommits(client *rpcclient.Client) error {
 		return err
 	}
 
-	channel.Party2.Commits = append(channel.Party2.Commits,
-		&CommitData{
-			HasHTLCOutput: false,
-			Data:          commitParty2})
+	channel.Party2.Commits = append(channel.Party2.Commits, commitParty2)
 
 	return nil
 }
 
 // createStaticCommit creates a single commit, no htlc
-func createStaticCommit(encumbered *User, unencumbered *User, fundingTxIn *wire.TxIn, client *rpcclient.Client) (*CommitWithoutHTLC, error) {
+func createStaticCommit(encumbered *User, unencumbered *User, fundingTxIn *wire.TxIn, client *rpcclient.Client) (*CommitData, error) {
 
 	//Create revoke key on party1 commit side
 	commitSecret, commitPoint := btcec.PrivKeyFromBytes(btcec.S256(), encumbered.RevokePreImage)
@@ -64,7 +50,7 @@ func createStaticCommit(encumbered *User, unencumbered *User, fundingTxIn *wire.
 	encumbered.RevokationSecrets = append(encumbered.RevokationSecrets, &CommitRevokationSecret{CommitPoint: commitPoint, CommitSecret: commitSecret})
 
 	//Delayed script to self, or via revocation
-	ourRedeemScript, err := input.CommitScriptToSelf(10, encumbered.PayoutPubKey.PubKey(), revocationPub)
+	ourRedeemScript, err := input.CommitScriptToSelf(DefaultRelativeLockTime, encumbered.PayoutPubKey.PubKey(), revocationPub)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +88,10 @@ func createStaticCommit(encumbered *User, unencumbered *User, fundingTxIn *wire.
 		commitTx.TxOut[1].Value = unencumbered.UserBalance - 2000
 	}
 
-	return &CommitWithoutHTLC{
+	return &CommitData{
 		CommitTx:                   commitTx,
 		TimeLockedRevocationScript: ourRedeemScript,
 		UnencumberedScript:         theirWitnessKeyHash,
-		RevocationPub:              revocationPub}, nil
+		RevocationPub:              revocationPub,
+		HasHTLCOutput:              false}, nil
 }

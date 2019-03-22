@@ -21,6 +21,9 @@ var (
 
 	//Green prints with green text
 	Green = color.New(color.FgGreen)
+
+	//DefaultRelativeLockTime is the default number of blocks to wait before a commit is spendable
+	DefaultRelativeLockTime = uint32(3)
 )
 
 // User represents a party in a payment channel.
@@ -30,8 +33,9 @@ type User struct {
 	FundingPrivateKey *btcec.PrivateKey
 
 	/* Whenever a channel closes, all funds should go to this address */
-	PayOutAddress btcutil.Address
-	PayoutPubKey  *btcutil.AddressPubKey
+	PayOutAddress    btcutil.Address
+	PayoutPubKey     *btcutil.AddressPubKey
+	PayoutPrivateKey *btcutil.WIF
 
 	/* A construct that can be used to sign commits,
 	derived from the funding transaction */
@@ -56,19 +60,39 @@ type User struct {
 	/* Array of all commits so far in this channel */
 	Commits []*CommitData
 
-	/* Array of Commit-Revokes. Index 0 is the revoke for commit 0 etc...*/
+	/* Array of Commit-Revokes. Index 0 is the revoke for commit 0 etc...
+	NOTE: These are spending the commit tx from the other party.*/
 	CommitRevokes []*CommitRevokeData
+
+	/* Commit spend */
+	CommitSpends []*CommitSpendData
 }
 
-// CommitData stores commits and their related data
+// CommitData is a representation of a commit transaction with some companion data
 type CommitData struct {
+
+	//The base commit TX
+	CommitTx *wire.MsgTx
+
+	//The scripts in the timelocked return / revocation and the unencumbered outputs.
+	TimeLockedRevocationScript []byte
+	UnencumberedScript         []byte
+
+	// The public key used in the timelocked return / revocation output.
+	RevocationPub *btcec.PublicKey
+
+	// This is set to true if the commit contians a HTLC output
 	HasHTLCOutput bool
-	Data          *CommitWithoutHTLC
 }
 
 // CommitRevokeData is a structure holding data related to revokes
 type CommitRevokeData struct {
 	RevokeTx *wire.MsgTx
+}
+
+// CommitSpendData is a structure holding data related to spending the timelocked output in the base commit
+type CommitSpendData struct {
+	CommitSpend *wire.MsgTx
 }
 
 // CommitRevokationSecret is part of what is needed to revoke a commit
@@ -99,6 +123,7 @@ func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient
 	clientWraper.LoadWallet(walletName)
 
 	payoutAddress, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
+	payoutPrivKey, _ := client.DumpPrivKey(payoutAddress)
 
 	//Payout address for unencumbered
 	payoutPubKey, _ := clientWraper.GetPubKey(payoutAddress.EncodeAddress())
@@ -114,6 +139,7 @@ func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient
 		FundingPrivateKey: privKey,
 		PayOutAddress:     payoutAddress,
 		PayoutPubKey:      payoutPubKey,
+		PayoutPrivateKey:  payoutPrivKey,
 		FundingSigner:     signer,
 		UserBalance:       0,
 		Fundee:            fundee,

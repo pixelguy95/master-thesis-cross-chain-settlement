@@ -89,7 +89,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 		WitnessScript: c.FundingWitnessScript,
 		Output:        c.FundingMultiSigOut,
 		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(holder.Commits[commitIndex].Data.CommitTx),
+		SigHashes:     txscript.NewTxSigHashes(holder.Commits[commitIndex].CommitTx),
 		InputIndex:    0,
 	}
 
@@ -98,7 +98,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 	}
 
 	// Signature from holder of commit
-	signature1, err := s.SignOutputRaw(holder.Commits[commitIndex].Data.CommitTx, &signDesc)
+	signature1, err := s.SignOutputRaw(holder.Commits[commitIndex].CommitTx, &signDesc)
 	if err != nil {
 		Red.Printf("[FAILED]\n")
 		fmt.Println(err)
@@ -110,7 +110,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 	}
 
 	//Signature from the counter party
-	signature2, err := s.SignOutputRaw(holder.Commits[commitIndex].Data.CommitTx, &signDesc)
+	signature2, err := s.SignOutputRaw(holder.Commits[commitIndex].CommitTx, &signDesc)
 	if err != nil {
 		Red.Printf("[FAILED]\n")
 		fmt.Println(err)
@@ -122,7 +122,7 @@ func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
 
 	//Below caused problems
 	witness := input.SpendMultiSig(c.FundingWitnessScript, holder.FundingPublicKey.SerializeCompressed(), signature1, other.FundingPublicKey.SerializeCompressed(), signature2)
-	holder.Commits[commitIndex].Data.CommitTx.TxIn[0].Witness = witness
+	holder.Commits[commitIndex].CommitTx.TxIn[0].Witness = witness
 
 	Green.Printf("[DONE]\n")
 	return nil

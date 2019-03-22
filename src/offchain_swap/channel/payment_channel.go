@@ -61,9 +61,17 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 		return nil, err
 	}
 
+	//TODO: Form into one function call
 	channel.SignCommitTx(false, 0)
 	channel.SignCommitTx(true, 0)
 
+	err = channel.GenerateCommitSpends(0)
+	if err != nil {
+		fmt.Println(err)
+		return nil, error
+	}
+
+	//TODO: Form into one function call
 	err = channel.GenerateRevocation(false, 0, client)
 	if err != nil {
 		fmt.Println(err)

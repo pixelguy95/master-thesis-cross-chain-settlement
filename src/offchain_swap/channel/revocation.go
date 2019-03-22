@@ -27,7 +27,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	}
 
 	//TODO: Fix output amount to reflect channel balance
-	revocationOutputValue := encumbered.Commits[commitIndex].Data.CommitTx.TxOut[0].Value
+	revocationOutputValue := encumbered.Commits[commitIndex].CommitTx.TxOut[0].Value
 
 	if revocationOutputValue < int64(customtransactions.DefaultFee) {
 		Yellow.Printf("[NOT NEEDED]\n")
@@ -38,7 +38,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 
 	revocationPrivateKey := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey, encumbered.RevokationSecrets[0].CommitSecret)
 
-	if !revocationPrivateKey.PubKey().IsEqual(encumbered.Commits[commitIndex].Data.RevocationPub) {
+	if !revocationPrivateKey.PubKey().IsEqual(encumbered.Commits[commitIndex].RevocationPub) {
 		Red.Printf("[FAILED]\n")
 		fmt.Println("Incorrect revocation key")
 		return errors.New("Incorrect revocation key")
@@ -52,7 +52,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 
 	commitInputPoint := wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			Hash:  encumbered.Commits[commitIndex].Data.CommitTx.TxHash(),
+			Hash:  encumbered.Commits[commitIndex].CommitTx.TxHash(),
 			Index: 0,
 		},
 	}
@@ -61,8 +61,8 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	revoke.AddTxOut(wire.NewTxOut(revocationOutputValue-int64(customtransactions.DefaultFee), customtransactions.CreateP2PKHScript(unencumbered.PayOutAddress.ScriptAddress())))
 
 	signDesc := input.SignDescriptor{
-		WitnessScript: encumbered.Commits[commitIndex].Data.TimeLockedRevocationScript,
-		Output:        encumbered.Commits[commitIndex].Data.CommitTx.TxOut[0],
+		WitnessScript: encumbered.Commits[commitIndex].TimeLockedRevocationScript,
+		Output:        encumbered.Commits[commitIndex].CommitTx.TxOut[0],
 		HashType:      txscript.SigHashAll,
 		SigHashes:     txscript.NewTxSigHashes(revoke),
 		InputIndex:    0,
@@ -78,7 +78,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	witness := make([][]byte, 3)
 	witness[0] = append(revokeSig, byte(signDesc.HashType))
 	witness[1] = []byte{1}
-	witness[2] = encumbered.Commits[commitIndex].Data.TimeLockedRevocationScript
+	witness[2] = encumbered.Commits[commitIndex].TimeLockedRevocationScript
 
 	revoke.TxIn[0].Witness = witness
 

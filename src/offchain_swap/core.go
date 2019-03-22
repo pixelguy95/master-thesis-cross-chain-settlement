@@ -55,4 +55,14 @@ func main() {
 	buf := new(bytes.Buffer)
 	pc.FundingTx.Serialize(buf)
 	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+
+	fmt.Println()
+	buf = new(bytes.Buffer)
+	pc.Party1.Commits[0].CommitTx.Serialize(buf)
+	fmt.Printf("COMMIT TX:\n%x\n\n", buf)
+
+	fmt.Println()
+	buf = new(bytes.Buffer)
+	pc.Party1.CommitSpends[0].CommitSpend.Serialize(buf)
+	fmt.Printf("SPEND COMMIT TX:\n%x\n\n", buf)
 }
