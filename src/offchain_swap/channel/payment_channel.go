@@ -55,15 +55,11 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 		FundingMultiSigOut:   multiSigOut,
 	}
 
-	err = channel.CreateStaticCommits(client)
+	err = channel.Settle(client)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
-
-	//TODO: Form into one function call
-	channel.SignCommitTx(false, 0)
-	channel.SignCommitTx(true, 0)
 
 	err = channel.GenerateCommitSpends(0)
 	if err != nil {

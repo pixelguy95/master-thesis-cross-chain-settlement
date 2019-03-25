@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/btcsuite/btcd/btcec"
+
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -86,4 +88,13 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 
 	Green.Printf("[DONE]\n")
 	return nil
+}
+
+// GenerateRevokePubKey generates a revokation key
+func GenerateRevokePubKey(preimage []byte, basePub *btcec.PublicKey) (commitPoint *btcec.PublicKey, commitSecret *btcec.PrivateKey, revocationPub *btcec.PublicKey, err error) {
+
+	commitSecret, commitPoint = btcec.PrivKeyFromBytes(btcec.S256(), preimage)
+	revocationPub = input.DeriveRevocationPubkey(basePub, commitPoint)
+
+	return commitPoint, commitSecret, revocationPub, nil
 }

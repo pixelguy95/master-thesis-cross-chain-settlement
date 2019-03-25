@@ -68,9 +68,23 @@ func maybeTweakPrivKey(signDesc *input.SignDescriptor,
 	return retPriv, nil
 }
 
-// SignCommitTx Signs a commit
-func (c *Channel) SignCommitTx(reverse bool, commitIndex uint) error {
+// SignCommitsTx Signs a commit
+func (c *Channel) SignCommitsTx(commitIndex uint) error {
 
+	err := c.signCommit(false, commitIndex)
+	if err != nil {
+		return err
+	}
+
+	err = c.signCommit(true, commitIndex)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Channel) signCommit(reverse bool, commitIndex uint) error {
 	fmt.Printf("Signing commit transaction\t\t ")
 
 	var holder *User

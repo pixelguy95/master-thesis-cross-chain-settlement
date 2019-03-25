@@ -10,6 +10,8 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/btcsuite/btcd/wire"
+
+	"crypto/sha256"
 )
 
 var (
@@ -28,6 +30,8 @@ var (
 
 // User represents a party in a payment channel.
 type User struct {
+	Name string
+
 	/* The keys related to the funding of the channel */
 	FundingPublicKey  *btcec.PublicKey
 	FundingPrivateKey *btcec.PrivateKey
@@ -58,6 +62,11 @@ type User struct {
 	TODO: remove, this should be random for each commit */
 	RevokePreImage []byte
 
+	/* The pre image used for htlc outputs
+	TODO: remove, this should be random for each commit*/
+	HTLCPreImage    []byte
+	HTLCPaymentHash [sha256.Size]byte
+
 	/* Array of all revokation secrets and some related data */
 	RevokationSecrets []*CommitRevokationSecret
 
@@ -75,10 +84,10 @@ type User struct {
 // CommitData is a representation of a commit transaction with some companion data
 type CommitData struct {
 
-	//The base commit TX
+	// The base commit TX
 	CommitTx *wire.MsgTx
 
-	//The scripts in the timelocked return / revocation and the unencumbered outputs.
+	// The scripts in the timelocked return / revocation and the unencumbered outputs.
 	TimeLockedRevocationScript []byte
 	UnencumberedScript         []byte
 
@@ -87,6 +96,14 @@ type CommitData struct {
 
 	// This is set to true if the commit contians a HTLC output
 	HasHTLCOutput bool
+
+	/* BELOW THIS POINT IS ONLY RELEVANT IF ABOVE IS TRUE */
+
+	// True if the holder of this commit is the sender
+	IsSender bool
+
+	// The script in the htlc output
+	HTLCOutScript []byte
 }
 
 // CommitRevokeData is a structure holding data related to revokes
@@ -115,13 +132,25 @@ type Channel struct {
 	FundingMultiSigOut   *wire.TxOut
 }
 
+// SendDescriptor represents how a transaction should be constructed
+type SendDescriptor struct {
+	Sender   *User
+	Receiver *User
+	Balance  int64
+}
+
 // PrintUser prints all info on user
 func (user *User) PrintUser() {
 	fmt.Printf("=== %s ===\n%x\n%x\n%t\n", user.WalletName, user.FundingPublicKey.SerializeCompressed(), user.FundingPrivateKey.Serialize(), user.Fundee)
 }
 
+// Equals compares two users
+func (user *User) Equals(user2 *User) bool {
+	return user.WalletName == user2.WalletName && user.UserBalance == user2.UserBalance
+}
+
 // GenerateNewUserFromWallet generates a new channel user from a wallet
-func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient.Client) (*User, error) {
+func GenerateNewUserFromWallet(name string, walletName string, fundee bool, client *rpcclient.Client) (*User, error) {
 	clientWraper := rpcutils.New(client)
 	clientWraper.UnloadAllWallets()
 	clientWraper.LoadWallet(walletName)
@@ -133,13 +162,14 @@ func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient
 	payoutPubKey, _ := clientWraper.GetPubKey(payoutAddress.EncodeAddress())
 
 	fundingPrivateKey, _ := btcec.NewPrivateKey(btcec.S256())
-	HTLCPrivateKey := btcec.NewPrivateKey(btcec.S256())
+	HTLCPrivateKey, _ := btcec.NewPrivateKey(btcec.S256())
 
 	fundingSigner := &SimpleSigner{
 		PrivateKey: fundingPrivateKey,
 	}
 
 	user := &User{
+		Name:              name,
 		FundingPublicKey:  fundingPrivateKey.PubKey(),
 		FundingPrivateKey: fundingPrivateKey,
 		HTLCPublicKey:     HTLCPrivateKey.PubKey(),
@@ -152,6 +182,8 @@ func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient
 		Fundee:            fundee,
 		WalletName:        walletName,
 		RevokePreImage:    []byte(walletName),
+		HTLCPreImage:      []byte(walletName),
+		HTLCPaymentHash:   sha256.Sum256([]byte(walletName)),
 	}
 
 	return user, nil

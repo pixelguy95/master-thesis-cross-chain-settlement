@@ -32,12 +32,12 @@ func main() {
 
 	client.Connect(1)
 
-	cj, _ := channel.GenerateNewUserFromWallet("cj_wallet", true, client)
+	cj, _ := channel.GenerateNewUserFromWallet("Alice", "cj_wallet", true, client)
 	cj.PrintUser()
 
 	fmt.Println()
 
-	other, _ := channel.GenerateNewUserFromWallet("otherwallet", false, client)
+	other, _ := channel.GenerateNewUserFromWallet("Bob", "otherwallet", false, client)
 	other.PrintUser()
 
 	fmt.Println()
@@ -51,6 +51,18 @@ func main() {
 		fmt.Println(error)
 	}
 
+	sd := &channel.SendDescriptor{
+		Balance:  1000,
+		Sender:   pc.Party1,
+		Receiver: pc.Party2,
+	}
+
+	err := pc.SendCommit(sd)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	fmt.Println()
 	buf := new(bytes.Buffer)
 	pc.FundingTx.Serialize(buf)
@@ -58,11 +70,8 @@ func main() {
 
 	fmt.Println()
 	buf = new(bytes.Buffer)
-	pc.Party1.Commits[0].CommitTx.Serialize(buf)
+	pc.Party1.Commits[1].CommitTx.Serialize(buf)
 	fmt.Printf("COMMIT TX:\n%x\n\n", buf)
 
-	fmt.Println()
-	buf = new(bytes.Buffer)
-	pc.Party1.CommitSpends[0].CommitSpend.Serialize(buf)
-	fmt.Printf("SPEND COMMIT TX:\n%x\n\n", buf)
+	fmt.Printf("HTLC SCRIPT:\n%x\n", pc.Party1.Commits[1].HTLCOutScript)
 }
