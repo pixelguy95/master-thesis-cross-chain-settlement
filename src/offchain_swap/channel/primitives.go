@@ -32,6 +32,10 @@ type User struct {
 	FundingPublicKey  *btcec.PublicKey
 	FundingPrivateKey *btcec.PrivateKey
 
+	/* HTLC keys */
+	HTLCPublicKey  *btcec.PublicKey
+	HTLCPrivateKey *btcec.PrivateKey
+
 	/* Whenever a channel closes, all funds should go to this address */
 	PayOutAddress    btcutil.Address
 	PayoutPubKey     *btcutil.AddressPubKey
@@ -128,19 +132,22 @@ func GenerateNewUserFromWallet(walletName string, fundee bool, client *rpcclient
 	//Payout address for unencumbered
 	payoutPubKey, _ := clientWraper.GetPubKey(payoutAddress.EncodeAddress())
 
-	privKey, _ := btcec.NewPrivateKey(btcec.S256())
+	fundingPrivateKey, _ := btcec.NewPrivateKey(btcec.S256())
+	HTLCPrivateKey := btcec.NewPrivateKey(btcec.S256())
 
-	signer := &SimpleSigner{
-		PrivateKey: privKey,
+	fundingSigner := &SimpleSigner{
+		PrivateKey: fundingPrivateKey,
 	}
 
 	user := &User{
-		FundingPublicKey:  privKey.PubKey(),
-		FundingPrivateKey: privKey,
+		FundingPublicKey:  fundingPrivateKey.PubKey(),
+		FundingPrivateKey: fundingPrivateKey,
+		HTLCPublicKey:     HTLCPrivateKey.PubKey(),
+		HTLCPrivateKey:    HTLCPrivateKey,
 		PayOutAddress:     payoutAddress,
 		PayoutPubKey:      payoutPubKey,
 		PayoutPrivateKey:  payoutPrivKey,
-		FundingSigner:     signer,
+		FundingSigner:     fundingSigner,
 		UserBalance:       0,
 		Fundee:            fundee,
 		WalletName:        walletName,
