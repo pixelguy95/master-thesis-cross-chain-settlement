@@ -38,7 +38,7 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 		return nil
 	}
 
-	revocationPrivateKey := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey, encumbered.RevokationSecrets[0].CommitSecret)
+	revocationPrivateKey := input.DeriveRevocationPrivKey(unencumbered.FundingPrivateKey, encumbered.RevokationSecrets[commitIndex].CommitSecret)
 
 	if !revocationPrivateKey.PubKey().IsEqual(encumbered.Commits[commitIndex].RevocationPub) {
 		Red.Printf("[FAILED]\n")

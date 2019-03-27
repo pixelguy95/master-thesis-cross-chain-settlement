@@ -36,7 +36,7 @@ func createSpend(index uint, peer *User) error {
 			Hash:  peer.Commits[index].CommitTx.TxHash(),
 			Index: 0,
 		},
-		Sequence: DefaultRelativeLockTime, //Might not work
+		Sequence: DefaultRelativeLockTime,
 	}
 
 	spend.AddTxIn(commitTxIn)

@@ -79,6 +79,9 @@ type User struct {
 
 	/* Commit spend */
 	CommitSpends []*CommitSpendData
+
+	/**/
+	HTLCOutputTxs []*HTLCOutputTxs
 }
 
 // CommitData is a representation of a commit transaction with some companion data
@@ -104,6 +107,16 @@ type CommitData struct {
 
 	// The script in the htlc output
 	HTLCOutScript []byte
+}
+
+// HTLCOutputTxs holds all the transactions and scripts related to the HTLC output
+type HTLCOutputTxs struct {
+	//Sender commit timeout
+	SenderCommitTimeoutTx     *wire.MsgTx
+	SenderCommitTimeoutScript []byte
+
+	SenderCommitTimeoutRedeemTx *wire.MsgTx
+	SenderCommitTimeoutRevokeTx *wire.MsgTx
 }
 
 // CommitRevokeData is a structure holding data related to revokes
@@ -168,6 +181,8 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, clie
 		PrivateKey: fundingPrivateKey,
 	}
 
+	htlcOutputTxs := make([]*HTLCOutputTxs, 100)
+
 	user := &User{
 		Name:              name,
 		FundingPublicKey:  fundingPrivateKey.PubKey(),
@@ -184,6 +199,7 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, clie
 		RevokePreImage:    []byte(walletName),
 		HTLCPreImage:      []byte(walletName),
 		HTLCPaymentHash:   sha256.Sum256([]byte(walletName)),
+		HTLCOutputTxs:     htlcOutputTxs,
 	}
 
 	return user, nil

@@ -52,7 +52,7 @@ func main() {
 	}
 
 	sd := &channel.SendDescriptor{
-		Balance:  1000,
+		Balance:  15000,
 		Sender:   pc.Party1,
 		Receiver: pc.Party2,
 	}
@@ -71,7 +71,20 @@ func main() {
 	fmt.Println()
 	buf = new(bytes.Buffer)
 	pc.Party1.Commits[1].CommitTx.Serialize(buf)
-	fmt.Printf("COMMIT TX:\n%x\n\n", buf)
+	fmt.Printf("SENDER COMMIT TX:\n%x\n\n", buf)
 
-	fmt.Printf("HTLC SCRIPT:\n%x\n", pc.Party1.Commits[1].HTLCOutScript)
+	fmt.Println()
+	buf = new(bytes.Buffer)
+	pc.Party1.HTLCOutputTxs[1].SenderCommitTimeoutTx.Serialize(buf)
+	fmt.Printf("SENDER COMMIT TIMEOUT TX:\n%x\n\n", buf)
+
+	fmt.Println()
+	buf = new(bytes.Buffer)
+	pc.Party1.HTLCOutputTxs[1].SenderCommitTimeoutRedeemTx.Serialize(buf)
+	fmt.Printf("SENDER COMMIT TIMEOUT REDEEM TX:\n%x\n\n", buf)
+
+	fmt.Println()
+	buf = new(bytes.Buffer)
+	pc.Party2.HTLCOutputTxs[1].SenderCommitTimeoutRevokeTx.Serialize(buf)
+	fmt.Printf("SENDER COMMIT TIMEOUT REVOKE TX:\n%x\n\n", buf)
 }

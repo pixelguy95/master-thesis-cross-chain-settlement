@@ -150,6 +150,11 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 
 	Green.Printf("[DONE]\n")
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
+
+	/*TIMEOUT*/
+	cltvExpiry := uint32(time.Now().Unix() + (60 * 60 * 1))
+	channel.GenerateSenderCommitTimeoutTx(1, cltvExpiry, sd.Sender, sd.Receiver)
+
 	return nil
 }
 
@@ -236,7 +241,7 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 		commitTx.TxOut[1].Value = sd.Sender.UserBalance - int64(customtransactions.DefaultFee)
 	}
 
-	cltvExpiry := time.Now().Unix() + (60 * 60 * 24)
+	cltvExpiry := time.Now().Unix() + (60 * 60 * 1)
 
 	//HTLC output
 	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])
