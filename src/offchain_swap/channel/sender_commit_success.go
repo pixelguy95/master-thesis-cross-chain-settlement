@@ -54,24 +54,24 @@ func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, rece
 		return err
 	}
 
-	if sender.HTLCOutputTxs[index] == nil {
-		sender.HTLCOutputTxs[index] = &HTLCOutputTxs{
+	if receiver.HTLCOutputTxs[index] == nil {
+		receiver.HTLCOutputTxs[index] = &HTLCOutputTxs{
 			SenderCommitSuccessScript:   witnessScript,
 			SenderCommitSuccessTx:       commitSuccess,
 			SenderCommitSuccessRedeemTx: redeem,
 		}
 	} else {
-		sender.HTLCOutputTxs[index].SenderCommitSuccessScript = witnessScript
-		sender.HTLCOutputTxs[index].SenderCommitSuccessTx = commitSuccess
-		sender.HTLCOutputTxs[index].SenderCommitSuccessRedeemTx = redeem
+		receiver.HTLCOutputTxs[index].SenderCommitSuccessScript = witnessScript
+		receiver.HTLCOutputTxs[index].SenderCommitSuccessTx = commitSuccess
+		receiver.HTLCOutputTxs[index].SenderCommitSuccessRedeemTx = redeem
 	}
 
-	if receiver.HTLCOutputTxs[index] == nil {
-		receiver.HTLCOutputTxs[index] = &HTLCOutputTxs{
+	if sender.HTLCOutputTxs[index] == nil {
+		sender.HTLCOutputTxs[index] = &HTLCOutputTxs{
 			SenderCommitSuccessRevokeTx: revoke,
 		}
 	} else {
-		receiver.HTLCOutputTxs[index].SenderCommitSuccessRevokeTx = revoke
+		sender.HTLCOutputTxs[index].SenderCommitSuccessRevokeTx = revoke
 	}
 
 	return nil

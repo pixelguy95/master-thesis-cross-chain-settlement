@@ -3,7 +3,6 @@ package channel
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 
@@ -148,14 +147,18 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 	receiverCommit, _ := channel.createReceiverCommit(sd)
 	sd.Receiver.Commits = append(sd.Receiver.Commits, receiverCommit)
 
+	index := uint32(len(sd.Receiver.Commits) - 1)
+
 	Green.Printf("[DONE]\n")
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
 
 	/*TIMEOUT*/
-	cltvExpiry := uint32(time.Now().Unix() + (60 * 10))
-	//cltvExpiry := uint32(1553763911)
-	channel.GenerateSenderCommitTimeoutTx(1, cltvExpiry, sd.Sender, sd.Receiver)
-	channel.GenerateSenderCommitSuccessTx(1, sd.Sender, sd.Receiver)
+	//cltvExpiry := uint32(time.Now().Unix() + (60 * 10))
+	cltvExpiry := uint32(1553763911)
+	channel.GenerateSenderCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	channel.GenerateSenderCommitSuccessTx(index, sd.Sender, sd.Receiver)
+
+	channel.GenerateReceiverCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
 
 	return nil
 }
@@ -243,8 +246,8 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 		commitTx.TxOut[1].Value = sd.Sender.UserBalance - int64(customtransactions.DefaultFee)
 	}
 
-	cltvExpiry := time.Now().Unix() + (60 * 10)
-	//cltvExpiry := uint32(1553763911)
+	//cltvExpiry := time.Now().Unix() + (60 * 10)
+	cltvExpiry := uint32(1553763911)
 
 	//HTLC output
 	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])

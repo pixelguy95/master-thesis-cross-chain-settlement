@@ -70,21 +70,21 @@ func main() {
 
 	fmt.Println()
 	buf = new(bytes.Buffer)
-	pc.Party1.Commits[1].CommitTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT TX:\n%x\n\n", buf)
+	pc.Party2.Commits[1].CommitTx.Serialize(buf)
+	fmt.Printf("RECEIVER COMMIT TX:\n%x\n\n", buf)
 
 	fmt.Println()
 	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].SenderCommitSuccessTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT SUCCESS TX:\n%x\n\n", buf)
+	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutTx.Serialize(buf)
+	fmt.Printf("RECEIVER COMMIT TIMEOUT TX:\n%x\n\n", buf)
 
 	fmt.Println()
 	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].SenderCommitSuccessRedeemTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT SUCCESS REDEEM TX:\n%x\n\n", buf)
+	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutRedeemTx.Serialize(buf)
+	fmt.Printf("RECEIVER COMMIT TIMEOUT REDEEM TX:\n%x\n\n", buf)
 
 	fmt.Println()
 	buf = new(bytes.Buffer)
-	pc.Party2.HTLCOutputTxs[1].SenderCommitSuccessRevokeTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT SUCCESS REVOKE TX:\n%x\n\n", buf)
+	pc.Party2.HTLCOutputTxs[1].ReceiverCommitTimeoutRevokeTx.Serialize(buf)
+	fmt.Printf("RECEIVER COMMIT TIMEOUT REVOKE TX:\n%x\n\n", buf)
 }
