@@ -11,6 +11,7 @@ import (
 
 	"github.com/btcsuite/btcd/wire"
 
+	"crypto/rand"
 	"crypto/sha256"
 )
 
@@ -64,8 +65,8 @@ type User struct {
 
 	/* The pre image used for htlc outputs
 	TODO: remove, this should be random for each commit*/
-	HTLCPreImage    []byte
-	HTLCPaymentHash [sha256.Size]byte
+	HTLCPreImage    [32]byte
+	HTLCPaymentHash [32]byte
 
 	/* Array of all revokation secrets and some related data */
 	RevokationSecrets []*CommitRevokationSecret
@@ -117,6 +118,13 @@ type HTLCOutputTxs struct {
 
 	SenderCommitTimeoutRedeemTx *wire.MsgTx
 	SenderCommitTimeoutRevokeTx *wire.MsgTx
+
+	//Sender commit success
+	SenderCommitSuccessTx     *wire.MsgTx
+	SenderCommitSuccessScript []byte
+
+	SenderCommitSuccessRedeemTx *wire.MsgTx
+	SenderCommitSuccessRevokeTx *wire.MsgTx
 }
 
 // CommitRevokeData is a structure holding data related to revokes
@@ -183,6 +191,9 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, clie
 
 	htlcOutputTxs := make([]*HTLCOutputTxs, 100)
 
+	var htlcPreImage [32]byte
+	rand.Read(htlcPreImage[:])
+
 	user := &User{
 		Name:              name,
 		FundingPublicKey:  fundingPrivateKey.PubKey(),
@@ -197,8 +208,8 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, clie
 		Fundee:            fundee,
 		WalletName:        walletName,
 		RevokePreImage:    []byte(walletName),
-		HTLCPreImage:      []byte(walletName),
-		HTLCPaymentHash:   sha256.Sum256([]byte(walletName)),
+		HTLCPreImage:      htlcPreImage,
+		HTLCPaymentHash:   sha256.Sum256(htlcPreImage[:]),
 		HTLCOutputTxs:     htlcOutputTxs,
 	}
 

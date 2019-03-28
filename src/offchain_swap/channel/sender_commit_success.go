@@ -8,15 +8,13 @@ import (
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
-func (c *Channel) GenerateSenderCommitTimeoutTx(index, cltvLocktime uint32, sender *User, receiver *User) error {
-
-	//_, _, revocationPub, _ := GenerateRevokePubKey(sender.RevokePreImage, receiver.FundingPublicKey)
+// GenerateSenderCommitSuccessTx consumes a commit with secret reveal
+func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, receiver *User) error {
 
 	revocationPrivateKey := input.DeriveRevocationPrivKey(receiver.FundingPrivateKey, sender.RevokationSecrets[index].CommitSecret)
 	revocationPub := revocationPrivateKey.PubKey()
 
-	commitTimeout := wire.NewMsgTx(2)
-	commitTimeout.LockTime = cltvLocktime
+	commitSuccess := wire.NewMsgTx(2)
 
 	commitInput := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
@@ -25,9 +23,9 @@ func (c *Channel) GenerateSenderCommitTimeoutTx(index, cltvLocktime uint32, send
 		},
 	}
 
-	commitTimeout.AddTxIn(commitInput)
+	commitSuccess.AddTxIn(commitInput)
 
-	witnessScript, err := input.SecondLevelHtlcScript(revocationPub, sender.HTLCPublicKey, DefaultRelativeLockTime)
+	witnessScript, err := input.SecondLevelHtlcScript(revocationPub, receiver.HTLCPublicKey, DefaultRelativeLockTime)
 	if err != nil {
 		return err
 	}
@@ -39,116 +37,106 @@ func (c *Channel) GenerateSenderCommitTimeoutTx(index, cltvLocktime uint32, send
 		Value:    sender.Commits[index].CommitTx.TxOut[2].Value - int64(customtransactions.DefaultFee),
 	}
 
-	commitTimeout.AddTxOut(secondLevelOutput)
+	commitSuccess.AddTxOut(secondLevelOutput)
 
 	htlcScript := sender.Commits[index].HTLCOutScript
-	signSenderCommitTimeoutTx(commitTimeout, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver)
+	signSenderCommitSuccessTx(commitSuccess, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver)
 
-	/* REDEEM */
-	redeem, err := generateSenderCommitTimeoutRedeemTx(commitTimeout, witnessScript, sender)
+	// REDEEM
+	redeem, err := generateSenderCommitSuccessRedeemTx(commitSuccess, witnessScript, receiver)
 	if err != nil {
 		return err
 	}
 
-	/* REVOKE */
-	revoke, err := generateSenderCommitTimeoutRevokeTx(commitTimeout, witnessScript, receiver, revocationPrivateKey)
+	// REVOKE
+	revoke, err := generateSenderCommitSuccessRevokeTx(commitSuccess, witnessScript, sender, revocationPrivateKey)
 	if err != nil {
 		return err
 	}
 
 	if sender.HTLCOutputTxs[index] == nil {
 		sender.HTLCOutputTxs[index] = &HTLCOutputTxs{
-			SenderCommitTimeoutScript:   witnessScript,
-			SenderCommitTimeoutTx:       commitTimeout,
-			SenderCommitTimeoutRedeemTx: redeem,
+			SenderCommitSuccessScript:   witnessScript,
+			SenderCommitSuccessTx:       commitSuccess,
+			SenderCommitSuccessRedeemTx: redeem,
 		}
 	} else {
-		sender.HTLCOutputTxs[index].SenderCommitTimeoutScript = witnessScript
-		sender.HTLCOutputTxs[index].SenderCommitTimeoutTx = commitTimeout
-		sender.HTLCOutputTxs[index].SenderCommitTimeoutRedeemTx = redeem
+		sender.HTLCOutputTxs[index].SenderCommitSuccessScript = witnessScript
+		sender.HTLCOutputTxs[index].SenderCommitSuccessTx = commitSuccess
+		sender.HTLCOutputTxs[index].SenderCommitSuccessRedeemTx = redeem
 	}
 
 	if receiver.HTLCOutputTxs[index] == nil {
 		receiver.HTLCOutputTxs[index] = &HTLCOutputTxs{
-			SenderCommitTimeoutRevokeTx: revoke,
+			SenderCommitSuccessRevokeTx: revoke,
 		}
 	} else {
-		receiver.HTLCOutputTxs[index].SenderCommitTimeoutRevokeTx = revoke
+		receiver.HTLCOutputTxs[index].SenderCommitSuccessRevokeTx = revoke
 	}
 
 	return nil
 }
 
-func signSenderCommitTimeoutTx(senderCommitTimeoutTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User) ([][]byte, error) {
+func signSenderCommitSuccessTx(senderCommitSuccessTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User) ([][]byte, error) {
 
 	signDesc := input.SignDescriptor{
 		WitnessScript: commitScript,
 		Output:        commitOut,
 		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(senderCommitTimeoutTx),
+		SigHashes:     txscript.NewTxSigHashes(senderCommitSuccessTx),
 		InputIndex:    0,
 	}
 
 	s := &SimpleSigner{
-		PrivateKey: sender.HTLCPrivateKey,
-	}
-	senderSignature, err := s.SignOutputRaw(senderCommitTimeoutTx, &signDesc)
-	if err != nil {
-		return nil, err
-	}
-
-	s = &SimpleSigner{
 		PrivateKey: receiver.HTLCPrivateKey,
 	}
-	receiverSignature, err := s.SignOutputRaw(senderCommitTimeoutTx, &signDesc)
+	receiverSignature, err := s.SignOutputRaw(senderCommitSuccessTx, &signDesc)
 	if err != nil {
 		return nil, err
 	}
 
-	witnessStack := wire.TxWitness(make([][]byte, 5))
-	witnessStack[0] = nil
-	witnessStack[1] = append(receiverSignature, byte(signDesc.HashType))
-	witnessStack[2] = append(senderSignature, byte(signDesc.HashType))
-	witnessStack[3] = nil
-	witnessStack[4] = signDesc.WitnessScript
+	witnessStack := wire.TxWitness(make([][]byte, 3))
+	witnessStack[0] = append(receiverSignature, byte(signDesc.HashType))
+	witnessStack[1] = sender.HTLCPreImage[:]
+	witnessStack[2] = signDesc.WitnessScript
 
-	senderCommitTimeoutTx.TxIn[0].Witness = witnessStack
+	senderCommitSuccessTx.TxIn[0].Witness = witnessStack
 
 	return witnessStack, nil
 }
 
-func generateSenderCommitTimeoutRedeemTx(commitTimeoutTx *wire.MsgTx, commitTimeoutScript []byte, sender *User) (*wire.MsgTx, error) {
+func generateSenderCommitSuccessRedeemTx(commitSuccessTx *wire.MsgTx, commitSuccessScript []byte, receiver *User) (*wire.MsgTx, error) {
 
 	redeem := wire.NewMsgTx(2)
 
 	redeem.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			Hash:  commitTimeoutTx.TxHash(),
+			Hash:  commitSuccessTx.TxHash(),
 			Index: 0,
 		},
 		Sequence: DefaultRelativeLockTime,
 	})
 
-	outputScript, err := txscript.PayToAddrScript(sender.PayOutAddress)
+	outputScript, err := txscript.PayToAddrScript(receiver.PayOutAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	redeem.AddTxOut(&wire.TxOut{
 		PkScript: outputScript,
-		Value:    commitTimeoutTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
+		Value:    commitSuccessTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
 	})
 
 	signDesc := input.SignDescriptor{
-		WitnessScript: commitTimeoutScript,
-		Output:        commitTimeoutTx.TxOut[0],
+		WitnessScript: commitSuccessScript,
+		Output:        commitSuccessTx.TxOut[0],
 		HashType:      txscript.SigHashAll,
 		SigHashes:     txscript.NewTxSigHashes(redeem),
 		InputIndex:    0,
 	}
 
 	s := &SimpleSigner{
-		PrivateKey: sender.HTLCPrivateKey,
+		PrivateKey: receiver.HTLCPrivateKey,
 	}
 
 	signature, err := s.SignOutputRaw(redeem, &signDesc)
@@ -159,20 +147,20 @@ func generateSenderCommitTimeoutRedeemTx(commitTimeoutTx *wire.MsgTx, commitTime
 	witnessStack := wire.TxWitness(make([][]byte, 3))
 	witnessStack[0] = append(signature, byte(signDesc.HashType))
 	witnessStack[1] = nil
-	witnessStack[2] = commitTimeoutScript
+	witnessStack[2] = commitSuccessScript
 
 	redeem.TxIn[0].Witness = witnessStack
 
 	return redeem, nil
 }
 
-func generateSenderCommitTimeoutRevokeTx(commitTimeoutTx *wire.MsgTx, commitTimeoutScript []byte, receiver *User, revokePrivateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
+func generateSenderCommitSuccessRevokeTx(commitSuccessTx *wire.MsgTx, commitSuccessScript []byte, receiver *User, revokePrivateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
 
 	revoke := wire.NewMsgTx(2)
 
 	revoke.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			Hash:  commitTimeoutTx.TxHash(),
+			Hash:  commitSuccessTx.TxHash(),
 			Index: 0,
 		},
 	})
@@ -184,12 +172,12 @@ func generateSenderCommitTimeoutRevokeTx(commitTimeoutTx *wire.MsgTx, commitTime
 
 	revoke.AddTxOut(&wire.TxOut{
 		PkScript: outputScript,
-		Value:    commitTimeoutTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
+		Value:    commitSuccessTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
 	})
 
 	signDesc := input.SignDescriptor{
-		WitnessScript: commitTimeoutScript,
-		Output:        commitTimeoutTx.TxOut[0],
+		WitnessScript: commitSuccessScript,
+		Output:        commitSuccessTx.TxOut[0],
 		HashType:      txscript.SigHashAll,
 		SigHashes:     txscript.NewTxSigHashes(revoke),
 		InputIndex:    0,
@@ -207,7 +195,7 @@ func generateSenderCommitTimeoutRevokeTx(commitTimeoutTx *wire.MsgTx, commitTime
 	witnessStack := wire.TxWitness(make([][]byte, 3))
 	witnessStack[0] = append(signature, byte(signDesc.HashType))
 	witnessStack[1] = []byte{1}
-	witnessStack[2] = commitTimeoutScript
+	witnessStack[2] = commitSuccessScript
 
 	revoke.TxIn[0].Witness = witnessStack
 
