@@ -159,6 +159,7 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 	channel.GenerateSenderCommitSuccessTx(index, sd.Sender, sd.Receiver)
 
 	channel.GenerateReceiverCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	channel.GenerateReceiverCommitSuccessTx(index, sd.Sender, sd.Receiver)
 
 	return nil
 }
@@ -221,7 +222,7 @@ func (channel *Channel) createSenderCommit(sd *SendDescriptor) (*CommitData, err
 func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, error) {
 
 	commitPoint, commitSecret, revocationPub, _ := GenerateRevokePubKey(sd.Receiver.RevokePreImage, sd.Sender.FundingPublicKey)
-	sd.Sender.RevokationSecrets = append(sd.Receiver.RevokationSecrets, &CommitRevokationSecret{CommitPoint: commitPoint, CommitSecret: commitSecret})
+	sd.Receiver.RevokationSecrets = append(sd.Receiver.RevokationSecrets, &CommitRevokationSecret{CommitPoint: commitPoint, CommitSecret: commitSecret})
 
 	commitTx := wire.NewMsgTx(2)
 

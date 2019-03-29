@@ -133,6 +133,13 @@ type HTLCOutputTxs struct {
 
 	ReceiverCommitTimeoutRedeemTx *wire.MsgTx
 	ReceiverCommitTimeoutRevokeTx *wire.MsgTx
+
+	//Receiver commit success
+	ReceiverCommitSuccessTx     *wire.MsgTx
+	ReceiverCommitSuccessScript []byte
+
+	ReceiverCommitSuccessRedeemTx *wire.MsgTx
+	ReceiverCommitSuccessRevokeTx *wire.MsgTx
 }
 
 // CommitRevokeData is a structure holding data related to revokes
