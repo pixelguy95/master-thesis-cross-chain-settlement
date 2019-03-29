@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/input"
@@ -43,13 +42,13 @@ func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, rece
 	signSenderCommitSuccessTx(commitSuccess, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver)
 
 	// REDEEM
-	redeem, err := generateSenderCommitSuccessRedeemTx(commitSuccess, witnessScript, receiver)
+	redeem, err := GenerateSecondlevelHTLCSpendTx(commitSuccess, witnessScript, receiver.PayOutAddress, receiver.HTLCPrivateKey, 0, DefaultRelativeLockTime)
 	if err != nil {
 		return err
 	}
 
 	// REVOKE
-	revoke, err := generateSenderCommitSuccessRevokeTx(commitSuccess, witnessScript, sender, revocationPrivateKey)
+	revoke, err := GenerateSecondlevelHTLCSpendTx(commitSuccess, witnessScript, sender.PayOutAddress, revocationPrivateKey, 1, 0)
 	if err != nil {
 		return err
 	}
@@ -103,101 +102,4 @@ func signSenderCommitSuccessTx(senderCommitSuccessTx *wire.MsgTx, commitScript [
 	senderCommitSuccessTx.TxIn[0].Witness = witnessStack
 
 	return witnessStack, nil
-}
-
-func generateSenderCommitSuccessRedeemTx(commitSuccessTx *wire.MsgTx, commitSuccessScript []byte, receiver *User) (*wire.MsgTx, error) {
-
-	redeem := wire.NewMsgTx(2)
-
-	redeem.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
-			Hash:  commitSuccessTx.TxHash(),
-			Index: 0,
-		},
-		Sequence: DefaultRelativeLockTime,
-	})
-
-	outputScript, err := txscript.PayToAddrScript(receiver.PayOutAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	redeem.AddTxOut(&wire.TxOut{
-		PkScript: outputScript,
-		Value:    commitSuccessTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
-	})
-
-	signDesc := input.SignDescriptor{
-		WitnessScript: commitSuccessScript,
-		Output:        commitSuccessTx.TxOut[0],
-		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(redeem),
-		InputIndex:    0,
-	}
-
-	s := &SimpleSigner{
-		PrivateKey: receiver.HTLCPrivateKey,
-	}
-
-	signature, err := s.SignOutputRaw(redeem, &signDesc)
-	if err != nil {
-		return nil, err
-	}
-
-	witnessStack := wire.TxWitness(make([][]byte, 3))
-	witnessStack[0] = append(signature, byte(signDesc.HashType))
-	witnessStack[1] = nil
-	witnessStack[2] = commitSuccessScript
-
-	redeem.TxIn[0].Witness = witnessStack
-
-	return redeem, nil
-}
-
-func generateSenderCommitSuccessRevokeTx(commitSuccessTx *wire.MsgTx, commitSuccessScript []byte, sender *User, revokePrivateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
-
-	revoke := wire.NewMsgTx(2)
-
-	revoke.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
-			Hash:  commitSuccessTx.TxHash(),
-			Index: 0,
-		},
-	})
-
-	outputScript, err := txscript.PayToAddrScript(sender.PayOutAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	revoke.AddTxOut(&wire.TxOut{
-		PkScript: outputScript,
-		Value:    commitSuccessTx.TxOut[0].Value - int64(customtransactions.DefaultFee),
-	})
-
-	signDesc := input.SignDescriptor{
-		WitnessScript: commitSuccessScript,
-		Output:        commitSuccessTx.TxOut[0],
-		HashType:      txscript.SigHashAll,
-		SigHashes:     txscript.NewTxSigHashes(revoke),
-		InputIndex:    0,
-	}
-
-	s := &SimpleSigner{
-		PrivateKey: revokePrivateKey,
-	}
-
-	signature, err := s.SignOutputRaw(revoke, &signDesc)
-	if err != nil {
-		return nil, err
-	}
-
-	witnessStack := wire.TxWitness(make([][]byte, 3))
-	witnessStack[0] = append(signature, byte(signDesc.HashType))
-	witnessStack[1] = []byte{1}
-	witnessStack[2] = commitSuccessScript
-
-	revoke.TxIn[0].Witness = witnessStack
-
-	return revoke, nil
 }
