@@ -5,12 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/rpcclient"
 
 	"errors"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 )
@@ -69,7 +70,7 @@ type FundRawTransactionReply = struct {
 // LoadWallet loads a new wallet
 func (c *CustomRPC) LoadWallet(walletName string) (*LoadWalletReply, error) {
 
-	fmt.Printf("Loading wallet: %s\n", walletName)
+	log.Printf("Loading wallet: %s\n", walletName)
 
 	params, _ := json.Marshal(walletName)
 	paramsRaw := []json.RawMessage{params}
@@ -77,7 +78,7 @@ func (c *CustomRPC) LoadWallet(walletName string) (*LoadWalletReply, error) {
 	rawData, error := c.client.RawRequest("loadwallet", paramsRaw)
 
 	if error != nil {
-		fmt.Printf("Error occured while loading wallet: %s\n", error)
+		log.Fatalf("Error occured while loading wallet: %s\n", error)
 		return nil, errors.New("Wallet already loaded or doesn't exist most likely")
 	}
 
@@ -91,7 +92,7 @@ func (c *CustomRPC) LoadWallet(walletName string) (*LoadWalletReply, error) {
 // Returns a loadwallet struct because the messages look the same
 func (c *CustomRPC) CreateWallet(walletName string) (*LoadWalletReply, error) {
 
-	fmt.Println("Creating a new wallet")
+	log.Println("Creating a new wallet")
 
 	params, _ := json.Marshal(walletName)
 	paramsRaw := []json.RawMessage{params}
@@ -128,7 +129,7 @@ func (c *CustomRPC) ListWallets() ([]string, error) {
 // UnloadAllWallets loops through all loaded wallets and unloads them
 func (c *CustomRPC) UnloadAllWallets() error {
 
-	fmt.Println("Unloading all wallets")
+	log.Println("Unloading all wallets")
 
 	wallets, _ := c.ListWallets()
 
@@ -139,7 +140,7 @@ func (c *CustomRPC) UnloadAllWallets() error {
 		_, error := c.client.RawRequest("unloadwallet", paramsRaw)
 
 		if error != nil {
-			fmt.Printf("Error occured while loading wallet: %s\n", error)
+			log.Fatalf("Error occured while loading wallet: %s\n", error)
 			return errors.New("Wallet already loaded or doesn't exist most likely")
 		}
 	}
@@ -150,7 +151,7 @@ func (c *CustomRPC) UnloadAllWallets() error {
 // GetNewP2PKHAddress returns a brand new P2PKH address
 func (c *CustomRPC) GetNewP2PKHAddress() string {
 
-	fmt.Print("Generating new P2PKH address: ")
+	log.Print("Generating new P2PKH address: ")
 
 	param1, _ := json.Marshal("")
 	param2, _ := json.Marshal("legacy")
@@ -161,7 +162,7 @@ func (c *CustomRPC) GetNewP2PKHAddress() string {
 	address := new(string)
 	json.Unmarshal(rawData, &address)
 
-	fmt.Printf("%s\n", *address)
+	log.Printf("%s\n", *address)
 
 	return *address
 }
@@ -215,7 +216,7 @@ func (c *CustomRPC) GetPubKey(address string) (*btcutil.AddressPubKey, error) {
 	key, error := btcutil.NewAddressPubKey(asBytes, &chaincfg.TestNet3Params)
 
 	if error != nil {
-		fmt.Println(error)
+		log.Fatal(error)
 		return nil, error
 	}
 
@@ -225,7 +226,7 @@ func (c *CustomRPC) GetPubKey(address string) (*btcutil.AddressPubKey, error) {
 // SignRawTransactionWithWallet signs a transaction with whatever wallet is loaded
 func (c *CustomRPC) SignRawTransactionWithWallet(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
-	fmt.Println("Signing raw transaction with wallet")
+	log.Println("Signing raw transaction with wallet")
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
@@ -254,7 +255,7 @@ func (c *CustomRPC) SignRawTransactionWithWallet(tx *wire.MsgTx) (*wire.MsgTx, e
 // FundRawTransaction fund a transaction with whatever wallet is loaded
 func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
-	fmt.Println("Funding raw transaction")
+	log.Println("Funding raw transaction")
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
@@ -268,7 +269,7 @@ func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 	rawData, error := c.client.RawRequest("fundrawtransaction", paramsRaw)
 
 	if error != nil {
-		fmt.Println(error)
+		log.Fatal(error)
 		return nil, error
 	}
 

@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
@@ -85,7 +85,7 @@ func (c *Channel) SignCommitsTx(commitIndex uint) error {
 }
 
 func (c *Channel) signCommit(reverse bool, commitIndex uint) error {
-	fmt.Printf("Signing commit transaction\t\t ")
+	log.Printf("Signing commit transaction\t\t ")
 
 	var holder *User
 	var other *User
@@ -114,8 +114,7 @@ func (c *Channel) signCommit(reverse bool, commitIndex uint) error {
 	// Signature from holder of commit
 	signature1, err := s.SignOutputRaw(holder.Commits[commitIndex].CommitTx, &signDesc)
 	if err != nil {
-		Red.Printf("[FAILED]\n")
-		fmt.Println(err)
+		log.Fatal(err)
 		return err
 	}
 
@@ -126,8 +125,7 @@ func (c *Channel) signCommit(reverse bool, commitIndex uint) error {
 	//Signature from the counter party
 	signature2, err := s.SignOutputRaw(holder.Commits[commitIndex].CommitTx, &signDesc)
 	if err != nil {
-		Red.Printf("[FAILED]\n")
-		fmt.Println(err)
+		log.Fatal(err)
 		return err
 	}
 
@@ -138,6 +136,5 @@ func (c *Channel) signCommit(reverse bool, commitIndex uint) error {
 	witness := input.SpendMultiSig(c.FundingWitnessScript, holder.FundingPublicKey.SerializeCompressed(), signature1, other.FundingPublicKey.SerializeCompressed(), signature2)
 	holder.Commits[commitIndex].CommitTx.TxIn[0].Witness = witness
 
-	Green.Printf("[DONE]\n")
 	return nil
 }

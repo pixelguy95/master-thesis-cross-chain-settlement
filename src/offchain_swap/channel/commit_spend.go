@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -20,12 +20,11 @@ func (c *Channel) GenerateCommitSpends(index uint) error {
 
 func createSpend(index uint, peer *User) error {
 
-	fmt.Printf("Building commit spend transaction\t ")
+	log.Printf("Building commit spend transaction for %s", peer.Name)
 	spend := wire.NewMsgTx(2)
 
 	if peer.Commits[index].CommitTx.TxOut[0].Value-int64(customtransactions.DefaultFee) < 0 {
-		Yellow.Printf("[NOT NEEDED]\n")
-		fmt.Println("No commit spend is needed, as output is 0 or less than dust limit")
+		log.Println("No commit spend is needed, as output is 0 or less than dust limit")
 
 		peer.CommitSpends = append(peer.CommitSpends, nil)
 		return nil
@@ -43,7 +42,6 @@ func createSpend(index uint, peer *User) error {
 
 	outputscript, err := txscript.PayToAddrScript(peer.PayOutAddress)
 	if err != nil {
-		Red.Printf("[FAILED]\n")
 		return err
 	}
 
@@ -68,7 +66,6 @@ func createSpend(index uint, peer *User) error {
 
 	signature, err := s.SignOutputRaw(spend, &signDesc)
 	if err != nil {
-		Red.Printf("[FAILED]\n")
 		return err
 	}
 
@@ -83,6 +80,5 @@ func createSpend(index uint, peer *User) error {
 
 	peer.CommitSpends = append(peer.CommitSpends, &CommitSpendData{CommitSpend: spend})
 
-	Green.Printf("[DONE]\n")
 	return nil
 }

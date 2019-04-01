@@ -3,11 +3,17 @@ package channel
 import (
 	"fmt"
 
+	"github.com/ltcsuite/ltcd/chaincfg"
+
 	rpcutils "../../extensions/bitcoin"
+	ltcrpcutils "../../extensions/litecoin"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
 	"github.com/fatih/color"
+	ltcbtcec "github.com/ltcsuite/ltcd/btcec"
+	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
+	"github.com/ltcsuite/ltcutil"
 
 	"github.com/btcsuite/btcd/wire"
 
@@ -81,8 +87,16 @@ type User struct {
 	/* Commit spend */
 	CommitSpends []*CommitSpendData
 
-	/**/
+	/* All tx that spend from a htlc output */
 	HTLCOutputTxs []*HTLCOutputTxs
+
+	/* Set this to true if the user is on the liteocin network */
+	IsLitecoinUser bool
+
+	/* Whenever a channel closes, all funds should go to this address */
+	LtcPayOutAddress    ltcutil.Address
+	LtcPayoutPubKey     *ltcbtcec.PublicKey
+	LtcPayoutPrivateKey *ltcutil.WIF
 }
 
 // CommitData is a representation of a commit transaction with some companion data
@@ -186,16 +200,30 @@ func (user *User) Equals(user2 *User) bool {
 }
 
 // GenerateNewUserFromWallet generates a new channel user from a wallet
-func GenerateNewUserFromWallet(name string, walletName string, fundee bool, client *rpcclient.Client) (*User, error) {
+func GenerateNewUserFromWallet(name string, walletName string, fundee bool, isLtc bool, client *rpcclient.Client, clientLtc *ltcrpc.Client) (*User, error) {
 	clientWraper := rpcutils.New(client)
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(walletName)
+	ltcWrapper := ltcrpcutils.New(clientLtc)
 
-	payoutAddress, _ := btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
-	payoutPrivKey, _ := client.DumpPrivKey(payoutAddress)
+	if !isLtc {
+		clientWraper.UnloadAllWallets()
+		clientWraper.LoadWallet(walletName)
+	}
 
-	//Payout address for unencumbered
-	payoutPubKey, _ := clientWraper.GetPubKey(payoutAddress.EncodeAddress())
+	var payoutAddress btcutil.Address
+	var payoutPrivKey *btcutil.WIF
+	var payoutPubKey *btcutil.AddressPubKey
+
+	var LtcPayoutAddress ltcutil.Address
+	var LtcPayoutPrivKey *ltcutil.WIF
+
+	if !isLtc {
+		payoutAddress, _ = btcutil.DecodeAddress(clientWraper.GetNewP2PKHAddress(), config)
+		payoutPrivKey, _ = client.DumpPrivKey(payoutAddress)
+		payoutPubKey, _ = clientWraper.GetPubKey(payoutAddress.EncodeAddress())
+	} else {
+		LtcPayoutAddress, _ = ltcutil.DecodeAddress(ltcWrapper.GetNewP2PKHAddress(), &chaincfg.TestNet4Params)
+		LtcPayoutPrivKey, _ = clientLtc.DumpPrivKey(LtcPayoutAddress)
+	}
 
 	fundingPrivateKey, _ := btcec.NewPrivateKey(btcec.S256())
 	HTLCPrivateKey, _ := btcec.NewPrivateKey(btcec.S256())
@@ -209,23 +237,48 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, clie
 	var htlcPreImage [32]byte
 	rand.Read(htlcPreImage[:])
 
-	user := &User{
-		Name:              name,
-		FundingPublicKey:  fundingPrivateKey.PubKey(),
-		FundingPrivateKey: fundingPrivateKey,
-		HTLCPublicKey:     HTLCPrivateKey.PubKey(),
-		HTLCPrivateKey:    HTLCPrivateKey,
-		PayOutAddress:     payoutAddress,
-		PayoutPubKey:      payoutPubKey,
-		PayoutPrivateKey:  payoutPrivKey,
-		FundingSigner:     fundingSigner,
-		UserBalance:       0,
-		Fundee:            fundee,
-		WalletName:        walletName,
-		RevokePreImage:    []byte(walletName),
-		HTLCPreImage:      htlcPreImage,
-		HTLCPaymentHash:   sha256.Sum256(htlcPreImage[:]),
-		HTLCOutputTxs:     htlcOutputTxs,
+	var user *User
+
+	if !isLtc {
+		user = &User{
+			Name:              name,
+			FundingPublicKey:  fundingPrivateKey.PubKey(),
+			FundingPrivateKey: fundingPrivateKey,
+			HTLCPublicKey:     HTLCPrivateKey.PubKey(),
+			HTLCPrivateKey:    HTLCPrivateKey,
+			PayOutAddress:     payoutAddress,
+			PayoutPubKey:      payoutPubKey,
+			PayoutPrivateKey:  payoutPrivKey,
+			FundingSigner:     fundingSigner,
+			UserBalance:       0,
+			Fundee:            fundee,
+			WalletName:        walletName,
+			RevokePreImage:    []byte(walletName),
+			HTLCPreImage:      htlcPreImage,
+			HTLCPaymentHash:   sha256.Sum256(htlcPreImage[:]),
+			HTLCOutputTxs:     htlcOutputTxs,
+			IsLitecoinUser:    isLtc,
+		}
+	} else {
+		user = &User{
+			Name:                name,
+			FundingPublicKey:    fundingPrivateKey.PubKey(),
+			FundingPrivateKey:   fundingPrivateKey,
+			HTLCPublicKey:       HTLCPrivateKey.PubKey(),
+			HTLCPrivateKey:      HTLCPrivateKey,
+			LtcPayOutAddress:    LtcPayoutAddress,
+			LtcPayoutPrivateKey: LtcPayoutPrivKey,
+			LtcPayoutPubKey:     LtcPayoutPrivKey.PrivKey.PubKey(),
+			FundingSigner:       fundingSigner,
+			UserBalance:         0,
+			Fundee:              fundee,
+			WalletName:          walletName,
+			RevokePreImage:      []byte(walletName),
+			HTLCPreImage:        htlcPreImage,
+			HTLCPaymentHash:     sha256.Sum256(htlcPreImage[:]),
+			HTLCOutputTxs:       htlcOutputTxs,
+			IsLitecoinUser:      isLtc,
+		}
 	}
 
 	return user, nil

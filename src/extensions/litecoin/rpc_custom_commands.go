@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 
+	"github.com/btcsuite/btcd/wire"
 	"github.com/ltcsuite/ltcd/rpcclient"
-	"github.com/ltcsuite/ltcd/wire"
 )
 
 // CustomRPC a wrapper around the rpcclient
@@ -44,10 +45,15 @@ type SignRawTransactionError = struct {
 	Error     string `json:"error"`
 }
 
+// FundPosition a
+type FundPosition = struct {
+	ChangePosition int `json:"changePosition"`
+}
+
 // GetNewP2PKHAddress returns a brand new P2PKH address
 func (c *CustomRPC) GetNewP2PKHAddress() string {
 
-	fmt.Print("Generating new P2PKH address: ")
+	log.Print("Generating new P2PKH address: ")
 
 	param1, _ := json.Marshal("")
 	param2, _ := json.Marshal("legacy")
@@ -58,7 +64,7 @@ func (c *CustomRPC) GetNewP2PKHAddress() string {
 	address := new(string)
 	json.Unmarshal(rawData, &address)
 
-	fmt.Printf("%s\n", *address)
+	log.Printf("%s\n", *address)
 
 	return *address
 }
@@ -66,7 +72,7 @@ func (c *CustomRPC) GetNewP2PKHAddress() string {
 // SignRawTransaction signs a transaction
 func (c *CustomRPC) SignRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
-	fmt.Println("Signing raw transaction with wallet")
+	log.Println("Signing raw transaction")
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
@@ -80,6 +86,36 @@ func (c *CustomRPC) SignRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 	if error != nil {
 		fmt.Println(error)
 		return nil, error
+	}
+
+	reply := new(SignRawTransactionReply)
+	json.Unmarshal(rawData, &reply)
+
+	ret := new(wire.MsgTx)
+	txbytes, _ := hex.DecodeString(reply.Hex)
+	ret.DeserializeNoWitness(bytes.NewReader(txbytes))
+
+	return ret, nil
+}
+
+// FundRawTransaction Funds a transaction with some outputs
+func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
+	log.Println("Fund raw transaction")
+
+	// Serialize the transaction
+	buf := new(bytes.Buffer)
+	tx.Serialize(buf)
+	hexEncoding := hex.EncodeToString(buf.Bytes())
+	param1, err := json.Marshal(hexEncoding)
+	param2, err := json.Marshal(&FundPosition{ChangePosition: 1})
+
+	paramsRaw := []json.RawMessage{param1, param2}
+
+	rawData, err := c.client.RawRequest("fundrawtransaction", paramsRaw)
+
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
 	}
 
 	reply := new(SignRawTransactionReply)

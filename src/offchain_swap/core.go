@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
+	"log"
 
 	"./channel"
 	"github.com/btcsuite/btcd/rpcclient"
+	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
 )
 
 var connCfg = &rpcclient.ConnConfig{
@@ -16,75 +16,78 @@ var connCfg = &rpcclient.ConnConfig{
 	Pass:         "kebab",
 }
 
-func main() {
-	fmt.Println("Start up")
+var ltcConnCfg = &ltcrpc.ConnConfig{
+	Host:         "localhost:19332",
+	HTTPPostMode: true,
+	DisableTLS:   true,
+	User:         "pi",
+	Pass:         "kebab",
+}
 
-	ntfnHandlers := rpcclient.NotificationHandlers{
-		OnClientConnected: func() {
-			fmt.Println("Connected")
-		},
+func main() {
+	log.Println("Start up")
+
+	log.Println("Connecting to bitcoin node...")
+	client, err := rpcclient.New(connCfg, nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	client, error := rpcclient.New(connCfg, &ntfnHandlers)
-	if error != nil {
-		fmt.Println(error)
+	log.Println("Connecting to litecoin node...")
+	ltcClient, err := ltcrpc.New(ltcConnCfg, nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	client.Connect(1)
+	ltcClient.Connect(1)
 
-	cj, _ := channel.GenerateNewUserFromWallet("Alice", "cj_wallet", true, client)
-	cj.PrintUser()
+	log.Println("Creating Alice user for bitcoin channel")
+	alice, _ := channel.GenerateNewUserFromWallet("Alice", "cj_wallet", true, false, client, ltcClient)
+	alice.UserBalance = 100000
 
-	fmt.Println()
+	log.Println("Creating Bob user for bitcoin channel")
+	bob, _ := channel.GenerateNewUserFromWallet("Bob", "otherwallet", false, false, client, ltcClient)
 
-	other, _ := channel.GenerateNewUserFromWallet("Bob", "otherwallet", false, client)
-	other.PrintUser()
-
-	fmt.Println()
-	fmt.Println()
-
-	cj.UserBalance = 100000
-
-	pc, error := channel.OpenNewChannel(cj, other, client)
-
-	if error != nil {
-		fmt.Println(error)
-	}
-
-	sd := &channel.SendDescriptor{
-		Balance:  15000,
-		Sender:   pc.Party1,
-		Receiver: pc.Party2,
-	}
-
-	err := pc.SendCommit(sd)
+	log.Print("Opening channel between Alice and Bob (bitcoin)")
+	pc, err := channel.OpenNewChannel(alice, bob, false, client, ltcClient)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
+	pc.Settle(client)
 
-	fmt.Println()
-	buf := new(bytes.Buffer)
-	pc.FundingTx.Serialize(buf)
-	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+	log.Println("Creating Alice user for litecoin channel")
+	aliceLtc, _ := channel.GenerateNewUserFromWallet("Alice", "doesn't matter", true, true, client, ltcClient)
+	aliceLtc.UserBalance = 100000
 
-	fmt.Println()
-	buf = new(bytes.Buffer)
-	pc.Party1.Commits[1].CommitTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT TX:\n%x\n\n", buf)
+	log.Println("Creating Bob user for litecoin channel")
+	bobLtc, _ := channel.GenerateNewUserFromWallet("Bob", "doesn't matter", false, true, client, ltcClient)
 
-	fmt.Println()
-	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].SenderCommitTimeoutTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT TIMEOUT TX:\n%x\n\n", buf)
+	log.Print("Opening channel between Alice and Bob (litecoin)")
+	pcLtc, err := channel.OpenNewChannel(aliceLtc, bobLtc, true, client, ltcClient)
+	pcLtc.Settle(client)
 
-	fmt.Println()
-	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].SenderCommitTimeoutRedeemTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT TIMEOUT REDEEM TX:\n%x\n\n", buf)
+	//sd := &channel.SendDescriptor{
+	//	Balance:  15000,
+	//	Sender:   pc.Party1,
+	//	Receiver: pc.Party2,
+	//}
 
-	fmt.Println()
-	buf = new(bytes.Buffer)
-	pc.Party2.HTLCOutputTxs[1].SenderCommitTimeoutRevokeTx.Serialize(buf)
-	fmt.Printf("SENDER COMMIT TIMEOUT REVOKE TX:\n%x\n\n", buf)
+	//err = pc.SendCommit(sd)
+	//if err != nil {
+	//	log.Fatal(err)
+	//	return
+	//}
+
+	//bob.UserBalance += 15000
+	//pc.Settle(client)
+
+	//buf := new(bytes.Buffer)
+	//pc.FundingTx.Serialize(buf)
+	//fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+
+	//buf = new(bytes.Buffer)
+	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
+	//fmt.Printf("Commit TX:\n%x\n\n", buf)
+
 }

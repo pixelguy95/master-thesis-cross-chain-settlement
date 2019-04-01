@@ -2,21 +2,23 @@ package channel
 
 import (
 	"errors"
-	"fmt"
+	"log"
 
 	rpcutils "../../extensions/bitcoin"
+	ltcutils "../../extensions/litecoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/input"
+	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
 )
 
 var config = &chaincfg.TestNet3Params
 
 // OpenNewChannel opens a new channel between two parties, first user with fundee set will be considred to be the funder of the channel
 // Only supports single funder
-func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (channel *Channel, err error) {
+func OpenNewChannel(party1 *User, party2 *User, isLtc bool, client *rpcclient.Client, LtcClient *ltcrpc.Client) (channel *Channel, err error) {
 
 	/** CHANNEL FUNDING **/
 	// Find out who will be considered for funding the channel
@@ -30,6 +32,7 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 	}
 
 	clientWraper := rpcutils.New(client)
+	ltcWraper := ltcutils.New(LtcClient)
 
 	// Create funding transaction
 	fundingTx := wire.NewMsgTx(2)
@@ -41,10 +44,15 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 
 	fundingTx.AddTxOut(multiSigOut)
 
-	clientWraper.UnloadAllWallets()
-	clientWraper.LoadWallet(funder.WalletName)
-	fundingTx, _ = clientWraper.FundRawTransaction(fundingTx)
-	fundingTx, _ = clientWraper.SignRawTransactionWithWallet(fundingTx)
+	if !isLtc {
+		clientWraper.UnloadAllWallets()
+		clientWraper.LoadWallet(funder.WalletName)
+		fundingTx, _ = clientWraper.FundRawTransaction(fundingTx)
+		fundingTx, _ = clientWraper.SignRawTransactionWithWallet(fundingTx)
+	} else {
+		fundingTx, _ = ltcWraper.FundRawTransaction(fundingTx)
+		fundingTx, _ = ltcWraper.SignRawTransaction(fundingTx)
+	}
 
 	channel = &Channel{
 		Party1:               party1,
@@ -57,27 +65,8 @@ func OpenNewChannel(party1 *User, party2 *User, client *rpcclient.Client) (chann
 
 	err = channel.Settle(client)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		return nil, err
-	}
-
-	err = channel.GenerateCommitSpends(0)
-	if err != nil {
-		fmt.Println(err)
-		return nil, error
-	}
-
-	//TODO: Form into one function call
-	err = channel.GenerateRevocation(false, 0, client)
-	if err != nil {
-		fmt.Println(err)
-		return nil, error
-	}
-
-	err = channel.GenerateRevocation(true, 0, client)
-	if err != nil {
-		fmt.Println(err)
-		return nil, error
 	}
 
 	return channel, nil

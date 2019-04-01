@@ -2,7 +2,7 @@ package channel
 
 import (
 	"errors"
-	"fmt"
+	"log"
 
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 
@@ -14,6 +14,8 @@ import (
 
 // Settle creates new commits with whatever funds each party had on their side of the channel. The commits will not have any HTLC outputs
 func (channel *Channel) Settle(client *rpcclient.Client) error {
+
+	log.Println("Generating settle commits")
 
 	if channel.Party1.UserBalance < 0 || channel.Party2.UserBalance < 0 {
 		return errors.New("Channel balance is impossible, Negative values")
@@ -37,6 +39,26 @@ func (channel *Channel) Settle(client *rpcclient.Client) error {
 	channel.Party2.Commits = append(channel.Party2.Commits, commitParty2)
 
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
+
+	err = channel.GenerateCommitSpends(uint(len(channel.Party1.Commits) - 1))
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	//TODO: Form into one function call
+	err = channel.GenerateRevocation(false, uint(len(channel.Party1.Commits)-1), client)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	err = channel.GenerateRevocation(true, uint(len(channel.Party1.Commits)-1), client)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
 	return nil
 }
 
@@ -121,21 +143,17 @@ func UnencumberedOutput(unencumberedPauoutPubKey *btcec.PublicKey, amount int64)
 // SendCommit creates all new commit tx and related data that represents sending money
 func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 
-	fmt.Printf("Sending %d satoshis from %s to %s: ", sd.Balance, sd.Sender.Name, sd.Receiver.Name)
+	log.Printf("Sending %d satoshis from %s to %s", sd.Balance, sd.Sender.Name, sd.Receiver.Name)
 
 	if !channel.Party1.Equals(sd.Sender) && !channel.Party2.Equals(sd.Sender) {
-		Red.Printf("[FAILED]\n")
 		return errors.New("Sender is not in this channel")
 	} else if !channel.Party1.Equals(sd.Receiver) && !channel.Party2.Equals(sd.Receiver) {
-		Red.Printf("[FAILED]\n")
 		return errors.New("Receiver is not in this channel")
 	} else if sd.Receiver.Equals(sd.Sender) {
-		Red.Printf("[FAILED]\n")
 		return errors.New("Sender and receiver can't be the same user")
 	}
 
 	if sd.Sender.UserBalance < int64(sd.Balance) {
-		Red.Printf("[FAILED]\n")
 		return errors.New("Sender doesn't have enough money to send")
 	}
 
@@ -149,7 +167,6 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 
 	index := uint32(len(sd.Receiver.Commits) - 1)
 
-	Green.Printf("[DONE]\n")
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
 
 	/*TIMEOUT*/
@@ -196,7 +213,7 @@ func (channel *Channel) createSenderCommit(sd *SendDescriptor) (*CommitData, err
 	//HTLC output
 	htclOutPutScript, err := input.SenderHTLCScript(sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		return nil, err
 	}
 
@@ -253,7 +270,7 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 	//HTLC output
 	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 		return nil, err
 	}
 
