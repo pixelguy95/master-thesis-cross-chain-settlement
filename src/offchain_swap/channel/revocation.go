@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 
+	"github.com/btcsuite/btcutil"
+
 	"github.com/btcsuite/btcd/btcec"
 
 	"github.com/btcsuite/btcd/rpcclient"
@@ -58,7 +60,14 @@ func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpc
 	}
 	revoke.AddTxIn(&commitInputPoint)
 
-	revoke.AddTxOut(wire.NewTxOut(revocationOutputValue-int64(customtransactions.DefaultFee), customtransactions.CreateP2PKHScript(unencumbered.PayOutAddress.ScriptAddress())))
+	var unencumberedPayoutScriptAddress []byte
+	if unencumbered.IsLitecoinUser {
+		unencumberedPayoutScriptAddress = btcutil.Hash160(unencumbered.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		unencumberedPayoutScriptAddress = unencumbered.PayOutAddress.ScriptAddress()
+	}
+
+	revoke.AddTxOut(wire.NewTxOut(revocationOutputValue-int64(customtransactions.DefaultFee), customtransactions.CreateP2PKHScript(unencumberedPayoutScriptAddress)))
 
 	signDesc := input.SignDescriptor{
 		WitnessScript: encumbered.Commits[commitIndex].TimeLockedRevocationScript,

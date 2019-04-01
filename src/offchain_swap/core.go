@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"log"
 
 	"./channel"
@@ -61,7 +63,7 @@ func main() {
 	aliceLtc.UserBalance = 100000
 
 	log.Println("Creating Bob user for litecoin channel")
-	bobLtc, _ := channel.GenerateNewUserFromWallet("Bob", "doesn't matter", false, true, client, ltcClient)
+	bobLtc, _ := channel.GenerateNewUserFromWallet("Bob", "doesn't matter either", false, true, client, ltcClient)
 
 	log.Print("Opening channel between Alice and Bob (litecoin)")
 	pcLtc, err := channel.OpenNewChannel(aliceLtc, bobLtc, true, client, ltcClient)
@@ -90,4 +92,19 @@ func main() {
 	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
 	//fmt.Printf("Commit TX:\n%x\n\n", buf)
 
+	buf := new(bytes.Buffer)
+	pcLtc.FundingTx.Serialize(buf)
+	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party1.Commits[0].CommitTx.Serialize(buf)
+	fmt.Printf("COMMIT ALICE TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party2.CommitRevokes[0].RevokeTx.Serialize(buf)
+	fmt.Printf("REVOKE COMMIT BOB TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party1.CommitSpends[0].CommitSpend.Serialize(buf)
+	fmt.Printf("SPEND COMMIT ALICE TX:\n%x\n\n", buf)
 }

@@ -82,11 +82,23 @@ func (channel *Channel) createSettleCommit(encumbered *User, unencumbered *User,
 	commitTx.AddTxIn(&fundingTxIn)
 
 	//Delayed script to self, or via revocation
-	ourRedeemScript, out, _ := EncumberedOutput(encumbered.PayoutPubKey.PubKey(), revocationPub, encumbered.UserBalance)
+	var encumberedPayout *btcec.PublicKey
+	if encumbered.IsLitecoinUser {
+		encumberedPayout, _ = btcec.ParsePubKey(encumbered.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		encumberedPayout = encumbered.PayoutPubKey.PubKey()
+	}
+	ourRedeemScript, out, _ := EncumberedOutput(encumberedPayout, revocationPub, encumbered.UserBalance)
 	commitTx.AddTxOut(out)
 
 	//Unencumbered payout to other party
-	theirWitnessKeyHash, uout, _ := UnencumberedOutput(unencumbered.PayoutPubKey.PubKey(), unencumbered.UserBalance)
+	var unencumberedPayout *btcec.PublicKey
+	if encumbered.IsLitecoinUser {
+		unencumberedPayout, _ = btcec.ParsePubKey(unencumbered.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		unencumberedPayout = unencumbered.PayoutPubKey.PubKey()
+	}
+	theirWitnessKeyHash, uout, _ := UnencumberedOutput(unencumberedPayout, unencumbered.UserBalance)
 	commitTx.AddTxOut(uout)
 
 	if encumbered.UserBalance < 2000 {

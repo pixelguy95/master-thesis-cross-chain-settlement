@@ -3,8 +3,11 @@ package channel
 import (
 	"log"
 
+	"github.com/btcsuite/btcd/btcec"
+
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
@@ -12,8 +15,15 @@ import (
 // GenerateCommitSpends generates a spend fot eh timelocked output in the base commit
 func (c *Channel) GenerateCommitSpends(index uint) error {
 
-	createSpend(index, c.Party1)
-	createSpend(index, c.Party2)
+	err := createSpend(index, c.Party1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = createSpend(index, c.Party2)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
@@ -40,10 +50,14 @@ func createSpend(index uint, peer *User) error {
 
 	spend.AddTxIn(commitTxIn)
 
-	outputscript, err := txscript.PayToAddrScript(peer.PayOutAddress)
-	if err != nil {
-		return err
+	var unencumberedPayoutScriptAddress []byte
+	if peer.IsLitecoinUser {
+		unencumberedPayoutScriptAddress = btcutil.Hash160(peer.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		unencumberedPayoutScriptAddress = peer.PayOutAddress.ScriptAddress()
 	}
+
+	outputscript := customtransactions.CreateP2PKHScript(unencumberedPayoutScriptAddress)
 
 	output := &wire.TxOut{
 		PkScript: outputscript,
@@ -52,8 +66,16 @@ func createSpend(index uint, peer *User) error {
 
 	spend.AddTxOut(output)
 
-	s := &SimpleSigner{
-		PrivateKey: peer.PayoutPrivateKey.PrivKey,
+	var s *SimpleSigner
+	if peer.IsLitecoinUser {
+		btcTypePriv, _ := btcec.PrivKeyFromBytes(btcec.S256(), peer.LtcPayoutPrivateKey.PrivKey.Serialize())
+		s = &SimpleSigner{
+			PrivateKey: btcTypePriv,
+		}
+	} else {
+		s = &SimpleSigner{
+			PrivateKey: peer.PayoutPrivateKey.PrivKey,
+		}
 	}
 
 	signDesc := input.SignDescriptor{

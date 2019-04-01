@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/btcsuite/btcd/wire"
@@ -76,7 +75,7 @@ func (c *CustomRPC) SignRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
 	// Serialize the transaction
 	buf := new(bytes.Buffer)
-	tx.SerializeNoWitness(buf)
+	tx.Serialize(buf)
 	hexEncoding := hex.EncodeToString(buf.Bytes())
 	params, _ := json.Marshal(hexEncoding)
 	paramsRaw := []json.RawMessage{params}
@@ -84,7 +83,7 @@ func (c *CustomRPC) SignRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 	rawData, error := c.client.RawRequest("signrawtransaction", paramsRaw)
 
 	if error != nil {
-		fmt.Println(error)
+		log.Fatal(error)
 		return nil, error
 	}
 
@@ -93,7 +92,7 @@ func (c *CustomRPC) SignRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
 	ret := new(wire.MsgTx)
 	txbytes, _ := hex.DecodeString(reply.Hex)
-	ret.DeserializeNoWitness(bytes.NewReader(txbytes))
+	ret.Deserialize(bytes.NewReader(txbytes))
 
 	return ret, nil
 }
@@ -123,7 +122,7 @@ func (c *CustomRPC) FundRawTransaction(tx *wire.MsgTx) (*wire.MsgTx, error) {
 
 	ret := new(wire.MsgTx)
 	txbytes, _ := hex.DecodeString(reply.Hex)
-	ret.DeserializeNoWitness(bytes.NewReader(txbytes))
+	ret.Deserialize(bytes.NewReader(txbytes))
 
 	return ret, nil
 }
