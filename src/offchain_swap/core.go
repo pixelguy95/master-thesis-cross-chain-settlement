@@ -107,4 +107,15 @@ func main() {
 	buf = new(bytes.Buffer)
 	pcLtc.Party1.CommitSpends[0].CommitSpend.Serialize(buf)
 	fmt.Printf("SPEND COMMIT ALICE TX:\n%x\n\n", buf)
+
+	sd := &channel.SendDescriptor{
+		Balance:  15000,
+		Sender:   pcLtc.Party1,
+		Receiver: pcLtc.Party2,
+	}
+
+	err = pcLtc.SendCommit(sd)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -210,11 +210,25 @@ func (channel *Channel) createSenderCommit(sd *SendDescriptor) (*CommitData, err
 	commitTx.AddTxIn(&fundingTxIn)
 
 	//Delayed script to self, or via revocation
-	ourRedeemScript, out, _ := EncumberedOutput(sd.Sender.PayoutPubKey.PubKey(), revocationPub, sd.Sender.UserBalance)
+	var senderPayout *btcec.PublicKey
+	if sd.Sender.IsLitecoinUser {
+		senderPayout, _ = btcec.ParsePubKey(sd.Sender.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		senderPayout = sd.Sender.PayoutPubKey.PubKey()
+	}
+
+	ourRedeemScript, out, _ := EncumberedOutput(senderPayout, revocationPub, sd.Sender.UserBalance)
 	commitTx.AddTxOut(out)
 
 	//Unencumbered payout to other party
-	theirWitnessKeyHash, uout, _ := UnencumberedOutput(sd.Receiver.PayoutPubKey.PubKey(), sd.Receiver.UserBalance)
+	var receiverPayout *btcec.PublicKey
+	if sd.Receiver.IsLitecoinUser {
+		receiverPayout, _ = btcec.ParsePubKey(sd.Receiver.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		receiverPayout = sd.Receiver.PayoutPubKey.PubKey()
+	}
+
+	theirWitnessKeyHash, uout, _ := UnencumberedOutput(receiverPayout, sd.Receiver.UserBalance)
 	commitTx.AddTxOut(uout)
 
 	if sd.Sender.UserBalance < int64(customtransactions.DefaultFee) {
@@ -264,11 +278,23 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 	commitTx.AddTxIn(&fundingTxIn)
 
 	//Delayed script to self, or via revocation
-	ourRedeemScript, out, _ := EncumberedOutput(sd.Receiver.PayoutPubKey.PubKey(), revocationPub, sd.Receiver.UserBalance)
+	var receiverPayout *btcec.PublicKey
+	if sd.Receiver.IsLitecoinUser {
+		receiverPayout, _ = btcec.ParsePubKey(sd.Receiver.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		receiverPayout = sd.Receiver.PayoutPubKey.PubKey()
+	}
+	ourRedeemScript, out, _ := EncumberedOutput(receiverPayout, revocationPub, sd.Receiver.UserBalance)
 	commitTx.AddTxOut(out)
 
 	//Unencumbered payout to other party
-	theirWitnessKeyHash, uout, _ := UnencumberedOutput(sd.Sender.PayoutPubKey.PubKey(), sd.Sender.UserBalance)
+	var senderPayout *btcec.PublicKey
+	if sd.Sender.IsLitecoinUser {
+		senderPayout, _ = btcec.ParsePubKey(sd.Sender.LtcPayoutPubKey.SerializeCompressed(), btcec.S256())
+	} else {
+		senderPayout = sd.Sender.PayoutPubKey.PubKey()
+	}
+	theirWitnessKeyHash, uout, _ := UnencumberedOutput(senderPayout, sd.Sender.UserBalance)
 	commitTx.AddTxOut(uout)
 
 	if sd.Receiver.UserBalance < int64(customtransactions.DefaultFee) {

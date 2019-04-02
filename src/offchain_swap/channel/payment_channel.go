@@ -1,9 +1,7 @@
 package channel
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 	"log"
 
 	rpcutils "../../extensions/bitcoin"
@@ -40,7 +38,6 @@ func OpenNewChannel(party1 *User, party2 *User, isLtc bool, client *rpcclient.Cl
 	fundingTx := wire.NewMsgTx(2)
 
 	witnessScript, multiSigOut, err := input.GenFundingPkScript(party1.FundingPublicKey.SerializeCompressed(), party2.FundingPublicKey.SerializeCompressed(), funder.UserBalance)
-	fmt.Println(funder.UserBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -53,22 +50,8 @@ func OpenNewChannel(party1 *User, party2 *User, isLtc bool, client *rpcclient.Cl
 		fundingTx, _ = clientWraper.FundRawTransaction(fundingTx)
 		fundingTx, _ = clientWraper.SignRawTransactionWithWallet(fundingTx)
 	} else {
-
-		buf := new(bytes.Buffer)
-		fundingTx.Serialize(buf)
-		fmt.Printf("FUNDING TX:\n%x\n\n", buf)
-
 		fundingTx, _ = ltcWraper.FundRawTransaction(fundingTx)
-
-		buf = new(bytes.Buffer)
-		fundingTx.Serialize(buf)
-		fmt.Printf("Funded FUNDING TX:\n%x\n\n", buf)
-
 		fundingTx, _ = ltcWraper.SignRawTransaction(fundingTx)
-
-		buf = new(bytes.Buffer)
-		fundingTx.Serialize(buf)
-		fmt.Printf("signed FUNDING TX:\n%x\n\n", buf)
 	}
 
 	channel = &Channel{
