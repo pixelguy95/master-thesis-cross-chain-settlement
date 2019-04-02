@@ -46,7 +46,7 @@ func (c *Channel) GenerateReceiverCommitSuccessTx(index uint32, sd *SendDescript
 	commitSuccess.AddTxOut(secondLevelOutput)
 
 	htlcScript := receiver.Commits[index].HTLCOutScript
-	signReceiverCommitSuccessTx(commitSuccess, htlcScript, receiver.Commits[index].CommitTx.TxOut[2], sender, receiver, sd.HTLCPreImage)
+	signReceiverCommitSuccessTx(commitSuccess, htlcScript, receiver.Commits[index].CommitTx.TxOut[2], sender, receiver, sd.HTLCPreImage[:])
 
 	// REDEEM
 	var receiverPayout []byte
@@ -125,7 +125,7 @@ func signReceiverCommitSuccessTx(receiverCommitSuccessTx *wire.MsgTx, commitScri
 	witnessStack[0] = nil
 	witnessStack[1] = append(senderSignature, byte(signDesc.HashType))
 	witnessStack[2] = append(receiverSignature, byte(signDesc.HashType))
-	witnessStack[3] = preImage[:]
+	witnessStack[3] = preImage
 	witnessStack[4] = signDesc.WitnessScript
 
 	receiverCommitSuccessTx.TxIn[0].Witness = witnessStack

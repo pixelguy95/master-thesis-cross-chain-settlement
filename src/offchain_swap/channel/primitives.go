@@ -13,6 +13,7 @@ import (
 	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
 	"github.com/ltcsuite/ltcutil"
 	rpcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/bitcoin"
+	ltcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/litecoin"
 
 	"github.com/btcsuite/btcd/wire"
 
@@ -197,7 +198,7 @@ func (user *User) Equals(user2 *User) bool {
 // GenerateNewUserFromWallet generates a new channel user from a wallet
 func GenerateNewUserFromWallet(name string, walletName string, fundee bool, isLtc bool, client *rpcclient.Client, clientLtc *ltcrpc.Client) (*User, error) {
 	clientWraper := rpcutils.New(client)
-	ltcWrapper := ltcrpcutils.New(clientLtc)
+	ltcWrapper := ltcutils.New(clientLtc)
 
 	if !isLtc {
 		clientWraper.UnloadAllWallets()
