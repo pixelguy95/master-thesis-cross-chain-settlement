@@ -10,7 +10,10 @@ import (
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
-func (c *Channel) GenerateReceiverCommitSuccessTx(index uint32, sender *User, receiver *User) error {
+func (c *Channel) GenerateReceiverCommitSuccessTx(index uint32, sd *SendDescriptor) error {
+
+	sender := sd.Sender
+	receiver := sd.Receiver
 
 	log.Println("Generating receiver commit success for", receiver.Name)
 
@@ -43,7 +46,7 @@ func (c *Channel) GenerateReceiverCommitSuccessTx(index uint32, sender *User, re
 	commitSuccess.AddTxOut(secondLevelOutput)
 
 	htlcScript := receiver.Commits[index].HTLCOutScript
-	signReceiverCommitSuccessTx(commitSuccess, htlcScript, receiver.Commits[index].CommitTx.TxOut[2], sender, receiver)
+	signReceiverCommitSuccessTx(commitSuccess, htlcScript, receiver.Commits[index].CommitTx.TxOut[2], sender, receiver, sd.HTLCPreImage)
 
 	// REDEEM
 	var receiverPayout []byte
@@ -92,7 +95,7 @@ func (c *Channel) GenerateReceiverCommitSuccessTx(index uint32, sender *User, re
 	return nil
 }
 
-func signReceiverCommitSuccessTx(receiverCommitSuccessTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User) ([][]byte, error) {
+func signReceiverCommitSuccessTx(receiverCommitSuccessTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User, preImage []byte) ([][]byte, error) {
 
 	signDesc := input.SignDescriptor{
 		WitnessScript: commitScript,
@@ -122,7 +125,7 @@ func signReceiverCommitSuccessTx(receiverCommitSuccessTx *wire.MsgTx, commitScri
 	witnessStack[0] = nil
 	witnessStack[1] = append(senderSignature, byte(signDesc.HashType))
 	witnessStack[2] = append(receiverSignature, byte(signDesc.HashType))
-	witnessStack[3] = sender.HTLCPreImage[:]
+	witnessStack[3] = preImage
 	witnessStack[4] = signDesc.WitnessScript
 
 	receiverCommitSuccessTx.TxIn[0].Witness = witnessStack

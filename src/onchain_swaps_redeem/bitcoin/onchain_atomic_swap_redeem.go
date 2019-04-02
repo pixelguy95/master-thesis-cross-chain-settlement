@@ -7,13 +7,13 @@ import (
 	"os"
 	"strconv"
 
-	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
+	rpcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/bitcoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcd/rpcclient"
 
 	"../../onchain_swaps_contract/bitcoin/customtransactions"
 )

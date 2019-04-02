@@ -12,7 +12,10 @@ import (
 )
 
 // GenerateSenderCommitSuccessTx consumes a commit with secret reveal
-func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, receiver *User) error {
+func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sd *SendDescriptor) error {
+
+	sender := sd.Sender
+	receiver := sd.Receiver
 
 	log.Println("Generating sender commit success for", receiver.Name)
 
@@ -45,7 +48,7 @@ func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, rece
 	commitSuccess.AddTxOut(secondLevelOutput)
 
 	htlcScript := sender.Commits[index].HTLCOutScript
-	signSenderCommitSuccessTx(commitSuccess, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver)
+	signSenderCommitSuccessTx(commitSuccess, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver, sd.HTLCPreImage)
 
 	// REDEEM
 	var receiverPayout []byte
@@ -94,7 +97,7 @@ func (c *Channel) GenerateSenderCommitSuccessTx(index uint32, sender *User, rece
 	return nil
 }
 
-func signSenderCommitSuccessTx(senderCommitSuccessTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User) ([][]byte, error) {
+func signSenderCommitSuccessTx(senderCommitSuccessTx *wire.MsgTx, commitScript []byte, commitOut *wire.TxOut, sender *User, receiver *User, preImage []byte) ([][]byte, error) {
 
 	signDesc := input.SignDescriptor{
 		WitnessScript: commitScript,
@@ -114,7 +117,7 @@ func signSenderCommitSuccessTx(senderCommitSuccessTx *wire.MsgTx, commitScript [
 
 	witnessStack := wire.TxWitness(make([][]byte, 3))
 	witnessStack[0] = append(receiverSignature, byte(signDesc.HashType))
-	witnessStack[1] = sender.HTLCPreImage[:]
+	witnessStack[1] = preImage
 	witnessStack[2] = signDesc.WitnessScript
 
 	senderCommitSuccessTx.TxIn[0].Witness = witnessStack

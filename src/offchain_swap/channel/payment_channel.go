@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 
-	rpcutils "../../extensions/bitcoin"
-	ltcutils "../../extensions/litecoin"
+	rpcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/bitcoin"
+	ltcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/litecoin"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"

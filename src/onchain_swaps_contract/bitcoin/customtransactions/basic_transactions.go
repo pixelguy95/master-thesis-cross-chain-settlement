@@ -4,14 +4,14 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	rpcutils "github.com/pixelguy95/btcd-rpcclient-extension/bitcoin"
+	rpcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/bitcoin"
 
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 )
 
 // DefaultFee is the default fee that will be payed in a transaction

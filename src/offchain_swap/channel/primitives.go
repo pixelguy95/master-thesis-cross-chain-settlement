@@ -5,8 +5,6 @@ import (
 
 	"github.com/ltcsuite/ltcd/chaincfg"
 
-	rpcutils "../../extensions/bitcoin"
-	ltcrpcutils "../../extensions/litecoin"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcutil"
@@ -14,11 +12,11 @@ import (
 	ltcbtcec "github.com/ltcsuite/ltcd/btcec"
 	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
 	"github.com/ltcsuite/ltcutil"
+	rpcutils "github.com/pixelguy95/master-thesis-cross-chain-settlement/src/extensions/bitcoin"
 
 	"github.com/btcsuite/btcd/wire"
 
 	"crypto/rand"
-	"crypto/sha256"
 )
 
 var (
@@ -68,11 +66,6 @@ type User struct {
 	/* The pre image that should be used when generating commit secrets
 	TODO: remove, this should be random for each commit */
 	RevokePreImage []byte
-
-	/* The pre image used for htlc outputs
-	TODO: remove, this should be random for each commit*/
-	HTLCPreImage    [32]byte
-	HTLCPaymentHash [32]byte
 
 	/* Array of all revokation secrets and some related data */
 	RevokationSecrets []*CommitRevokationSecret
@@ -184,9 +177,11 @@ type Channel struct {
 
 // SendDescriptor represents how a transaction should be constructed
 type SendDescriptor struct {
-	Sender   *User
-	Receiver *User
-	Balance  int64
+	Sender       *User
+	Receiver     *User
+	Balance      int64
+	HTLCPreImage [32]byte
+	PaymentHash  [32]byte
 }
 
 // PrintUser prints all info on user
@@ -254,8 +249,6 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, isLt
 			Fundee:            fundee,
 			WalletName:        walletName,
 			RevokePreImage:    []byte(walletName),
-			HTLCPreImage:      htlcPreImage,
-			HTLCPaymentHash:   sha256.Sum256(htlcPreImage[:]),
 			HTLCOutputTxs:     htlcOutputTxs,
 			IsLitecoinUser:    isLtc,
 		}
@@ -274,8 +267,6 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, isLt
 			Fundee:              fundee,
 			WalletName:          walletName,
 			RevokePreImage:      []byte(walletName),
-			HTLCPreImage:        htlcPreImage,
-			HTLCPaymentHash:     sha256.Sum256(htlcPreImage[:]),
 			HTLCOutputTxs:       htlcOutputTxs,
 			IsLitecoinUser:      isLtc,
 		}

@@ -137,7 +137,7 @@ func UnencumberedOutput(unencumberedPauoutPubKey *btcec.PublicKey, amount int64)
 }
 
 // SendCommit creates all new commit tx and related data that represents sending money
-func (channel *Channel) SendCommit(sd *SendDescriptor) error {
+func (channel *Channel) Pay(sd *SendDescriptor) error {
 
 	log.Printf("Sending %d satoshis from %s to %s", sd.Balance, sd.Sender.Name, sd.Receiver.Name)
 
@@ -176,7 +176,7 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 		log.Fatal(err)
 	}
 
-	err = channel.GenerateSenderCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	err = channel.GenerateSenderCommitSuccessTx(index, sd)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,7 +186,7 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 		log.Fatal(err)
 	}
 
-	err = channel.GenerateReceiverCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	err = channel.GenerateReceiverCommitSuccessTx(index, sd)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func (channel *Channel) createSenderCommit(sd *SendDescriptor) (*CommitData, err
 	}
 
 	//HTLC output
-	htclOutPutScript, err := input.SenderHTLCScript(sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])
+	htclOutPutScript, err := input.SenderHTLCScript(sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.PaymentHash)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -307,7 +307,7 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 	//cltvExpiry := uint32(1553763911)
 
 	//HTLC output
-	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])
+	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.PaymentHash)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
