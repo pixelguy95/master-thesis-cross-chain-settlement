@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 
-	"./channel"
 	"github.com/btcsuite/btcd/rpcclient"
 	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
+	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/offchain_swap/channel"
+	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/offchain_swap/swap"
 )
 
 var connCfg = &rpcclient.ConnConfig{
@@ -89,14 +90,16 @@ func main() {
 	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
 	//fmt.Printf("Commit TX:\n%x\n\n", buf)
 
-	sd := &channel.SendDescriptor{
-		Balance:  15000,
-		Sender:   pcLtc.Party1,
-		Receiver: pcLtc.Party2,
-	}
+	//sd := &channel.SendDescriptor{
+	//	Balance:  15000,
+	//	Sender:   pcLtc.Party1,
+	//	Receiver: pcLtc.Party2,
+	//}
 
-	err = pcLtc.SendCommit(sd)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//err = pcLtc.SendCommit(sd)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+
+	swap.GenerateAtomicSwap(pc, pcLtc, 20000)
 }

@@ -63,7 +63,7 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 		ReceiverBitcoin:  bitcoinChannel.Party2,
 		SenderLitecoin:   litecoinChannel.Party1,
 		ReceiverLitecoin: litecoinChannel.Party2,
-		Amount:           20000,
+		Amount:           amount,
 		Rate:             1.1,
 		HTLCPreImage:     htlcPreImage,
 		PaymentHash:      sha256.Sum256(htlcPreImage[:]),
