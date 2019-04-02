@@ -125,7 +125,7 @@ func signReceiverCommitSuccessTx(receiverCommitSuccessTx *wire.MsgTx, commitScri
 	witnessStack[0] = nil
 	witnessStack[1] = append(senderSignature, byte(signDesc.HashType))
 	witnessStack[2] = append(receiverSignature, byte(signDesc.HashType))
-	witnessStack[3] = preImage
+	witnessStack[3] = preImage[:]
 	witnessStack[4] = signDesc.WitnessScript
 
 	receiverCommitSuccessTx.TxIn[0].Witness = witnessStack
