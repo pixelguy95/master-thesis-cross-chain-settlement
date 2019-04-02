@@ -67,21 +67,6 @@ func main() {
 	log.Print("Opening channel between Alice and Bob (litecoin)")
 	pcLtc, err := channel.OpenNewChannel(bobLtc, aliceLtc, true, client, ltcClient)
 
-	//sd := &channel.SendDescriptor{
-	//	Balance:  15000,
-	//	Sender:   pc.Party1,
-	//	Receiver: pc.Party2,
-	//}
-
-	//err = pc.SendCommit(sd)
-	//if err != nil {
-	//	log.Fatal(err)
-	//	return
-	//}
-
-	//bob.UserBalance += 15000
-	//pc.Settle(client)
-
 	//buf := new(bytes.Buffer)
 	//pc.FundingTx.Serialize(buf)
 	//fmt.Printf("FUNDING TX:\n%x\n\n", buf)
@@ -89,17 +74,6 @@ func main() {
 	//buf = new(bytes.Buffer)
 	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
 	//fmt.Printf("Commit TX:\n%x\n\n", buf)
-
-	//sd := &channel.SendDescriptor{
-	//	Balance:  15000,
-	//	Sender:   pcLtc.Party1,
-	//	Receiver: pcLtc.Party2,
-	//}
-
-	//err = pcLtc.SendCommit(sd)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 
 	swap.GenerateAtomicSwap(pc, pcLtc, 20000)
 }

@@ -70,7 +70,10 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 	}
 
 	bitcoinPayment := swap.ExtractSendDescriptorBitcoin()
-	bitcoinChannel.Pay(bitcoinPayment)
+	err := bitcoinChannel.Pay(bitcoinPayment)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
