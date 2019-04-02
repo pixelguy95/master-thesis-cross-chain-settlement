@@ -67,7 +67,6 @@ func main() {
 
 	log.Print("Opening channel between Alice and Bob (litecoin)")
 	pcLtc, err := channel.OpenNewChannel(aliceLtc, bobLtc, true, client, ltcClient)
-	pcLtc.Settle(client)
 
 	//sd := &channel.SendDescriptor{
 	//	Balance:  15000,
@@ -92,22 +91,6 @@ func main() {
 	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
 	//fmt.Printf("Commit TX:\n%x\n\n", buf)
 
-	buf := new(bytes.Buffer)
-	pcLtc.FundingTx.Serialize(buf)
-	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pcLtc.Party1.Commits[0].CommitTx.Serialize(buf)
-	fmt.Printf("COMMIT ALICE TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pcLtc.Party2.CommitRevokes[0].RevokeTx.Serialize(buf)
-	fmt.Printf("REVOKE COMMIT BOB TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pcLtc.Party1.CommitSpends[0].CommitSpend.Serialize(buf)
-	fmt.Printf("SPEND COMMIT ALICE TX:\n%x\n\n", buf)
-
 	sd := &channel.SendDescriptor{
 		Balance:  15000,
 		Sender:   pcLtc.Party1,
@@ -118,4 +101,25 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	buf := new(bytes.Buffer)
+	pcLtc.FundingTx.Serialize(buf)
+	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party1.Commits[1].CommitTx.Serialize(buf)
+	fmt.Printf("COMMIT ALICE TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party2.HTLCOutputTxs[1].SenderCommitSuccessTx.Serialize(buf)
+	fmt.Printf("COMMIT SUCCESS BOB TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party2.HTLCOutputTxs[1].SenderCommitSuccessRedeemTx.Serialize(buf)
+	fmt.Printf("COMMIT SUCCESS SPEND BOB TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pcLtc.Party1.HTLCOutputTxs[1].SenderCommitSuccessRevokeTx.Serialize(buf)
+	fmt.Printf("COMMIT SUCCESS REVOKE ALICE TX:\n%x\n\n", buf)
+
 }

@@ -8,26 +8,29 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
-// GenerateRevocation generates a commit revocation transaction between two parties
-func (c *Channel) GenerateRevocation(reverse bool, commitIndex uint, client *rpcclient.Client) error {
+// GenerateRevocations generates commit revocation transactions between two parties in a channel
+func (c *Channel) GenerateRevocations(commitIndex uint) error {
 
-	var encumbered *User
-	var unencumbered *User
-	if !reverse {
-		encumbered = c.Party1
-		unencumbered = c.Party2
-	} else {
-		encumbered = c.Party2
-		unencumbered = c.Party1
+	err := buildRevocation(commitIndex, c.Party1, c.Party2)
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	err = buildRevocation(commitIndex, c.Party2, c.Party1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
+}
+
+func buildRevocation(commitIndex uint, encumbered *User, unencumbered *User) error {
 	log.Printf("Building revocation for %s", unencumbered.Name)
 
 	//TODO: Fix output amount to reflect channel balance

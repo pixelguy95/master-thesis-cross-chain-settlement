@@ -1,13 +1,18 @@
 package channel
 
 import (
+	"log"
+
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
 func (c *Channel) GenerateReceiverCommitTimeoutTx(index, cltvLocktime uint32, sender *User, receiver *User) error {
+
+	log.Println("Generating receiver commit timeout for", sender.Name)
 
 	revocationPrivateKey := input.DeriveRevocationPrivKey(receiver.FundingPrivateKey, sender.RevokationSecrets[index].CommitSecret)
 	revocationPub := revocationPrivateKey.PubKey()
@@ -42,13 +47,25 @@ func (c *Channel) GenerateReceiverCommitTimeoutTx(index, cltvLocktime uint32, se
 	signReceiverCommitTimeoutTx(commitTimeout, htlcScript, receiver.Commits[index].CommitTx.TxOut[2], sender, receiver)
 
 	// REDEEM
-	redeem, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, sender.PayOutAddress, sender.HTLCPrivateKey, 0, DefaultRelativeLockTime)
+	var senderPayout []byte
+	if sender.IsLitecoinUser {
+		senderPayout = btcutil.Hash160(sender.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		senderPayout = sender.PayoutPubKey.ScriptAddress()
+	}
+	redeem, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, senderPayout, sender.HTLCPrivateKey, 0, DefaultRelativeLockTime)
 	if err != nil {
 		return err
 	}
 
 	// REVOKE
-	revoke, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, receiver.PayOutAddress, revocationPrivateKey, 1, 0)
+	var receiverPayout []byte
+	if receiver.IsLitecoinUser {
+		receiverPayout = btcutil.Hash160(receiver.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		receiverPayout = receiver.PayoutPubKey.ScriptAddress()
+	}
+	revoke, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, receiverPayout, revocationPrivateKey, 1, 0)
 	if err != nil {
 		return err
 	}

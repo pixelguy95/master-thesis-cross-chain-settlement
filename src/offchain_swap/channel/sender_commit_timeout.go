@@ -1,8 +1,11 @@
 package channel
 
 import (
+	"log"
+
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
@@ -10,6 +13,7 @@ import (
 // GenerateSenderCommitTimeoutTx generates a timeout transaction that spends the htlc output from the senders commit
 func (c *Channel) GenerateSenderCommitTimeoutTx(index, cltvLocktime uint32, sender *User, receiver *User) error {
 
+	log.Println("Generating sender commit timeout for", sender.Name)
 	//_, _, revocationPub, _ := GenerateRevokePubKey(sender.RevokePreImage, receiver.FundingPublicKey)
 
 	revocationPrivateKey := input.DeriveRevocationPrivKey(receiver.FundingPrivateKey, sender.RevokationSecrets[index].CommitSecret)
@@ -45,13 +49,25 @@ func (c *Channel) GenerateSenderCommitTimeoutTx(index, cltvLocktime uint32, send
 	signSenderCommitTimeoutTx(commitTimeout, htlcScript, sender.Commits[index].CommitTx.TxOut[2], sender, receiver)
 
 	// REDEEM
-	redeem, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, sender.PayOutAddress, sender.HTLCPrivateKey, 0, DefaultRelativeLockTime)
+	var senderPayout []byte
+	if sender.IsLitecoinUser {
+		senderPayout = btcutil.Hash160(sender.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		senderPayout = sender.PayoutPubKey.ScriptAddress()
+	}
+	redeem, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, senderPayout, sender.HTLCPrivateKey, 0, DefaultRelativeLockTime)
 	if err != nil {
 		return err
 	}
 
 	// REVOKE
-	revoke, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, receiver.PayOutAddress, revocationPrivateKey, 1, 0)
+	var receiverPayout []byte
+	if receiver.IsLitecoinUser {
+		receiverPayout = btcutil.Hash160(receiver.LtcPayoutPubKey.SerializeCompressed())
+	} else {
+		receiverPayout = receiver.PayoutPubKey.ScriptAddress()
+	}
+	revoke, err := GenerateSecondlevelHTLCSpendTx(commitTimeout, witnessScript, receiverPayout, revocationPrivateKey, 1, 0)
 	if err != nil {
 		return err
 	}

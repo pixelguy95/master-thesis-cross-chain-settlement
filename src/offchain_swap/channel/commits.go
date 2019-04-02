@@ -3,6 +3,7 @@ package channel
 import (
 	"errors"
 	"log"
+	"time"
 
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 
@@ -39,25 +40,8 @@ func (channel *Channel) Settle(client *rpcclient.Client) error {
 	channel.Party2.Commits = append(channel.Party2.Commits, commitParty2)
 
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
-
-	err = channel.GenerateCommitSpends(uint(len(channel.Party1.Commits) - 1))
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	//TODO: Form into one function call
-	err = channel.GenerateRevocation(false, uint(len(channel.Party1.Commits)-1), client)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	err = channel.GenerateRevocation(true, uint(len(channel.Party1.Commits)-1), client)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+	channel.GenerateCommitSpends(uint(len(channel.Party1.Commits) - 1))
+	channel.GenerateRevocations(uint(len(channel.Party1.Commits) - 1))
 
 	return nil
 }
@@ -180,15 +164,32 @@ func (channel *Channel) SendCommit(sd *SendDescriptor) error {
 	index := uint32(len(sd.Receiver.Commits) - 1)
 
 	channel.SignCommitsTx(uint(len(channel.Party1.Commits)) - 1)
+	channel.GenerateCommitSpends(uint(len(channel.Party1.Commits) - 1))
+	channel.GenerateRevocations(uint(len(channel.Party1.Commits) - 1))
 
 	/*TIMEOUT*/
-	//cltvExpiry := uint32(time.Now().Unix() + (60 * 10))
-	cltvExpiry := uint32(1553763911)
-	channel.GenerateSenderCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
-	channel.GenerateSenderCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	cltvExpiry := uint32(time.Now().Unix() + (60 * 10))
+	//cltvExpiry := uint32(1553763911)
 
-	channel.GenerateReceiverCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
-	channel.GenerateReceiverCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	err := channel.GenerateSenderCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = channel.GenerateSenderCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = channel.GenerateReceiverCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = channel.GenerateReceiverCommitSuccessTx(index, sd.Sender, sd.Receiver)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
@@ -302,8 +303,8 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 		commitTx.TxOut[1].Value = sd.Sender.UserBalance - int64(customtransactions.DefaultFee)
 	}
 
-	//cltvExpiry := time.Now().Unix() + (60 * 10)
-	cltvExpiry := uint32(1553763911)
+	cltvExpiry := time.Now().Unix() + (60 * 10)
+	//cltvExpiry := uint32(1553763911)
 
 	//HTLC output
 	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.Sender.HTLCPaymentHash[:])

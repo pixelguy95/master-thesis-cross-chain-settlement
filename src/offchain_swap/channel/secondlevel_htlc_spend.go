@@ -4,12 +4,11 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 )
 
-func GenerateSecondlevelHTLCSpendTx(tx *wire.MsgTx, script []byte, payoutAddress btcutil.Address, signKey *btcec.PrivateKey, path byte, csv uint32) (*wire.MsgTx, error) {
+func GenerateSecondlevelHTLCSpendTx(tx *wire.MsgTx, script []byte, payoutScriptAddress []byte, signKey *btcec.PrivateKey, path byte, csv uint32) (*wire.MsgTx, error) {
 
 	spend := wire.NewMsgTx(2)
 
@@ -21,10 +20,7 @@ func GenerateSecondlevelHTLCSpendTx(tx *wire.MsgTx, script []byte, payoutAddress
 		Sequence: csv,
 	})
 
-	outputScript, err := txscript.PayToAddrScript(payoutAddress)
-	if err != nil {
-		return nil, err
-	}
+	outputScript := customtransactions.CreateP2PKHScript(payoutScriptAddress)
 
 	spend.AddTxOut(&wire.TxOut{
 		PkScript: outputScript,
@@ -50,7 +46,13 @@ func GenerateSecondlevelHTLCSpendTx(tx *wire.MsgTx, script []byte, payoutAddress
 
 	witnessStack := wire.TxWitness(make([][]byte, 3))
 	witnessStack[0] = append(signature, byte(signDesc.HashType))
-	witnessStack[1] = []byte{path}
+
+	if path == 0 {
+		witnessStack[1] = nil
+	} else {
+		witnessStack[1] = []byte{path}
+	}
+
 	witnessStack[2] = script
 
 	spend.TxIn[0].Witness = witnessStack
