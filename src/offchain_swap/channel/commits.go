@@ -3,7 +3,6 @@ package channel
 import (
 	"errors"
 	"log"
-	"time"
 
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 
@@ -136,7 +135,7 @@ func UnencumberedOutput(unencumberedPauoutPubKey *btcec.PublicKey, amount int64)
 	return theirWitnessKeyHash, out, nil
 }
 
-// SendCommit creates all new commit tx and related data that represents sending money
+// Pay creates all new commit tx and related data that represents sending money
 func (channel *Channel) Pay(sd *SendDescriptor) error {
 
 	log.Printf("Sending %d satoshis from %s to %s", sd.Balance, sd.Sender.Name, sd.Receiver.Name)
@@ -167,11 +166,7 @@ func (channel *Channel) Pay(sd *SendDescriptor) error {
 	channel.GenerateCommitSpends(uint(len(channel.Party1.Commits) - 1))
 	channel.GenerateRevocations(uint(len(channel.Party1.Commits) - 1))
 
-	/*TIMEOUT*/
-	cltvExpiry := uint32(time.Now().Unix() + (60 * 10))
-	//cltvExpiry := uint32(1553763911)
-
-	err := channel.GenerateSenderCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	err := channel.GenerateSenderCommitTimeoutTx(index, sd.Timelock, sd.Sender, sd.Receiver)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -181,7 +176,7 @@ func (channel *Channel) Pay(sd *SendDescriptor) error {
 		log.Fatal(err)
 	}
 
-	err = channel.GenerateReceiverCommitTimeoutTx(index, cltvExpiry, sd.Sender, sd.Receiver)
+	err = channel.GenerateReceiverCommitTimeoutTx(index, sd.Timelock, sd.Sender, sd.Receiver)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -303,11 +298,8 @@ func (channel *Channel) createReceiverCommit(sd *SendDescriptor) (*CommitData, e
 		commitTx.TxOut[1].Value = sd.Sender.UserBalance - int64(customtransactions.DefaultFee)
 	}
 
-	cltvExpiry := time.Now().Unix() + (60 * 10)
-	//cltvExpiry := uint32(1553763911)
-
 	//HTLC output
-	htclOutPutScript, err := input.ReceiverHTLCScript(uint32(cltvExpiry), sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.PaymentHash[:])
+	htclOutPutScript, err := input.ReceiverHTLCScript(sd.Timelock, sd.Sender.HTLCPublicKey, sd.Receiver.HTLCPublicKey, revocationPub, sd.PaymentHash[:])
 	if err != nil {
 		log.Fatal(err)
 		return nil, err

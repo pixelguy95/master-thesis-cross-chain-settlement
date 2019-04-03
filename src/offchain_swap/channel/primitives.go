@@ -183,6 +183,7 @@ type SendDescriptor struct {
 	Balance      int64
 	HTLCPreImage [32]byte
 	PaymentHash  [32]byte
+	Timelock     uint32
 }
 
 // PrintUser prints all info on user

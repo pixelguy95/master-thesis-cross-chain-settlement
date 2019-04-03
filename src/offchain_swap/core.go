@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
 	"log"
 
 	"github.com/btcsuite/btcd/rpcclient"
@@ -55,7 +57,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	pc.Settle(client)
+	//pc.Settle(client)
 
 	log.Println("Creating Bob user for litecoin channel")
 	bobLtc, _ := channel.GenerateNewUserFromWallet("Bob", "doesn't matter either", true, true, client, ltcClient)
@@ -66,14 +68,17 @@ func main() {
 
 	log.Print("Opening channel between Alice and Bob (litecoin)")
 	pcLtc, err := channel.OpenNewChannel(bobLtc, aliceLtc, true, client, ltcClient)
-
-	//buf := new(bytes.Buffer)
-	//pc.FundingTx.Serialize(buf)
-	//fmt.Printf("FUNDING TX:\n%x\n\n", buf)
-
-	//buf = new(bytes.Buffer)
-	//pc.Party1.Commits[2].CommitTx.Serialize(buf)
-	//fmt.Printf("Commit TX:\n%x\n\n", buf)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	swap.GenerateAtomicSwap(pc, pcLtc, 20000)
+
+	buf := new(bytes.Buffer)
+	pc.FundingTx.Serialize(buf)
+	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pc.Party1.Commits[1].CommitTx.Serialize(buf)
+	fmt.Printf("Commit TX:\n%x\n\n", buf)
 }
