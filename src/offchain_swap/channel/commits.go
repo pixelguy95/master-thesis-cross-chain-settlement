@@ -7,13 +7,12 @@ import (
 	"github.com/pixelguy95/master-thesis-cross-chain-settlement/src/onchain_swaps_contract/bitcoin/customtransactions"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/input"
 )
 
 // Settle creates new commits with whatever funds each party had on their side of the channel. The commits will not have any HTLC outputs
-func (channel *Channel) Settle(client *rpcclient.Client) error {
+func (channel *Channel) Settle() error {
 
 	log.Println("Generating settle commits")
 
@@ -22,7 +21,7 @@ func (channel *Channel) Settle(client *rpcclient.Client) error {
 	}
 
 	//PARTY 1 COMMIT
-	commitParty1, err := channel.createSettleCommit(channel.Party1, channel.Party2, client)
+	commitParty1, err := channel.createSettleCommit(channel.Party1, channel.Party2)
 	if err != nil {
 		return err
 	}
@@ -31,7 +30,7 @@ func (channel *Channel) Settle(client *rpcclient.Client) error {
 
 	//**************************************************************************************************
 	//PARTY2 COMMIT
-	commitParty2, err := channel.createSettleCommit(channel.Party2, channel.Party1, client)
+	commitParty2, err := channel.createSettleCommit(channel.Party2, channel.Party1)
 	if err != nil {
 		return err
 	}
@@ -46,7 +45,7 @@ func (channel *Channel) Settle(client *rpcclient.Client) error {
 }
 
 // createStaticCommit creates a single commit, no htlc
-func (channel *Channel) createSettleCommit(encumbered *User, unencumbered *User, client *rpcclient.Client) (*CommitData, error) {
+func (channel *Channel) createSettleCommit(encumbered *User, unencumbered *User) (*CommitData, error) {
 
 	//Create revoke key on party1 commit side
 	commitPoint, commitSecret, revocationPub, _ := GenerateRevokePubKey(encumbered.RevokePreImage, unencumbered.FundingPublicKey)

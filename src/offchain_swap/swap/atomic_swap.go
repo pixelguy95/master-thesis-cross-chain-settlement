@@ -32,7 +32,7 @@ type AtomicSwapDescriptor struct {
 	Rate float32
 
 	//Time before the transaction can be reclaimed by sender. In Seconds
-	AbsoluteTimelock uint32
+	AbsoluteTimelock int64
 }
 
 // ExtractSendDescriptorBitcoin extracts the senddescriptor from the swap details
@@ -44,7 +44,7 @@ func (swap *AtomicSwapDescriptor) ExtractSendDescriptorBitcoin() *channel.SendDe
 		Balance:      swap.Amount,
 		HTLCPreImage: swap.HTLCPreImage,
 		PaymentHash:  swap.PaymentHash,
-		Timelock:     uint32(time.Now().Unix()) + swap.AbsoluteTimelock*2, // Twice as long before refund is possible
+		Timelock:     uint32(time.Now().Unix() + swap.AbsoluteTimelock*2), // Twice as long before refund is possible
 	}
 }
 
@@ -57,7 +57,7 @@ func (swap *AtomicSwapDescriptor) ExtractSendDescriptorLitecoin() *channel.SendD
 		Balance:      int64(float32(swap.Amount) * swap.Rate),
 		HTLCPreImage: swap.HTLCPreImage,
 		PaymentHash:  swap.PaymentHash,
-		Timelock:     uint32(time.Now().Unix()) + swap.AbsoluteTimelock,
+		Timelock:     uint32(time.Now().Unix() + swap.AbsoluteTimelock),
 	}
 }
 
@@ -80,7 +80,7 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 		Rate:             1.1,
 		HTLCPreImage:     htlcPreImage,
 		PaymentHash:      sha256.Sum256(htlcPreImage[:]),
-		AbsoluteTimelock: 60,
+		AbsoluteTimelock: -60 * 60,
 	}
 
 	bitcoinPayment := swap.ExtractSendDescriptorBitcoin()
@@ -88,6 +88,17 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	litecoinPayment := swap.ExtractSendDescriptorLitecoin()
+	err = litecoinChannel.Pay(litecoinPayment)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bitcoinChannel.Party2.UserBalance += bitcoinPayment.Balance
+	litecoinChannel.Party2.UserBalance += bitcoinPayment.Balance
+
+	bitcoinChannel.Settle()
 
 	return nil
 }

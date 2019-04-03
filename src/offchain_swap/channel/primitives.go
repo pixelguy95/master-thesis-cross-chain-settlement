@@ -31,7 +31,7 @@ var (
 	Green = color.New(color.FgGreen)
 
 	//DefaultRelativeLockTime is the default number of blocks to wait before a commit is spendable
-	DefaultRelativeLockTime = uint32(3)
+	DefaultRelativeLockTime = uint32(1)
 )
 
 // User represents a party in a payment channel.

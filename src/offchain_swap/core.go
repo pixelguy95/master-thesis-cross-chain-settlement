@@ -74,11 +74,25 @@ func main() {
 
 	swap.GenerateAtomicSwap(pc, pcLtc, 20000)
 
+	fmt.Println("\n\n\n\n===  BITCOIN  ===")
+
 	buf := new(bytes.Buffer)
 	pc.FundingTx.Serialize(buf)
 	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
 
 	buf = new(bytes.Buffer)
-	pc.Party1.Commits[1].CommitTx.Serialize(buf)
-	fmt.Printf("Commit TX:\n%x\n\n", buf)
+	pc.Party2.Commits[1].CommitTx.Serialize(buf)
+	fmt.Printf("COMMIT (BOB) TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutTx.Serialize(buf)
+	fmt.Printf("COMMIT HTLC TIMEOUT (ALICE) TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutRedeemTx.Serialize(buf)
+	fmt.Printf("COMMIT HTLC TIMEOUT REDEEM (ALICE) TX:\n%x\n\n", buf)
+
+	buf = new(bytes.Buffer)
+	pc.Party2.HTLCOutputTxs[1].ReceiverCommitTimeoutRevokeTx.Serialize(buf)
+	fmt.Printf("COMMIT HTLC TIMEOUT REVOKE (ALICE) TX:\n%x\n\n", buf)
 }

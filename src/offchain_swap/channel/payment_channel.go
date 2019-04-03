@@ -63,7 +63,7 @@ func OpenNewChannel(party1 *User, party2 *User, isLtc bool, client *rpcclient.Cl
 		FundingMultiSigOut:   multiSigOut,
 	}
 
-	err = channel.Settle(client)
+	err = channel.Settle()
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
