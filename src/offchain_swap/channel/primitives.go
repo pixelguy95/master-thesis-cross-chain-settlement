@@ -31,7 +31,7 @@ var (
 	Green = color.New(color.FgGreen)
 
 	//DefaultRelativeLockTime is the default number of blocks to wait before a commit is spendable
-	DefaultRelativeLockTime = uint32(1)
+	DefaultRelativeLockTime = uint32(100)
 )
 
 // User represents a party in a payment channel.
@@ -229,7 +229,7 @@ func GenerateNewUserFromWallet(name string, walletName string, fundee bool, isLt
 		PrivateKey: fundingPrivateKey,
 	}
 
-	htlcOutputTxs := make([]*HTLCOutputTxs, 100)
+	htlcOutputTxs := make([]*HTLCOutputTxs, 10000)
 
 	var htlcPreImage [32]byte
 	rand.Read(htlcPreImage[:])

@@ -80,7 +80,7 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 		Rate:             1.1,
 		HTLCPreImage:     htlcPreImage,
 		PaymentHash:      sha256.Sum256(htlcPreImage[:]),
-		AbsoluteTimelock: -60 * 60,
+		AbsoluteTimelock: 60 * 60 * 24,
 	}
 
 	bitcoinPayment := swap.ExtractSendDescriptorBitcoin()
@@ -96,7 +96,7 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 	}
 
 	bitcoinChannel.Party2.UserBalance += bitcoinPayment.Balance
-	litecoinChannel.Party2.UserBalance += bitcoinPayment.Balance
+	litecoinChannel.Party2.UserBalance += litecoinPayment.Balance
 
 	bitcoinChannel.Settle()
 

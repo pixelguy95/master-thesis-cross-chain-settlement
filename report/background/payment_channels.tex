@@ -18,4 +18,15 @@ A bit later Alice buys one funny hat from Bob for 0.1 Bitcoins. To complete the 
 A payment channel needs some safety measures to be safe from malicious actors. The above example lacks a mechanism for preventing old commitment transactions from making their way into the blockchain and still paying the malicious party.. For example after the initial funny hat transaction above (\textbf{C1}) Alice could just broadcast the initial commit transaction (\textbf{C0}) and reclaim the 0.1 Bitcoins she spent. Bob would have no way of preventing this in this naive implementation.
 
 \Subsubsection{Payment channel with breach remedy}
-awdwa
+To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be doine via something called revocable delivery and breach remedy (Some times called just revocation).
+Instead of both parties holding the same commit. They each get and individual one that differs in it's output. Let's take a closer
+
+  
+\begin{wrapfigure}{l}{0.4\textwidth}
+	\begin{center}
+		\includegraphics[width=0.4\textwidth]{background/images/tx_anatomy.png}
+	\end{center}
+	\vspace{-8mm}
+	\caption{Descriptions of the different parts of a tx as they appear in later diagrams}
+	\label{fig:script}
+\end{wrapfigure}

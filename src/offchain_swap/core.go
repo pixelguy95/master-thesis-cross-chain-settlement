@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/btcsuite/btcd/rpcclient"
 	ltcrpc "github.com/ltcsuite/ltcd/rpcclient"
@@ -57,7 +56,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//pc.Settle(client)
 
 	log.Println("Creating Bob user for litecoin channel")
 	bobLtc, _ := channel.GenerateNewUserFromWallet("Bob", "doesn't matter either", true, true, client, ltcClient)
@@ -72,27 +70,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	swap.GenerateAtomicSwap(pc, pcLtc, 20000)
+	start := time.Now()
+	var i int
+	for i = 0; i < 4999; i++ {
+		swap.GenerateAtomicSwap(pc, pcLtc, 1)
+	}
 
-	fmt.Println("\n\n\n\n===  BITCOIN  ===")
+	log.Printf("5000 atomic swaps in %s", time.Now().Sub(start).String())
 
-	buf := new(bytes.Buffer)
-	pc.FundingTx.Serialize(buf)
-	fmt.Printf("FUNDING TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pc.Party2.Commits[1].CommitTx.Serialize(buf)
-	fmt.Printf("COMMIT (BOB) TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutTx.Serialize(buf)
-	fmt.Printf("COMMIT HTLC TIMEOUT (ALICE) TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pc.Party1.HTLCOutputTxs[1].ReceiverCommitTimeoutRedeemTx.Serialize(buf)
-	fmt.Printf("COMMIT HTLC TIMEOUT REDEEM (ALICE) TX:\n%x\n\n", buf)
-
-	buf = new(bytes.Buffer)
-	pc.Party2.HTLCOutputTxs[1].ReceiverCommitTimeoutRevokeTx.Serialize(buf)
-	fmt.Printf("COMMIT HTLC TIMEOUT REVOKE (ALICE) TX:\n%x\n\n", buf)
 }
