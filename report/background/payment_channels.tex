@@ -6,7 +6,7 @@ In their most naive form a payment channel can simply be Alice and Bob exchangin
 This however is not trustless and any of the parties could later withdraw from the promise without punishment (other than maybe loss of friendship).
 
 To build a trustless payment channel there are several ways to go about as Script is quite versatile.
-The method that will be covered here uses a type of channel funding transaction that requires the signature from both parties to spend, and the channel balance is updated via special commitment transactions that spend the funding output. Each party in the channel has their own version of the commitment transaction. Whenever a commitment transaction is broadcast to the blockchain the channel is closed as the funding transaction can't be spent twice. To update the balance in the channel both parties create new commitment transactions and signs the other parties commitment transaction.  
+The method that will be covered here uses a type of channel \textbf{funding transaction that requires the signature from both parties to spend}, and the channel balance is updated via special commitment transactions that spend the funding output. Each party in the channel has their own version of the commitment transaction. Whenever a commitment transaction is broadcast to the blockchain the channel is closed as the funding transaction can't be spent twice. To update the balance in the channel both parties create new commitment transactions and signs the other parties commitment transaction.  
 Let's take a look at a naive example:
 
 \Subsubsection{The naive payment channel}
@@ -17,16 +17,29 @@ A bit later Alice buys one funny hat from Bob for 0.1 Bitcoins. To complete the 
 
 A payment channel needs some safety measures to be safe from malicious actors. The above example lacks a mechanism for preventing old commitment transactions from making their way into the blockchain and still paying the malicious party.. For example after the initial funny hat transaction above (\textbf{C1}) Alice could just broadcast the initial commit transaction (\textbf{C0}) and reclaim the 0.1 Bitcoins she spent. Bob would have no way of preventing this in this naive implementation.
 
-\Subsubsection{Payment channel with breach remedy}
-To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be doine via something called revocable delivery and breach remedy (Some times called just revocation).
-Instead of both parties holding the same commit. They each get and individual one that differs in it's output. Let's take a closer
+\Subsubsection{Transaction flow diagrams}
+The transactions that are involved in making payment channels grows larger the more features that are added. To make it easier to understand, diagrams are used together with the descriptions. In Figure \ref{fig:anatomy} a basic overview of the diagram-realm transaction is shown. Lines leading from outputs to inputs means that the connected input are spending that output. Note that one output can be connected to several inputs but each input can only be connected to one output, of course an output can only be spent once, this will be clarified later. A \textbf{?} in the broadcaster field indicates either that the sender is unknown or that who sends it is irrelevant. 
 
-  
-\begin{wrapfigure}{l}{0.4\textwidth}
-	\begin{center}
-		\includegraphics[width=0.4\textwidth]{background/images/tx_anatomy.png}
-	\end{center}
-	\vspace{-8mm}
-	\caption{Descriptions of the different parts of a tx as they appear in later diagrams}
-	\label{fig:script}
-\end{wrapfigure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.5\textwidth]{background/images/tx_anatomy.png}
+	\caption{Different parts of a transaction as they appear in diagrams.}
+	\label{fig:anatomy}
+\end{figure}
+
+\Subsubsection{Payment channel with breach remedy}
+To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be done via something called revocable delivery and breach remedy (Some times called just revocation).
+Instead of both parties holding the same commit. They each get an individual one that differs in it's outputs. 
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{background/images/payment_channel_pre_breach.png}
+	\caption{Payment channel, with commits using revocable delivery mechanism}
+	\label{fig:pre-breach}
+\end{figure}
+
+Figure \ref{fig:pre-breach} shows how the payment channel appears after the first commitment transactions has been made. Let's say the channel is between Alice (A) and Bob (B) and the balance in the channel is 0.5 BTC for Alice and 0.5 BTC for Bob. 
+
+\textbf{$C1_{A}$} is the commitment transaction on Alice's side of the channel. As with all commitment transactions it spends the funding transaction. It has two outputs. One sending 0.5 BTC
