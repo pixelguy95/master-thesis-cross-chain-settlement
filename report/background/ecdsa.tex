@@ -153,7 +153,7 @@ From $u_1$ and $u_2$ calculate the point $(x_1, y_1) = u_1 \times G + u_2 \times
 
 The signature is valid if and only if $r = x_1 \mod n$
 
-\Subsubsection{Addresses}
+\Subsection{Addresses}
 While in using Bitcoin normally you don't see the public keys directly, instead you mostly see something that is called addresses. The address is what you use when you want to send money to someone (see section \ref{p2pkh}). What the address really is, is just a representation of their public key.  
 
 To transform a public key to an address you first hash it using \texttt{SHA256} then that result with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address. 
@@ -168,3 +168,18 @@ Hash160 of public key:\\
 
 Base58 of public key hash (Address):\\
 \texttt{ms5UVmKaaz8kiL7DbMA1NG3t6T4C4GmGzG}
+
+\Subsection{Homomorphism}\label{homomorphism}
+Elliptic curves has a attribute called homomorphism. It will not be covered in depth, but what it basically means is that two public keys ($P_1$, $P_2$) can be combined to form a third public key ($P_R$). If $P_1$ and $P_2$ was generated with corresponding private keys $k_1$ and $k_2$ then they can be combined to form the privatekey that generates $P_R$ ($k_R$).
+
+This is very useful in cases where two parties wants a public key where neither side knows the private key, but the private key could be figured out by either side giving up their private key. 
+
+There are several ways of calculating a a new homomorphic key, this is the one used in later implementations:
+
+Let's say you have private key k with corresponding public key P. And another temporary private key $k_c$ with corresponding public key $P_c$. To generate the homomorphic public key ($P_h$) you can use the following equation (All the operations in the two equations below are in elliptic-curve addition and multiplication):
+
+$$P_h = P_c * SHA_{256}(P_c || P) + P * SHA_{256}(P || P_c)$$
+
+You now have Public key $P_h$. To figure out the Private key correlated with this public key you do the following equation:
+
+$$k_h = $$

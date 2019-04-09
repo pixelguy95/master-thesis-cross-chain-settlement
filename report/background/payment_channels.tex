@@ -32,7 +32,6 @@ The transactions that are involved in making payment channels grows larger the m
 To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be done via something called revocable delivery and breach remedy (Some times called just revocation).
 Instead of both parties holding the same commit. They each get an individual one that differs in it's outputs. 
 
-
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.6\textwidth]{background/images/payment_channel_pre_breach.png}
@@ -42,4 +41,36 @@ Instead of both parties holding the same commit. They each get an individual one
 
 Figure \ref{fig:pre-breach} shows how the payment channel appears after the first commitment transactions has been made. Let's say the channel is between Alice (A) and Bob (B) and the balance in the channel is 0.5 BTC for Alice and 0.5 BTC for Bob. 
 
-\textbf{$C1_{A}$} is the commitment transaction on Alice's side of the channel. As with all commitment transactions it spends the funding transaction. It has two outputs. One sending 0.5 BTC
+Lets' take a look at the left side of this diagram. \textbf{$C1_{A}$} is the commitment transaction on Alice's side of the channel. As with all commitment transactions it spends the funding transaction. It has two outputs. Output 0 sends 0.5 BTC to Bob completely unencumbered. Output 1 is a bit more complicated however. It pays into a revocable delivery contract worth 0.5 BTC.\footnote{The contract is a script, and it's payed to via P2SH} The contract is constructed with a relative time lock that allows Alice to claim her share of the money after x amount of time (relative to the broadcast time of $C1_{A}$, opften described in terms of blocks) or pays to whomever can sign using the pre-generated revocation keys (See section \ref{homomorphism})
+
+D1 is the transaction Bob uses to claim his money in case Alice decides to broadcast her commitment transaction ($C1_{A}$).
+
+RD1 is the transaction that Alice uses to claim her money. The transaction has a relative timelock on it that makes it so it can't be broadcast until x blocks has passed since $C1_{A}$ was included in the blockchain. \textbf{From now on the relative timelock will be 100 blocks in all the following examples}.
+
+The right side is identical, only that the RD1 and D1 relationship is reversed, meaning that Alice caan claim her money directly and Bob has to wait. 
+
+If Alice wants to send 0.1 BTC to Bob they need to update the channel with new commitment transactions and then invalidate the old transaction. The transaction diagram will now look like figure \ref{fig:pc-update}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.65\textwidth]{background/images/payment_channel_updated.png}
+	\caption{Updated payment channel, with breach remedies for old commitment transactions}
+	\label{fig:pc-update}
+\end{figure}
+
+Figure \ref{fig:pc-update} shows the state of the channel after the new commitment transactions have been finalized. 
+$C2_{A}$ is a lot like the previous commitment transaction with a few changes. The primary change is of course the channel balance, output 0 now has 0.6 BTC as value and output 1 has 0.4 BTC (Because Alice sent 0.1 BTC to Bob).
+
+Another important update to the channel is the breach remedy. BR1 is the breach remedy for the first commitment transaction, it's purpose is to prevent old commitment transactions from being broadcast. The breach remedy can be created after Alice has revealed the secret private key she used when creating the revocation key. Of course to prevent a new false breach remedy to be created for $C2_{A}$ Alice uses a new revocation key for all new commitment transactions. If Alice tries to take back her money by broadcasting an old commitment transaction Bob can prevent it by broadcasting the breach remedy, this is possible because of the timelock on Alice's claim being time-locked.
+
+These are the steps taken whenever someone wants to send money in the channel (Under the assumption that commitment n-1 ($C_{n-1}$) was the latest commitment transaction in the channel), Alice is assumed to be the sender: 
+\begin{enumerate}
+	\item Both parties create new revocation public keys.
+	\item Alice creates the commitment on Bob's side ($Cn_{b}$) using the revocation key from the previous step, signs it and sends it to Bob.
+	\item Bob creates the commitment on Alice's side ($Cn_{a}$) using the revocation key from the previous step, signs it and sends it to Alice.
+	\item Each party generates their repective Delivery and Revocable delivery transactions (Dn and BRn)
+	\item Both parties reveal the secret used to create the revocation keys for the previous commitment transactions ($C_{n-1}$)
+	\item From these revocation keys each party constructs the breach remedy ($BR_{n-1}$) for the previous commitment on the other persons side.
+\end{enumerate}
+
+These steps can be repeated however many times until the channel is closed. 
