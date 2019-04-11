@@ -20,3 +20,7 @@ To understand the HTLC-output you first need to understand the general mechanism
 	\caption{An overview of a network formed by payment channels}
 	\label{fig:pc-route}
 \end{figure}
+
+The principle used for multi-hop transactions is a lot like the one used for onchain atomic swaps. It relies on revealing a secret pre-image\footnote{See glossary} of a hash within a certain time limit. Using the diagram in figure \ref{fig:pc-route} as example. Alice wants to send money to Eric. But they have no direct channel between each other. To make this work Alice asks Eric for a hash of a secret, let's call this $R = SHA256(S)$. 
+
+For the money to reach Eric Alice needs to go via Bob. To do this Alice requests from Bob that they make a new commitment transaction with one HTLC output. The amount in the output 
