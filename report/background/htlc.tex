@@ -21,6 +21,19 @@ To understand the HTLC-output you first need to understand the general mechanism
 	\label{fig:pc-route}
 \end{figure}
 
-The principle used for multi-hop transactions is a lot like the one used for onchain atomic swaps. It relies on revealing a secret pre-image\footnote{See glossary} of a hash within a certain time limit. Using the diagram in figure \ref{fig:pc-route} as example. Alice wants to send money to Eric. But they have no direct channel between each other. To make this work Alice asks Eric for a hash of a secret, let's call this $R = SHA256(S)$. 
+The principle used for multi-hop transactions is a lot like the one used for onchain atomic swaps. It relies on revealing a secret pre-image\footnote{See glossary} of a hash within a certain time limit. Using the diagram in figure \ref{fig:pc-route} as example. Alice wants to send money to Eric. But they have no direct channel between each other. To make this work Alice asks Eric for a hash of a secret, let's call this $H = SHA256(R)$. For now Eric holds on to R and only sends H to Alice.
 
-For the money to reach Eric Alice needs to go via Bob. To do this Alice requests from Bob that they make a new commitment transaction with one HTLC output. The amount in the output 
+For the money to reach Eric, Alice needs to go via Bob. To do this Alice requests from Bob that they make a new commitment transaction with one HTLC output. The amount in the output should be equal to to whatever amount Alice want to send to Eric. The promise here is that Bob will get this money only if he can prove that he has the pre-image to H. Bob does the same with Carol. This continues until an updated commitment reaches Eric. Eric can then send the pre-image R backwards through the chain until it reaches Alice. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\textwidth]{background/images/pc_route_backwards.png}
+	\caption{All the steps taken in the payment network}
+	\label{fig:pc-route}
+\end{figure}
+
+Earlier it was mentioned that the HTLC output only existed as a contingency, when Bob can prove to Alice that he knows the pre-image R, and can claim the money in the htlc-output by closing the channel, Alice has no reason to not update the channel with correct balances in Bob's favor. Thus the channel returns to a regular state with no htlc-outputs and all previous commits are revoked. This is done for all channels between Alice and Eric. If a party will not co-operate in the chain the channels to that person will have to be closed, this is the only case where the htlc-outputs are actually spent. There is no risk of monetary loss, closing channels is generally something that should be avoided if not absolutely necessary.
+
+\vspace{10mm}
+\Subsubsection{HTLC in more detail and second-level HTLCs}
+The HTLC script is a bit different depending on what side you are on in the channel, in other words the HTLC in the commitment of the sender is different to the one on the receiver end. 
