@@ -102,3 +102,5 @@ func GenerateAtomicSwap(bitcoinChannel *channel.Channel, litecoinChannel *channe
 
 	return nil
 }
+
+//1Z13771Y0498285094
