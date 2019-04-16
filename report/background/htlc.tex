@@ -29,11 +29,32 @@ For the money to reach Eric, Alice needs to go via Bob. To do this Alice request
 	\centering
 	\includegraphics[width=0.75\textwidth]{background/images/pc_route_backwards.png}
 	\caption{All the steps taken in the payment network}
-	\label{fig:pc-route}
+	\label{fig:pc-route-final}
 \end{figure}
 
 Earlier it was mentioned that the HTLC output only existed as a contingency, when Bob can prove to Alice that he knows the pre-image R, and can claim the money in the htlc-output by closing the channel, Alice has no reason to not update the channel with correct balances in Bob's favor. Thus the channel returns to a regular state with no htlc-outputs and all previous commits are revoked. This is done for all channels between Alice and Eric. If a party will not co-operate in the chain the channels to that person will have to be closed, this is the only case where the htlc-outputs are actually spent. There is no risk of monetary loss, closing channels is generally something that should be avoided if not absolutely necessary.
 
-\vspace{10mm}
 \Subsubsection{HTLC in more detail and second-level HTLCs}
-The HTLC script is a bit different depending on what side you are on in the channel, in other words the HTLC in the commitment of the sender is different to the one on the receiver end. 
+The HTLC script is a bit different depending on what side you are on in the channel, in other words the HTLC in the commitment of the sender is different to the one on the receiver end. What they both have in common however is the three possible outcomes. Let's call these paths \textbf{HTLC timeout}, \textbf{HTLC execution} and \textbf{HTLC breach remedy}.
+
+HTLC execution can be considered to be the main path and the one that is taken if everything goes as planned. Let's take a closer look at what happens in the channel between Alice and Bob in figure \ref{fig:pc-route-final}. Bob knows the secret R because Carol sent it to him. Under normal circumstances Bob would prove to Alice that he knows the secret R, Alice would accept and the channel would be updated to reflect the transaction taking place. But for the sake of example let's say that Alice is uncooperative and does not want to give up the money she just sent to Eric. 
+Bob should then close the channel with Alice and claim his money in the HTLC output by providing a input containing the pre-image (R), and signatures from both Alice and Bob. The reason for both signatures being needed has to do with second-level HTLC, but we will return to that in a moment. The signatures are provided prior to the new commitment transaction.
+
+HTLC timeout is the path taken in the case where Bob never received the pre-image (R) from Carol. In this case the money should be refunded to Alice. Under normal circumstance Bob sees that Alice can claim the money and thus updates the channel to reflect the refund. In the case where Bob refuses to cooperate Alice can close the channel after the timeout has passed. This time no pre-mage is needed, only the signatures from both channel parties. As with the HTLC execution the transaction spending the HTLC output must pay into a second-level HTLC.
+
+HTLC breach remedy does not pay the money into a second-level HTLC instead it pays the money directly to the party that did not send an old commitment transaction. The breach remedy path is redeemed by providing a correct signature with the revocation key.
+
+The second-level HTLC is a necessary second part of the HTLC output. Whenever the HTLC-output is spent (except in cases of revocations) it has to lead into a second-level HTLC script, this is enforced by the HTLC script requiring the signature from both parties to be spent. The second-level HTLC script is fairly basic, it has two outcomes. Either the spender has to wait x amount of blocks (in relative time) before spending, or it can be revoked immidietly if a signature with the revocation keys is provided. It's usefulness can be demonstrated with an example:
+
+Take the example where a transaction from Alice to Eric passed through a channel between Alice and Bob. Let's say a couple of days passed and Alice and Bob has exchanged other transactions since. Without second level HTLC Bob could broadcast the old commitment transaction and try to claim the HTLC-output money by providing the pre-image. With second-level HTLC Bob needs to wait a relative time before the money properly becomes his. If the old commit was properly revoked Alice could revoke Bob's attempt at claiming the HTLC-ouput. Same holds true the other way around if Alice tries to claim an old HTLC output by waiting for the timeout.
+
+Figure \ref{fig:pc-htlc} is the equivalent transaction flow diagram for a channel where the third commit contains a HTLC-output. To keep the diagram from exploding completely all the previous and following commitment transactions has been excluded, as well as Bob's side of the commitment tree. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.75\textwidth]{background/images/payment_channel_htlc.png}
+	\caption{The transaction diagram showing the htlc-output this time}
+	\label{fig:pc-htlc}
+\end{figure}
+
+%The figure below shows all the related transactions ad which spends from which. Only one side of the channel is shown
