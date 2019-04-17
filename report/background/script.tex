@@ -32,7 +32,7 @@ This simple program will push 4 and 5 to the stack, \texttt{OP\_ADD} pops two va
 \Subsection{Complex operations}
 There are some operations in Script with slightly higher complexity, which do not act like the others. One of them is \texttt{OP\_VERIFY}, this will perform a verify check on the script. It will pop one value from the stack, and if that value equates to false execution will end immidietly and the entire script will be marked as invalid (see section \ref{script_valid}). If the value equals true execution will continue where it left off. Some operations are combinations with the verify check, like for example \texttt{OP\_EQUALVERIFY}. This is equal to writing \texttt{OP\_EQUAL OP\_VERIFY}, meaning that it first does an equal check then verifys the result.
 
-There are several operations for checking signatures. These are not so complex in terms of what they do in the script. Their implementation is quite complex however. They reliy on outside information that is not present in the script to check the validity of a signature. The two most used are \texttt{OP\_CHECKSIG} and \texttt{OP\_CHECKMULTISIG}. These will not be covered in full in this section as they are more related to transactions so see section \ref{transactions} for a full explanation. 
+There are several operations for checking signatures. These are not so complex in terms of what they do in the script. Their implementation is quite complex however. They rely on outside information that is not present in the script to check the validity of a signature. The two most used are \texttt{OP\_CHECKSIG} and \texttt{OP\_CHECKMULTISIG}. These will not be covered in full in this section as they are more related to transactions so see section \ref{transactions} for a full explanation. 
 
 \Subsection{Valid and invalid scripts}\label{script_valid}
 At the end of execution a script is marked as either valid or invalid. A script is invalid for the following reasons:
@@ -49,4 +49,4 @@ A script is valid if and only if there is one value on the stack, and it is not 
 \Subsection{Bug in Script}
 An interesting bit of trivia is that there is a bug in the language implementation. More specifically with the operation \texttt{OP\_CHECKMULTISIG}. The bug makes it so this operation pops one more value from the stack than it is supposed to. This was not discovered until the network had been running for a while. It can't be easily fixed as it is now a part of the consensus rules. All implementations of Bitcoin node has to implement the bugged version of this op code otherwise consensus on the validity of transactions will break.
 
-A fix to this bug would require a hardfok, see section \ref{soft_hard_fork}, and has so far been considered not worth it.
+A fix to this bug would require a hardfok, see section \ref{soft_hard_fork}, so far it has not been done as it is considered to be not worth the time and effort.

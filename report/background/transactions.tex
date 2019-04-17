@@ -24,26 +24,27 @@ Just as before this script is not valid by itself. But then the transaction is c
 
 \texttt{7 4 3 OP\_ADD OP\_EQUALS}
 
-Which is a valid script, thus bobs new transaction is also valid and he may spend the money as he see fits. 
+Which is a valid script, thus Bobs new transaction is also valid and he may spend the money as he see fits. 
 
-Obviously most transactions on the Bitcoin blockchain are not this simple. The most common form of transaction contians a script called P2PKH which stands for Pay to public key hash. Before we can go into details on this one however we first need to know about how signatures and sighash work in script and transactions.
+Obviously most transactions on the Bitcoin blockchain are not this simple. The most common form of transaction contains a script called P2PKH which stands for Pay to public key hash. Before we can go into details on this one however we first need to know about how signatures and sighash work in script and transactions.
 
 \Subsection{Signatures and sighash}
 Section \ref{ecdsa} covers public keys and signatures in depth.
 
-Perhaps the most important operation in script is the \texttt{OP\_CHECKSIG} operation and its cousins. \texttt{OP\_CHECKSIG} pops two values from the stack, if the script is correctly implemented these two values should be the public key and a signature that was signed with the private key that was used to create the public key. 
+Perhaps the most important operation in script is the \texttt{OP\_CHECKSIG} operation and its cousins. \texttt{OP\_CHECKSIG} pops two values from the stack, if the script is correctly implemented these two values should be the public key and a signature created with the private key that correlates with mentioned public key
 
-The question is: what is signed when the signature is created? Broadly speaking it is the hash of the transaction that is trying to spend the output, this is not entirely correct however. Appended to the signature that is a flag called \textbf{sighash}. The value of sighash tells the script interpreter what hash was signed during the creation of the signature. There are 4 types of sighash implemented:
+The question is: what is signed when the signature is created? Broadly speaking it is the hash of the transaction that is trying to spend the output, this is not entirely accurate however. Appended to the signature that is a flag called \textbf{sighash}. The value of sighash tells the script interpreter what hash was signed during the creation of the signature. There are 4 types of sighash implemented:
 
 \Subsubsection{SIGHASH\_ALL}
-This can be considered the default sighash, if it is not specified it can safely be assumed that this type was used. This simply means that the entire transaction is signed with all outputs and all other inputs.
+This can be considered the default sighash, if it is not stated otherwise it can safely be assumed that this type was used. This simply means that the entire transaction is signed with all outputs and all other inputs.
 
 
 \Subsubsection{SIGHASH\_NONE}
-This one signs the transaction butwithout the outputs, it could be thought of as ''I don't care where the money goes''
+This one signs the transaction but without the outputs, it could be thought of as ''I don't care where the money goes''.
 
 \Subsubsection{SIGHASH\_SINGLE}
 All outputs are removed except the output with the same index as the input that is being signed, then that transaction is signed.
+This could be thought of as ''I dont care about any other outputs to this transaction as long as this one remains as is''.
 
 \Subsubsection{SIGHASH\_ANYONECANPAY}
 Signs the transaction with all the outputs but none of the other inputs. This basically means ''The money has to go here, but I don't care if someone else want to fund this transaction also''
@@ -53,8 +54,6 @@ On the next page the entire signing process for SIGHASH\_ALL is detailed. This i
 \newpage
 \centerline{\includegraphics[width=1.35\textwidth]{background/images/checksig_in_detail.png}}
 \newpage
-
-More here? Maybe
 
 \Subsection{Pay to public key hash (P2PKH)}\label{p2pkh}
 P2PKH is as mentioned the most common form of transaction. This transaction can be thought of as paying to somebodies address. In other words the output of this transaction contains a script where the one who wants to redeem it must prove that they own the private key which created the public key the address is referring too. This is what the script looks like in the output:
@@ -70,7 +69,7 @@ When the input and output is executed together the process goes like this:
 	\item First the signature and unhashed public key is pushed to the stack.
 	\item The public key is duplicated (there are now one signature and two public keys on the stack).
 	\item The top public key goes through the HASH160 process making it a hashed public key.
-	\item The hashed public key from the output is pushed on the stack, at this point the stack has the following elements (\texttt{<signature>}, \texttt{<public key>}, \texttt{<hashed public key>}, \texttt{<hashed publick key>}).
+	\item The hashed public key from the output is pushed on the stack, at this point the stack has the following elements (\texttt{<signature>}, \texttt{<public key>}, \texttt{<hashed public key>}, \texttt{<hashed public key>}).
 	\item \texttt{OP\_EQUALVERIFY} checks if the top two elements is equal and verifies the result, What basically has been done is is that the script checks if the public key provided in the input script is equal to the hashed public key given in the output script.
 	\item At this point the stack has the following elements: (\texttt{<signature>}, \texttt{<public key>}). \texttt{OP\_CHECKSIG} pops these from the stack and checks if the signature is valid.
 \end{enumerate}
@@ -91,19 +90,19 @@ The execution of the combined input output script is not straight forward as mos
 	\item The K part of the script is executed as usual. This pushes or does whatever it needs to do to make K + S a valid script.
 	\item The partial script S is pushed to the stack in the form of bytes.
 	\item This is where the execution takes a strange and not so intuitive path, as you will see. First the script is hashed with the \texttt{OP\_HASH160} operation.
-	\item The script hash is form the output is pushed on the stack.
+	\item The script hash from the output is pushed on the stack.
 	\item OP\_EQUAL checks if the top two items on the stack are equal. If they are it means that the script S provided in the input is the correct script.
 	\item Unique to P2SH, the execution goes back to the original script S that was pushed to the stack in stage 2. And executes it together with whatever K pushed to the stack. This script also has to be valid. 
 \end{enumerate}
 
-If all stages are passed without warning the redeeming transaction is valid. 
+If all stages are executed without error the redeeming transaction is valid. 
 
-P2SH was developed to resolve the difficulties in making complex transaction scripts and make make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''
+P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''
 
 \Subsection{Timelock and sequence}
-Transactions have a very useful feature that is widely used in both atomic swaps and payment channels, and that is timelock and sequence. These variables are used for locking a transaction, meaning it can't be included in the blockchain until a certain time has been passed. Timelock is for absolute locks, for example this transaction can't be spent until \texttt{10th June 2019}, sequence is for relative timelocks, for example this transaction can't be spent until 10 days has passed since the original output was included in the blockchain.
+Transactions have a very useful feature that is widely used in more complex scripts and transactions, and that is timelock and sequence. These variables are used for locking a transaction, meaning it can't be included in the blockchain until a certain time has been passed. Timelock is for absolute locks, for example this transaction can't be spent until \texttt{10th June 2019}, sequence is for relative timelocks, for example this transaction can't be spent until 10 days has passed since the original output was included in the blockchain.
 
-Both sequence and timestamp can be interpreted as blockheight\footnote{Blockheight is the number of blocks on the current chain} and time in seconds. For example if the timestamp is equal to or larger than 500 million it is seen as a unix-timestamp if it's less than it is seen as a blockheight.
+Both sequence and timestamp can be interpreted in terms of number of blocks and time measured in seconds. For example if the timestamp is equal to or larger than 500 million it is seen as a unix-timestamp if it's less than it is seen as a blockheight\footnote{Blockheight is the number of blocks on the current chain}.
 
 \Subsubsection{OP\_CHECKTIMELOCKVERIFY}
 There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERITY}, what it does is that it compares the timestamp or blockheight that is on the stack and compares it to the timestamp that is in the transaction trying to spend the output that this op code is part of. 
@@ -111,7 +110,7 @@ There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERITY}, what it
 \Subsubsection{OP\_CHECKSEQUENCEVERIFY}
 \texttt{OP\_CHECKSEQUENCEVERIFY} is a lot like the previous one except it it deals with relative time. 
 
-Let's say you have two transactions transaction $T_A$ and transaction $T_B$, $T_A$ is included in a block on the blockchain. If $T_B$ tries to spend one of $T_A$ outputs and has that specific input marked witha  sequence of 10. It means that $T_B$ can't be included in the block chain until $T_A$ is at least 10 blocks deep in the blockchain.
+Let's say you have two transactions transaction $T_A$ and transaction $T_B$, $T_A$ is included in a block on the blockchain. If $T_B$ tries to spend one of $T_A$ outputs and has that specific input marked with a  sequence of 10. It means that $T_B$ can't be included in the block chain until $T_A$ is at least 10 blocks deep in the blockchain.
 
 \texttt{OP\_CHECKSEQUENCEVERIFY} enforces this in the output. If $T_A$ has \texttt{10 OP\_CHECKSEQUENCEVERIFY}, then if $T_B$ tries to spend that output it has to be at least 10 blocks deep.
 

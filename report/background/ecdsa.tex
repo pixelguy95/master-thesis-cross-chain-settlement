@@ -75,7 +75,7 @@ $$\lambda = \frac{(3X^2_P + a)}{(2Y_P)} \mod p$$
 \Subsubsection{Faster multiplication with large scalars}
 Take $xP=R$ that could be calculated by summing P x times:
 $$\sum_{n=1}^{x} P = R$$
-This might work fine for smaller numbers but for a very large number, like $x=2^{100}$ it will 
+This might work fine for smaller numbers but for a very large number, like $x=2^{100}$, it will 
 take infeasible amount of time to calculate. Luckily there is a convenient short cut that you 
 can take called double and add. 
 
@@ -84,9 +84,9 @@ First remember that: $P+P = 2P \Rightarrow 2P + P = 3P \Rightarrow 4P = 2(2P) \R
 Lets say $x=200$ in binary terms this could be written as $x=128+64+8$ or $x=2^7+2^6+2^3$ 
 thus $200P=R$ could be written as 
 $$2^7P+2^6P+2^3P=R$$ 
-which could be shorten to: 
+which can be expanded to: 
 $$2(2(2(2(2(2(2P)))))) + 2(2(2(2(2(2P))))) + 2(2(2P))$$ 
-which looks cumbersome but now instead of 200 calculations you only have to do 18.
+This looks more cumbersome but now instead of 200 calculations you only have to do 19. Or more exactly instead of 200 elliptic-curve additions you have to do 3 elliptic-curve additions and 16 elliptic-curve multiplications
 
 
 \Subsection{Private and public key}
@@ -113,7 +113,7 @@ public key P from a private key k you perform $kG = P$ as described in the secti
 
 The public key is quite large, with two 256-bit numbers representing coordinates. But there is a 
 clever trick we can use to compress the size of the key. Take the \texttt{Secp256k1} curve for 
-example ($Y^2=x^3+ax+b$). It is mirrored around the x-axis, meaning that for each x value there 
+example ($Y^2=x^3+7$). It is mirrored around the x-axis, meaning that for each x value there 
 are two possible y values. Thus a public key can be represented by only it's x value plus a 
 prefix telling you which resulting y-value to choose. 
 
@@ -125,7 +125,7 @@ The main usage of ECC in cryptocurrency is for proving ownership of coins. The p
 on elliptic curve mathematics like before. Lets say \textbf{Alice} has a message $m$ and want 
 to send it to \textbf{Bob} and also prove that the message came from her. First of let's 
 establish some variables: $k_A$ is the private key belonging to Alice, from that private 
-key $P_A$ was generated (The public key), that Bob knows about. 
+key $P_A$ was generated (The public key). Bob knows $P_A$ but not $k_A$ 
 
 \Subsubsection{Signing}
 First calculate the hash of the message:
@@ -154,9 +154,12 @@ From $u_1$ and $u_2$ calculate the point $(x_1, y_1) = u_1 \times G + u_2 \times
 The signature is valid if and only if $r = x_1 \mod n$
 
 \Subsection{Addresses}
-While in using Bitcoin normally you don't see the public keys directly, instead you mostly see something that is called addresses. The address is what you use when you want to send money to someone (see section \ref{p2pkh}). What the address really is, is just a representation of their public key.  
+While using Bitcoin normally you rarely interact with the public keys directly, instead you mostly see  and use something that is called addresses. For example if you want to send money to someone you use their bitcoin-address (see section \ref{p2pkh}). What the address really is, is just a obfuscated representation of a public key.  
 
-To transform a public key to an address you first hash it using \texttt{SHA256} then that result with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address. 
+To transform a public key to an address you first hash it using \texttt{SHA256} then hash the result of that with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address. 
+
+HASH160($P_A$) = RIPEMD160(SHA256($P_A$))\\
+$A_A$ = BASE58(HASH160($P_A$))
 
 For example:
 
