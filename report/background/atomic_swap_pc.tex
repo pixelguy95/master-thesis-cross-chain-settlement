@@ -1,4 +1,21 @@
-// sectuon goes here
+\Section{Off-chain atomic swaps}
+Atomic swaps over a payment channel is possible, often refered to as offchain atomic swap. The mechanisms that makes it work may not be as clear as one that takes place entirely onchain. 
 
-atomic swaps over a payment channel is possible, often refered to as offchain atomic swap. the mechanisms that makes it work may not be as clear as one that takes place entirely onchain. 
-to clear somethings up before moving on: both parties that are performing the swap needs to have a functioning node on the respective network 
+To clear some things up before moving on: \textbf{both} parties that are performing the swap needs to have a functioning node on the respective networks of the cryptocurrencies to be exchanged. The channels do \textbf{not} need to be directly connected to each other instead they can take any route through both networks, given that the route allows the exchanged amount of course.
+
+If we say that Alice (A) and Bob (B) want to do an offchain atomic swap, Alice has bitcoins and wants litecoins, Bob has litecoins and wants bitcoins. Let's also say that Alice is the one that initiates the swap (meaning that in this case she sends the initial transaction). An offchain atomic swap can be thought of as a transaction that propagates through both the networks. Alice sends a transaction to Bob on the bitcoin network, Bob re-sends a transaction with the same pre-image hash on the litecoin netowrk to Alice. The timelocks are set so that the time continually decreases (like it would on a regular network transaction), even as it transitions into the litecoin network. Let's say that there are $m$ jumps between Alice and Bob on the bitcoin network and $n$ jumps between them on the litecoin network, and that each step needs at least 24 hours more to claim for each step. 
+
+The timelock on the initial channel jump (the one Alice sends initially) would be:
+$$(m+n+1) * 24h$$
+
+When the transaction reaches Bob the timelock should be: 
+$$(n+1) * 24h$$
+
+This is where the swap differs from a normal transaction. In a regular transaction Bob would be the holder of the pre-image, and thus the pre-image could properly propagate backwards in the transaction chain from here. But in this case he does not know the pre-image and thus is forced to continue the chain on the litecoin chain if he ever wants to claim his bitcoins. As mentioned he sends the agreed upon litecoins to Alice via the litecoin network, still using the same pre-image hash used by Alice. He also continues with the same decreasing timelock (thus the next transaction will have a timelock of ($(n+1 - 1) * 24h$)
+
+When the transaction on the litecoin network at last arrives to Alice the timelock should be set to:
+$$(1) * 24h$$
+
+When the litecoin transaction reaches Alice the circle is closed and Alice can safely reveal the pre-image. Every one in the transaction chain gets their rightful money. When the pre-image reaches Bob he has to propagate it backwards on the bitcoin network until it reaches Alice again. Just as with regular multi-hop transactions each channel is expected to settle without closing and spening the HTLC-ouput unless neccessary due to uncooperative nodes etc... 
+
+As long as the same pre-image is used and the timelocks decrease monotonically across the networks this should be a safe swap. If let's say Bob tries to cheat Alice by not sending the agreed upon amount of litecoins Alice simply has to never reveal the pre-image anyone in the chain. Then all multi-hop transactions on both chains will have to be reset after the timelocks have expired.
