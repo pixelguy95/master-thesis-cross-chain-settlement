@@ -19,3 +19,21 @@ $$(1) * 24h$$
 When the litecoin transaction reaches Alice the circle is closed and Alice can safely reveal the pre-image. Every one in the transaction chain gets their rightful money. When the pre-image reaches Bob he has to propagate it backwards on the bitcoin network until it reaches Alice again. Just as with regular multi-hop transactions each channel is expected to settle without closing and spening the HTLC-ouput unless neccessary due to uncooperative nodes etc... 
 
 As long as the same pre-image is used and the timelocks decrease monotonically across the networks this should be a safe swap. If let's say Bob tries to cheat Alice by not sending the agreed upon amount of litecoins Alice simply has to never reveal the pre-image anyone in the chain. Then all multi-hop transactions on both chains will have to be reset after the timelocks have expired.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{background/images/ln_route_swap.png}
+	\caption{Route taken by the multi-hop transactions on both networks. Note that Alice and Bob has a node in both the BTC and LTC network.}
+	\label{fig:ln-swap}
+\end{figure}
+
+Figure \ref{fig:ln-swap} shows a rough diagram of the process. Alice and Bob has an active node in both the networks, no such assumption is needed for the other participants on either side. As mentioned the transaction could pass as many intermittent nodes as needed on either network, to keep the diagram small only two additional jumps are made on the Bitcoin side, and only one extra jump on the litecoin network.  
+
+So to summarize the process: 
+
+Alice and Bob agrees on doing a swap, they agree to exchange 1 bitcoin for 10 litecoins. Alice creates a new secret R and a new hash H = HASH(R). Sends a offchain transaction to Bob on the bitcoin network that gives him 1 bitcoin if he can provide the pre-image to H (R) (Steps 1 - 3 in the diagram). Bob sends a multi-hop transaction to Alice on the litecoin network, that gives Alice 10 litecoins if she can provide the pre-image to H (Steps 4 - 5 in the diagram). It is very important that the decreasing timelock that was used on the bitcoin side continues on the litecoin side. Otherwise the safety of the swap is not guaranteed. 
+
+When Alice receives the litecoin transaction, she can safely reveal R to Eric, Eric will do the same to Bob. The R will travel backwards in the transaction chain just like with a regular lightning network transaction, but this time when the pre-image reaches Bob he will keep transmitting it backwards through the chain on the bitcoin network. (Steps 6 - 10 in the diagram).
+
+\Subsection{Safety}
+asfaf
