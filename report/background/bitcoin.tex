@@ -45,4 +45,8 @@ The new chain got the name \textbf{Bitcoin cash} (bcash) while the main chain st
 Forks are considered a valid way to vote on what consensus rules and protocol changes should be made. When a change is planned to be made in the chain those who disagree can branch off and follow the old rules. Thus in a way everyone gets their way. You could even branch off on your own forked-chain alone. The main problem for those forking is that most vendors and users still consider the largest (most users, most developers, largest price, etc...) chain to be the valid one. 
 
 \Subsubsection{Soft and hard-forks}\label{soft_hard_fork}
-TODO
+As mentioned forks happens when there is disagreement in the network regarding the consensus rules. When a fork happens where two sub-groups of the entire network essentially follows two different blockchains, that is what is known as a hard-fork. There is another type of fork however called a soft-fork.  Every change in consensus rules are not incompatible with previous rules, in fact an update to the protocol could be made to be backwards compatible with software running on an older protocol. 
+
+An example of a soft-fork is the Segregated Witness update (see section \ref{segwit}). The changes it brought was still compatible with nodes that had not updated, transactions using segregated witness appears like a ''anyone can spend'' transaction to nodes running the older protocol. Soft-fork is a bit of a misnomer considering that there is no actual fork, as in the blockchain remains unforked. 
+
+Not all updates can be made as soft-forks, a good example is changes in block size. As any change to that could never be compatible with older nodes.

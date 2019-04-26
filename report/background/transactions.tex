@@ -5,12 +5,12 @@ Transactions in Bitcoin are not as straight forward as you might expect a transa
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=1.0\textwidth]{background/images/transaction_basic.png}
+	\includegraphics[width=0.75\textwidth]{background/images/transaction_diagram.png}
 	\caption{4 example transactions and how inputs are connected to outputs}
 	\label{fig:transaction_input_output}
 \end{figure}
 
-In simplified terms an output could be seen as the destination of a transaction, in other words it says how much and to whom the transaction is sent to. An input is a reference to a previous output. The inputs take the money from the outputs they reference and that money is used to fun the new outputs. 
+In simplified terms an output could be seen as the destination of a transaction, in other words it says how much and to whom the transaction is sent to. An input is a reference to a previous output. The inputs take the money from the outputs they reference and that money is used to fund the new outputs. 
 
 The inputs and outputs is where Script comes into the picture. Both outputs and inputs contains an incomplete script, together however they complete the script. The script in an output could be seen as a challenge, and the script in the input is the response. When a transaction is tested for validity the input script is appended to the script in the output and is executed. If the script comes out as valid the transaction is also valid. Here is a basic example: Let's say Alice wants to send a transaction to whoever can answer the very complex equation $4+3$. Her transaction output would contain the script:
 
@@ -49,11 +49,11 @@ This could be thought of as ''I dont care about any other outputs to this transa
 \Subsubsection{SIGHASH\_ANYONECANPAY}
 Signs the transaction with all the outputs but none of the other inputs. This basically means ''The money has to go here, but I don't care if someone else want to fund this transaction also''
 
-\Subsubsection{More detailed process}
-On the next page the entire signing process for SIGHASH\_ALL is detailed. This is how it is performed in the actual implementation:
-\newpage
-\centerline{\includegraphics[width=1.35\textwidth]{background/images/checksig_in_detail.png}}
-\newpage
+%\Subsubsection{More detailed process}
+%On the next page the entire signing process for SIGHASH\_ALL is detailed. This is how it is performed in the actual implementation:
+%\newpage
+%\centerline{\includegraphics[width=1.35\textwidth]{background/images/checksig_in_detail.png}}
+%\newpage
 
 \Subsection{Pay to public key hash (P2PKH)}\label{p2pkh}
 P2PKH is as mentioned the most common form of transaction. This transaction can be thought of as paying to somebodies address. In other words the output of this transaction contains a script where the one who wants to redeem it must prove that they own the private key which created the public key the address is referring too. This is what the script looks like in the output:
