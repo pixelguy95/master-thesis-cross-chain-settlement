@@ -1,0 +1,48 @@
+<h1 id="bolt9assignedfeatureflags">BOLT #9: Assigned Feature Flags</h1>
+
+<p>This document tracks the assignment of <code>localfeatures</code> and <code>globalfeatures</code>
+flags in the <code>init</code> message (<a href="01-messaging.md">BOLT #1</a>) along with the
+<code>features</code> flag fields in the <code>channel_announcement</code> and <code>node_announcement</code>
+messages (<a href="07-routing-gossip.md">BOLT #7</a>).
+The flags are tracked separately, since new flags will likely be added over time.</p>
+
+<p>The <code>features</code> flags in the routing messages are a subset of the
+<code>globalfeatures</code> flags, as <code>localfeatures</code>, by definition, are only of interest
+to direct peers.</p>
+
+<p>Flags are numbered from the least-significant bit, at bit 0 (i.e. 0x1,
+an <em>even</em> bit). They are generally assigned in pairs so that features
+can be introduced as optional (<em>odd</em> bits) and later upgraded to be compulsory
+(<em>even</em> bits), which will be refused by outdated nodes:
+see <a href="01-messaging.md#the-init-message">BOLT #1: The <code>init</code> Message</a>.</p>
+
+<h2 id="assignedlocalfeaturesflags">Assigned <code>localfeatures</code> flags</h2>
+
+<p>These flags may only be used in the <code>init</code> message:</p>
+
+<p>| Bits | Name             |Description                                     | Link                                                                |
+|------|------------------|------------------------------------------------|---------------------------------------------------------------------|
+| 0/1  | <code>option_data_loss_protect</code> | Requires or supports extra <code>channel_reestablish</code> fields | <a href="02-peer-protocol.md#message-retransmission">BOLT #2</a> |
+| 3  | <code>initial_routing_sync</code> | Indicates that the sending node needs a complete routing information dump | <a href="07-routing-gossip.md#initial-sync">BOLT #7</a> |
+| 4/5  | <code>option_upfront_shutdown_script</code> | Commits to a shutdown scriptpubkey when opening channel | <a href="02-peer-protocol.md#the-open_channel-message">BOLT #2</a> |
+| 6/7  | <code>gossip_queries</code>           | More sophisticated gossip control | <a href="07-routing-gossip.md#query-messages">BOLT #7</a> |</p>
+
+<h2 id="assignedglobalfeaturesflags">Assigned <code>globalfeatures</code> flags</h2>
+
+<p>There are currently no <code>globalfeatures</code> flags.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The requirements for receiving specific bits are defined in the linked sections in the table above.
+The requirements for feature bits that are not defined
+above can be found in <a href="01-messaging.md#the-init-message">BOLT #1: The <code>init</code> Message</a>.</p>
+
+<h2 id="rationale">Rationale</h2>
+
+<p>There is no <em>even</em> bit for <code>initial_routing_sync</code>, as there would be little
+point: a local node can't determine if a remote node complies, and it must
+interpret the flag, as defined in the initial spec.</p>
+
+<p><img src="https://i.creativecommons.org/l/by/4.0/88x31.png" alt="Creative Commons License" title="License CC-BY" />
+<br>
+This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>

@@ -167,7 +167,11 @@
 \setcounter{secnumdepth}{2}
 \setcounter{tocdepth}{2}
 
-\chapter*{Glossary}
+\newcommand{\Section}[1]{\section{#1}\vspace{-15pt}}
+\newcommand{\Subsection}[1]{\vspace{-4pt}\subsection{#1}\vspace{-15pt}}
+\newcommand{\Subsubsection}[1]{\vspace{-4pt}\subsubsection{#1}\vspace{-15pt}}
+
+\chapter*{Glossary}\vspace{-10mm}
 \textbf{Crypto currency} - A currency backed not by centralized authorities but by mathematical evidence and clever mechanisms\\
 \textbf{Bitcoin} - The very first and most mature cryptocurrency on earth, 1 bitcoin = $1$\bitcoinA\\
 \textbf{Litecoin} - A alternative to Bitcoin, mostly a clone with a few changes\\
@@ -183,21 +187,18 @@
 \textbf{Pre-image} - A pre-image is the name given to data as it was before being altered. For example Hash(D) = H, in this case D would be the pre-image of H\\
 \textbf{Nonce} - A temporary value, most often a number. Used to give the hash of a block a unique outcome. The value fills no othe purpose other than altering the hash. \\
 
-\vspace{10mm}
-More to come...
+\vspace{-5mm}
+\section*{Payment channel specific glossary}\vspace{-5mm}
+\textbf{Node} - A participant in a payment channel or lightning network. Sometimes goes under names such as peer, agent, actor or participant.\\
+\textbf{Channel} - A construct where two participants can exchange transactions outside of the blockchain. The medium of exchange caan be assumed to be over an internet connection, but could technically be over almost any medium. \\
+\textbf{Lightning network} - A lightning network is a network of connected payment channels. Where payments can be routed across multiple nodes and channels safely\\
+\textbf{HTLC} - Hashed time-locked contract, a contract defining the outcomes of a payment over multiple channels.\\
 
 \tableofcontents
 \thispagestyle{empty}
 \newpage
 \setcounter{page}{1}
 \setcounter{section}{0}
-
-\newcommand{\Section}[1]{\section{#1}\vspace{-15pt}}
-\newcommand{\Subsection}[1]{\vspace{-4pt}\subsection{#1}\vspace{-15pt}}
-\newcommand{\Subsubsection}[1]{\vspace{-4pt}\subsubsection{#1}\vspace{-15pt}}
-
-
-
 
 
 

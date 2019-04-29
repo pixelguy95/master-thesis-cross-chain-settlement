@@ -1,0 +1,491 @@
+<h1 id="bolt1baseprotocol">BOLT #1: Base Protocol</h1>
+
+<h2 id="overview">Overview</h2>
+
+<p>This protocol assumes an underlying authenticated and ordered transport mechanism that takes care of framing individual messages.
+<a href="08-transport.md">BOLT #8</a> specifies the canonical transport layer used in Lightning, though it can be replaced by any transport that fulfills the above guarantees.</p>
+
+<p>The default TCP port is 9735. This corresponds to hexadecimal <code>0x2607</code>: the Unicode code point for LIGHTNING.<sup><a href="#reference-1">1</a></sup></p>
+
+<p>All data fields are unsigned big-endian unless otherwise specified.</p>
+
+<h2 id="tableofcontents">Table of Contents</h2>
+
+<ul>
+<li><a href="#connection-handling-and-multiplexing">Connection Handling and Multiplexing</a></li>
+
+<li><a href="#lightning-message-format">Lightning Message Format</a></li>
+
+<li><a href="#setup-messages">Setup Messages</a>
+
+
+<ul>
+<li><a href="#the-init-message">The <code>init</code> Message</a></li>
+
+<li><a href="#the-error-message">The <code>error</code> Message</a></li></ul>
+</li>
+
+<li><a href="#control-messages">Control Messages</a>
+
+
+<ul>
+<li><a href="#the-ping-and-pong-messages">The <code>ping</code> and <code>pong</code> Messages</a></li></ul>
+</li>
+
+<li><a href="#acknowledgments">Acknowledgments</a></li>
+
+<li><a href="#references">References</a></li>
+
+<li><a href="#authors">Authors</a></li>
+</ul>
+
+<h2 id="connectionhandlingandmultiplexing">Connection Handling and Multiplexing</h2>
+
+<p>Implementations MUST use a single connection per peer; channel messages (which include a channel ID) are multiplexed over this single connection.</p>
+
+<h2 id="lightningmessageformat">Lightning Message Format</h2>
+
+<p>After decryption, all Lightning messages are of the form:</p>
+
+<ol>
+<li><code>type</code>: a 2-byte big-endian field indicating the type of message</li>
+
+<li><code>payload</code>: a variable-length payload that comprises the remainder of
+the message and that conforms to a format matching the <code>type</code></li>
+</ol>
+
+<p>The <code>type</code> field indicates how to interpret the <code>payload</code> field.
+The format for each individual type is defined by a specification in this repository.
+The type follows the <em>it's ok to be odd</em> rule, so nodes MAY send <em>odd</em>-numbered types without ascertaining that the recipient understands it.</p>
+
+<p>A sending node:</p>
+
+<ul>
+<li>MUST NOT send an evenly-typed message not listed here without prior negotiation.</li>
+</ul>
+
+<p>A receiving node:</p>
+
+<ul>
+<li>upon receiving a message of <em>odd</em>, unknown type:
+
+
+<ul>
+<li>MUST ignore the received message.</li></ul>
+</li>
+
+<li>upon receiving a message of <em>even</em>, unknown type:
+
+
+<ul>
+<li>MUST fail the channels.</li></ul>
+</li>
+</ul>
+
+<p>The messages are grouped logically into four groups, ordered by the most significant bit that is set:</p>
+
+<ul>
+<li>Setup &amp; Control (types <code>0</code>-<code>31</code>): messages related to connection setup, control, supported features, and error reporting (described below)</li>
+
+<li>Channel (types <code>32</code>-<code>127</code>): messages used to setup and tear down micropayment channels (described in <a href="02-peer-protocol.md">BOLT #2</a>)</li>
+
+<li>Commitment (types <code>128</code>-<code>255</code>): messages related to updating the current commitment transaction, which includes adding, revoking, and settling HTLCs as well as updating fees and exchanging signatures (described in <a href="02-peer-protocol.md">BOLT #2</a>)</li>
+
+<li>Routing (types <code>256</code>-<code>511</code>): messages containing node and channel announcements, as well as any active route exploration (described in <a href="07-routing-gossip.md">BOLT #7</a>)</li>
+</ul>
+
+<p>The size of the message is required by the transport layer to fit into a 2-byte unsigned int; therefore, the maximum possible size is 65535 bytes.</p>
+
+<p>A node:</p>
+
+<ul>
+<li>MUST ignore any additional data within a message beyond the length that it expects for that type.</li>
+
+<li>upon receiving a known message with insufficient length for the contents:
+
+
+<ul>
+<li>MUST fail the channels.</li></ul>
+</li>
+
+<li>that negotiates an option in this specification:
+
+
+<ul>
+<li>MUST include all the fields annotated with that option.</li></ul>
+</li>
+</ul>
+
+<h3 id="rationale">Rationale</h3>
+
+<p>By default <code>SHA2</code> and Bitcoin public keys are both encoded as
+big endian, thus it would be unusual to use a different endian for
+other fields.</p>
+
+<p>Length is limited to 65535 bytes by the cryptographic wrapping, and
+messages in the protocol are never more than that length anyway.</p>
+
+<p>The <em>it's ok to be odd</em> rule allows for future optional extensions
+without negotiation or special coding in clients. The "ignore
+additional data" rule similarly allows for future expansion.</p>
+
+<p>Implementations may prefer to have message data aligned on an 8-byte
+boundary (the largest natural alignment requirement of any type here);
+however, adding a 6-byte padding after the type field was considered
+wasteful: alignment may be achieved by decrypting the message into
+a buffer with 6-bytes of pre-padding.</p>
+
+<h2 id="setupmessages">Setup Messages</h2>
+
+<h3 id="theinitmessage">The <code>init</code> Message</h3>
+
+<p>Once authentication is complete, the first message reveals the features supported or required by this node, even if this is a reconnection.</p>
+
+<p><a href="09-features.md">BOLT #9</a> specifies lists of global and local features. Each feature is generally represented in <code>globalfeatures</code> or <code>localfeatures</code> by 2 bits. The least-significant bit is numbered 0, which is <em>even</em>, and the next most significant bit is numbered 1, which is <em>odd</em>.</p>
+
+<p>Both fields <code>globalfeatures</code> and <code>localfeatures</code> MUST be padded to bytes with 0s.</p>
+
+<ol>
+<li>type: 16 (<code>init</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>:<code>gflen</code>]</li>
+
+<li>[<code>gflen</code>:<code>globalfeatures</code>]</li>
+
+<li>[<code>2</code>:<code>lflen</code>]</li>
+
+<li>[<code>lflen</code>:<code>localfeatures</code>]</li></ul>
+</li>
+</ol>
+
+<p>The 2-byte <code>gflen</code> and <code>lflen</code> fields indicate the number of bytes in the immediately following field.</p>
+
+<h4 id="requirements">Requirements</h4>
+
+<p>The sending node:</p>
+
+<ul>
+<li>MUST send <code>init</code> as the first Lightning message for any connection.</li>
+
+<li>MUST set feature bits as defined in <a href="09-features.md">BOLT #9</a>.</li>
+
+<li>MUST set any undefined feature bits to 0.</li>
+
+<li>SHOULD use the minimum lengths required to represent the feature fields.</li>
+</ul>
+
+<p>The receiving node:</p>
+
+<ul>
+<li>MUST wait to receive <code>init</code> before sending any other messages.</li>
+
+<li>MUST respond to known feature bits as specified in <a href="09-features.md">BOLT #9</a>.</li>
+
+<li>upon receiving unknown <em>odd</em> feature bits that are non-zero:
+
+
+<ul>
+<li>MUST ignore the bit.</li></ul>
+</li>
+
+<li>upon receiving unknown <em>even</em> feature bits that are non-zero:
+
+
+<ul>
+<li>MUST fail the connection.</li></ul>
+</li>
+</ul>
+
+<h4 id="rationale-1">Rationale</h4>
+
+<p>This semantic allows both future incompatible changes and future backward compatible changes. Bits should generally be assigned in pairs, in order that optional features may later become compulsory.</p>
+
+<p>Nodes wait for receipt of the other's features to simplify error
+diagnosis when features are incompatible.</p>
+
+<p>The feature masks are split into local features (which only affect the
+protocol between these two nodes) and global features (which can affect
+HTLCs and are thus also advertised to other nodes).</p>
+
+<h3 id="theerrormessage">The <code>error</code> Message</h3>
+
+<p>For simplicity of diagnosis, it's often useful to tell a peer that something is incorrect.</p>
+
+<ol>
+<li>type: 17 (<code>error</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>32</code>:<code>channel_id</code>]</li>
+
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>data</code>]</li></ul>
+</li>
+</ol>
+
+<p>The 2-byte <code>len</code> field indicates the number of bytes in the immediately following field.</p>
+
+<h4 id="requirements-1">Requirements</h4>
+
+<p>The channel is referred to by <code>channel_id</code>, unless <code>channel_id</code> is 0 (i.e. all bytes are 0), in which case it refers to all channels.</p>
+
+<p>The funding node:</p>
+
+<ul>
+<li>for all error messages sent before (and including) the <code>funding_created</code> message:
+
+
+<ul>
+<li>MUST use <code>temporary_channel_id</code> in lieu of <code>channel_id</code>.</li></ul>
+</li>
+</ul>
+
+<p>The fundee node:</p>
+
+<ul>
+<li>for all error messages sent before (and not including) the <code>funding_signed</code> message:
+
+
+<ul>
+<li>MUST use <code>temporary_channel_id</code> in lieu of <code>channel_id</code>.</li></ul>
+</li>
+</ul>
+
+<p>A sending node:</p>
+
+<ul>
+<li>when sending <code>error</code>:
+
+
+<ul>
+<li>MUST fail the channel referred to by the error message.</li></ul>
+</li>
+
+<li>SHOULD send <code>error</code> for protocol violations or internal errors that make channels unusable or that make further communication unusable.</li>
+
+<li>SHOULD send <code>error</code> with the unknown <code>channel_id</code> in reply to messages of type <code>32</code>-<code>255</code> related to unknown channels.</li>
+
+<li>MAY send an empty <code>data</code> field.</li>
+
+<li>when failure was caused by an invalid signature check:
+
+
+<ul>
+<li>SHOULD include the raw, hex-encoded transaction in reply to a <code>funding_created</code>, <code>funding_signed</code>, <code>closing_signed</code>, or <code>commitment_signed</code> message.</li></ul>
+</li>
+
+<li>when <code>channel_id</code> is 0:
+
+
+<ul>
+<li>MUST fail all channels with the receiving node.</li>
+
+<li>MUST close the connection.</li></ul>
+</li>
+
+<li>MUST set <code>len</code> equal to the length of <code>data</code>.</li>
+</ul>
+
+<p>The receiving node:</p>
+
+<ul>
+<li>upon receiving <code>error</code>:
+
+
+<ul>
+<li>MUST fail the channel referred to by the error message, if that channel is with the sending node.</li></ul>
+</li>
+
+<li>if no existing channel is referred to by the message:
+
+
+<ul>
+<li>MUST ignore the message.</li></ul>
+</li>
+
+<li>MUST truncate <code>len</code> to the remainder of the packet (if it's larger).</li>
+
+<li>if <code>data</code> is not composed solely of printable ASCII characters (For reference: the printable character set includes byte values 32 through 126, inclusive):
+
+
+<ul>
+<li>SHOULD NOT print out <code>data</code> verbatim.</li></ul>
+</li>
+</ul>
+
+<h4 id="rationale-2">Rationale</h4>
+
+<p>There are unrecoverable errors that require an abort of conversations;
+if the connection is simply dropped, then the peer may retry the
+connection. It's also useful to describe protocol violations for
+diagnosis, as this indicates that one peer has a bug.</p>
+
+<p>It may be wise not to distinguish errors in production settings, lest
+it leak information — hence, the optional <code>data</code> field.</p>
+
+<h2 id="controlmessages">Control Messages</h2>
+
+<h3 id="thepingandpongmessages">The <code>ping</code> and <code>pong</code> Messages</h3>
+
+<p>In order to allow for the existence of long-lived TCP connections, at
+times it may be required that both ends keep alive the TCP connection at the
+application level. Such messages also allow obfuscation of traffic patterns.</p>
+
+<ol>
+<li>type: 18 (<code>ping</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>:<code>num_pong_bytes</code>]</li>
+
+<li>[<code>2</code>:<code>byteslen</code>]</li>
+
+<li>[<code>byteslen</code>:<code>ignored</code>]</li></ul>
+</li>
+</ol>
+
+<p>The <code>pong</code> message is to be sent whenever a <code>ping</code> message is received. It
+serves as a reply and also serves to keep the connection alive, while
+explicitly notifying the other end that the receiver is still active. Within
+the received <code>ping</code> message, the sender will specify the number of bytes to be
+included within the data payload of the <code>pong</code> message.</p>
+
+<ol>
+<li>type: 19 (<code>pong</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>:<code>byteslen</code>]</li>
+
+<li>[<code>byteslen</code>:<code>ignored</code>]</li></ul>
+</li>
+</ol>
+
+<h4 id="requirements-2">Requirements</h4>
+
+<p>A node sending a <code>ping</code> message:</p>
+
+<ul>
+<li>SHOULD set <code>ignored</code> to 0s.</li>
+
+<li>MUST NOT set <code>ignored</code> to sensitive data such as secrets or portions of initialized
+memory.</li>
+
+<li>if it doesn't receive a corresponding <code>pong</code>:
+
+
+<ul>
+<li>MAY terminate the network connection,
+
+
+<ul>
+<li>and MUST NOT fail the channels in this case.</li></ul>
+</li></ul>
+</li>
+
+<li>SHOULD NOT send <code>ping</code> messages more often than once every 30 seconds.</li>
+</ul>
+
+<p>A node sending a <code>pong</code> message:</p>
+
+<ul>
+<li>SHOULD set <code>ignored</code> to 0s.</li>
+
+<li>MUST NOT set <code>ignored</code> to sensitive data such as secrets or portions of initialized
+memory.</li>
+</ul>
+
+<p>A node receiving a <code>ping</code> message:</p>
+
+<ul>
+<li>SHOULD fail the channels if it has received significantly in excess of one <code>ping</code> per 30 seconds.</li>
+
+<li>if <code>num_pong_bytes</code> is less than 65532:
+
+
+<ul>
+<li>MUST respond by sending a <code>pong</code> message, with <code>byteslen</code> equal to <code>num_pong_bytes</code>.</li></ul>
+</li>
+
+<li>otherwise (<code>num_pong_bytes</code> is <strong>not</strong> less than 65532):
+
+
+<ul>
+<li>MUST ignore the <code>ping</code>.</li></ul>
+</li>
+</ul>
+
+<p>A node receiving a <code>pong</code> message:</p>
+
+<ul>
+<li>if <code>byteslen</code> does not correspond to any <code>ping</code>'s <code>num_pong_bytes</code> value it has sent:
+
+
+<ul>
+<li>MAY fail the channels.</li></ul>
+</li>
+</ul>
+
+<h3 id="rationale-3">Rationale</h3>
+
+<p>The largest possible message is 65535 bytes; thus, the maximum sensible <code>byteslen</code>
+is 65531 — in order to account for the type field (<code>pong</code>) and the <code>byteslen</code> itself. This allows
+a convenient cutoff for <code>num_pong_bytes</code> to indicate that no reply should be sent.</p>
+
+<p>Connections between nodes within the network may be long lived, as payment
+channels have an indefinite lifetime. However, it's likely that
+no new data will be
+exchanged for a
+significant portion of a connection's lifetime. Also, on several platforms it's possible that Lightning
+clients will be put to sleep without prior warning. Hence, a
+distinct <code>ping</code> message is used, in order to probe for the liveness of the connection on
+the other side, as well as to keep the established connection active.</p>
+
+<p>Additionally, the ability for a sender to request that the receiver send a
+response with a particular number of bytes enables nodes on the network to
+create <em>synthetic</em> traffic. Such traffic can be used to partially defend
+against packet and timing analysis — as nodes can fake the traffic patterns of
+typical exchanges without applying any true updates to their respective
+channels.</p>
+
+<p>When combined with the onion routing protocol defined in
+<a href="04-onion-routing.md">BOLT #4</a>,
+careful statistically driven synthetic traffic can serve to further bolster the
+privacy of participants within the network.</p>
+
+<p>Limited precautions are recommended against <code>ping</code> flooding, however some
+latitude is given because of network delays. Note that there are other methods
+of incoming traffic flooding (e.g. sending <em>odd</em> unknown message types, or padding
+every message maximally).</p>
+
+<p>Finally, the usage of periodic <code>ping</code> messages serves to promote frequent key
+rotations as specified within <a href="08-transport.md">BOLT #8</a>.</p>
+
+<h2 id="acknowledgments">Acknowledgments</h2>
+
+<p>[ TODO: (roasbeef); fin ]</p>
+
+<h2 id="references">References</h2>
+
+<ol>
+<li><a id="reference-2">http://www.unicode.org/charts/PDF/U2600.pdf</a></li>
+</ol>
+
+<h2 id="authors">Authors</h2>
+
+<p>[ FIXME: Insert Author List ]</p>
+
+<p><img src="https://i.creativecommons.org/l/by/4.0/88x31.png" alt="Creative Commons License" title="License CC-BY" />
+<br>
+This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>
