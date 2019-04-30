@@ -164,8 +164,9 @@
 \onecolumn
 \newpage
 % TOC - Table Of Contents
-\setcounter{secnumdepth}{2}
-\setcounter{tocdepth}{2}
+% \setcounter{secnumdepth}{2}
+% \setcounter{tocdepth}{2}
+\pagenumbering{Roman}
 
 \newcommand{\Section}[1]{\section{#1}\vspace{-15pt}}
 \newcommand{\Subsection}[1]{\vspace{-4pt}\subsection{#1}\vspace{-15pt}}
@@ -197,6 +198,7 @@
 \tableofcontents
 \thispagestyle{empty}
 \newpage
+\pagenumbering{arabic}
 \setcounter{page}{1}
 \setcounter{section}{0}
 
@@ -212,8 +214,8 @@
 
 \input{implementation/implementation}
 
+\input{proposal/result_and_proposal}
 
-\chapter{Results \& Proposal}
 \chapter{Discussion \& Future research}
 
 \twocolumn

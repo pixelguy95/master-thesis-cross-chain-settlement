@@ -37,4 +37,4 @@ payment channel could be opened that allows transactions to propagate through mu
 	\label{fig:mesh}
 \end{figure}
 
-Lightning network is really just a network of peers connected via payment channels. In figure \ref{fig:mesh} is an example. Let's say that Alice (node A) want to send a transaction to David (node D) but they have no direct payment channel between them. With lightning network they can send the transaction via the peers that are between them. 
+Lightning network is really just a network of peers connected via payment channels. In figure \ref{fig:mesh} is an example. Let's say that Alice (node A) want to send a transaction to David (node D) but they have no direct payment channel between them. With lightning network they can send the transaction via the peers that are between them, given that there is a path between the nodes, and that there is enough funds in all the channels between. 
