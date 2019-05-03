@@ -1,5 +1,10 @@
 \chapter{Implementation}
-To implement the described types of atomic swaps, Go (golang) was used together with the standard libraries plus external libraries from the \textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, both of which can be found on github.com. The implementations are made to be simplified by design, focusing more on making it understandable for new-comers, and to save some time. The critical parts like actually 
+To implement the described types of atomic swaps, Go (golang) was used together with the standard libraries plus external libraries from the \textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, as well as \textbf{lightningnetwork/lnd}, all of which can be found on github.com. The implementations are simplified, just like with this report the focus was on making it easy to understand for newcomers. 
+
+To interact with the different blockchains two different full-nodes was setup. \textbf{Bitcoin Core 17.1} for bitcoin and \textbf{Litecoin Core  v0.16.3.0-82cacfef8}. Both running on their respective \textit{testnet}. Both nodes have a RPC interface to interact with the blockchain and the rest of the network. 
+
+\Section{Onchain atomic swaps}
+The implementation creates two simulated peers, called Alice and Bob 
 
 \vspace{20mm}
 More to come...
