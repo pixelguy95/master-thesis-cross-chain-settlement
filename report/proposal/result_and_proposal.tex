@@ -2,4 +2,9 @@
 In this section I will talk about the results I got when performing the types of atomic swaps detailed in previous chapters, and from these and my experience I will make a few proposals on how atomic swaps could  be standardized into clearly defined protocols and procedures. 
 
 \Section{On-chain atomic swaps}
-In my implementation I created a scenario where one party swapped bitcoins for litecoins, on their respective testnet. 
+In my implementation I created a scenario where two pararties swapped bitcoins for litecoins, on their respective testnets. 
+The swap was tested for all possible outcomes and possible actions by the actors. And in all cases the swap acted in an atomic way, meaning that either the exchange tock place fully or the state was eventually reset to the original. 
+As expected an onchain atomic swap takes some time to perform. With the values for the timelocks used in my experiment the swap could take up to 48 hours to complete in a worst case scenario. The timelock values could be decreased at the cost of increased risk of failure. 
+
+Under the assumption that the contract transaction is included in the next block the
+
