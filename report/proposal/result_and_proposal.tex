@@ -6,5 +6,15 @@ In my implementation I created a scenario where two pararties swapped bitcoins f
 The swap was tested for all possible outcomes and possible actions by the actors. And in all cases the swap acted in an atomic way, meaning that either the exchange tock place fully or the state was eventually reset to the original. 
 As expected an onchain atomic swap takes some time to perform. With the values for the timelocks used in my experiment the swap could take up to 48 hours to complete in a worst case scenario. The timelock values could be decreased at the cost of increased risk of failure. 
 
-Under the assumption that the contract transaction is included in the next block the
+Under the assumption that the contract transactions, and claim transactions are included in their respective next block an atomic swap can take at best $\sim25$ minutes (Using the average block times for the respective chains, 10 minutes and 2.5 minutes). Both participants have to stay attentive during the whole span (25m - 2880m), in computing terms this is a very long time. 
 
+Under the assumption that Alice (A) is the one who initiated the swap, and Bob (B) is the counter party. A holds the power to control the earliest time that the swap could be completed, before A reveals the pre-image in the blockchain B can do nothing but wait. It could be argued that this is not a swap at all but instead a type of option. If A never reveals the pre-image the swap will be revert back to the pre-swap state. Alice and Bob could agree on a swap at a certain rate, then A could wait it out to see if she could get a better deal (as exchange rates are constantly changing) or decide not to go through with it if agreed upon exchange rate is worse than the current one. A cost for the privilege of this decision could be added to the initial contract transaction as an extra output giving a small sum of money to Bob. 
+
+The swap vs option discussion is interesting, I will however focus more on the technical details in this report, and will leave this topic for future discussion at another time. 
+
+The two sub sections below holds proposals on how wallet and node software could be changed/upgraded to best support atomic swaps in the future. Both runs on the premise that the manual input and interaction from the participants should be kept at minimum possible level and that most of the process should be automated by software and hardware.
+
+\Subsection{Proposed solution}
+The easiest way is to modify wallet software so that it can facilitate atomic swaps, not the matching between the swapees, that could be handled  through other channels. 
+
+\Subsection{Third-party alternative solution}
