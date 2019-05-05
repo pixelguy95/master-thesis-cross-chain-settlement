@@ -1,0 +1,499 @@
+<h1 id="bolt11invoiceprotocolforlightningpayments">BOLT #11: Invoice Protocol for Lightning Payments</h1>
+
+<p>A simple, extendable, QR-code-ready protocol for requesting payments
+over Lightning.</p>
+
+<h1 id="tableofcontents">Table of Contents</h1>
+
+<ul>
+<li><a href="#encoding-overview">Encoding Overview</a></li>
+
+<li><a href="#human-readable-part">Human-Readable Part</a></li>
+
+<li><a href="#data-part">Data Part</a>
+
+
+<ul>
+<li><a href="#tagged-fields">Tagged Fields</a></li></ul>
+</li>
+
+<li><a href="#payer--payee-interactions">Payer / Payee Interactions</a>
+
+
+<ul>
+<li><a href="#payer--payee-requirements">Payer / Payee Requirements</a></li></ul>
+</li>
+
+<li><a href="#implementation">Implementation</a></li>
+
+<li><a href="#examples">Examples</a></li>
+
+<li><a href="#authors">Authors</a></li>
+</ul>
+
+<h1 id="encodingoverview">Encoding Overview</h1>
+
+<p>The format for a Lightning invoice uses
+<a href="https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki">bech32 encoding</a>,
+which is already used for Bitcoin Segregated Witness. It can be
+simply reused for Lightning invoices even though its 6-character checksum is optimized
+for manual entry, which is unlikely to happen often given the length
+of Lightning invoices.</p>
+
+<p>If a URI scheme is desired, the current recommendation is to either
+use 'lightning:' as a prefix before the BOLT-11 encoding (note: not
+'lightning://'), or for fallback to Bitcoin payments, to use 'bitcoin:',
+as per BIP-21, with the key 'lightning' and the value equal to the BOLT-11
+encoding.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>A writer:</p>
+
+<ul>
+<li>MUST encode the payment request in Bech32 (see BIP-0173)</li>
+
+<li>MAY exceed the 90-character limit specified in BIP-0173.</li>
+</ul>
+
+<p>A reader:</p>
+
+<ul>
+<li>MUST parse the address as Bech32, as specified in BIP-0173 (also without the character limit).</li>
+
+<li>if the checksum is incorrect:
+
+
+<ul>
+<li>MUST fail the payment.</li></ul>
+</li>
+</ul>
+
+<h1 id="humanreadablepart">Human-Readable Part</h1>
+
+<p>The human-readable part of a Lightning invoice consists of two sections:</p>
+
+<ol>
+<li><code>prefix</code>: <code>ln</code> + BIP-0173 currency prefix (e.g. <code>lnbc</code> for Bitcoin mainnet,
+<code>lntb</code> for Bitcoin testnet, and <code>lnbcrt</code> for Bitcoin regtest)</li>
+
+<li><code>amount</code>: optional number in that currency, followed by an optional
+<code>multiplier</code> letter. The unit encoded here is the 'social' convention of a payment unit -- in the case of Bitcoin the unit is 'bitcoin' NOT satoshis.</li>
+</ol>
+
+<p>The following <code>multiplier</code> letters are defined:</p>
+
+<ul>
+<li><code>m</code> (milli): multiply by 0.001</li>
+
+<li><code>u</code> (micro): multiply by 0.000001</li>
+
+<li><code>n</code> (nano): multiply by 0.000000001</li>
+
+<li><code>p</code> (pico): multiply by 0.000000000001</li>
+</ul>
+
+<h2 id="requirements-1">Requirements</h2>
+
+<p>A writer:</p>
+
+<ul>
+<li>MUST encode <code>prefix</code> using the currency required for successful payment.</li>
+
+<li>if a specific minimum <code>amount</code> is required for successful payment:
+
+
+<ul>
+<li>MUST include that <code>amount</code>.
+
+
+<ul>
+<li>MUST encode <code>amount</code> as a positive decimal integer with no leading 0s.</li>
+
+<li>SHOULD use the shortest representation possible, by using the largest
+multiplier or omitting the multiplier.</li></ul>
+</li></ul>
+</li>
+</ul>
+
+<p>A reader:</p>
+
+<ul>
+<li>if it does NOT understand the <code>prefix</code>:
+
+
+<ul>
+<li>MUST fail the payment.</li></ul>
+</li>
+
+<li>if the <code>amount</code> is empty:
+
+
+<ul>
+<li>SHOULD indicate to the payer that amount is unspecified.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>if <code>amount</code> contains a non-digit OR is followed by anything except
+a <code>multiplier</code> (see table above):
+
+
+<ul>
+<li>MUST fail the payment.</li></ul>
+</li>
+
+<li>if the <code>multiplier</code> is present:
+
+
+<ul>
+<li>MUST multiply <code>amount</code> by the <code>multiplier</code> value to derive the
+amount required for payment.</li></ul>
+</li></ul>
+</li>
+</ul>
+
+<h2 id="rationale">Rationale</h2>
+
+<p>The <code>amount</code> is encoded into the human readable part, as it's fairly
+readable and a useful indicator of how much is being requested.</p>
+
+<p>Donation addresses often don't have an associated amount, so <code>amount</code>
+is optional in that case. Usually a minimum payment is required for
+whatever is being offered in return.</p>
+
+<h1 id="datapart">Data Part</h1>
+
+<p>The data part of a Lightning invoice consists of multiple sections:</p>
+
+<ol>
+<li><code>timestamp</code>: seconds-since-1970 (35 bits, big-endian)</li>
+
+<li>zero or more tagged parts</li>
+
+<li><code>signature</code>: Bitcoin-style signature of above (520 bits)</li>
+</ol>
+
+<h2 id="requirements-2">Requirements</h2>
+
+<p>A writer:</p>
+
+<ul>
+<li>MUST set <code>timestamp</code> to the number of seconds since Midnight 1 January 1970, UTC in
+big-endian.</li>
+
+<li>MUST set <code>signature</code> to a valid 512-bit secp256k1 signature of the SHA2 256-bit hash of the
+human-readable part, represented as UTF-8 bytes, concatenated with the
+data part (excluding the signature) with 0 bits appended to pad the
+data to the next byte boundary, with a trailing byte containing
+the recovery ID (0, 1, 2, or 3).</li>
+</ul>
+
+<p>A reader:</p>
+
+<ul>
+<li>MUST check that the <code>signature</code> is valid (see the <code>n</code> tagged field specified below).</li>
+</ul>
+
+<h2 id="rationale-1">Rationale</h2>
+
+<p><code>signature</code> covers an exact number of bytes even though the SHA2
+standard actually supports hashing in bit boundaries, because it's not widely
+implemented. The recovery ID allows public-key recovery, so the
+identity of the payee node can be implied.</p>
+
+<h2 id="taggedfields">Tagged Fields</h2>
+
+<p>Each Tagged Field is of the form:</p>
+
+<ol>
+<li><code>type</code> (5 bits)</li>
+
+<li><code>data_length</code> (10 bits, big-endian)</li>
+
+<li><code>data</code> (<code>data_length</code> x 5 bits)</li>
+</ol>
+
+<p>Currently defined tagged fields are:</p>
+
+<ul>
+<li><code>p</code> (1): <code>data_length</code> 52. 256-bit SHA256 payment_hash. Preimage of this provides proof of payment.</li>
+
+<li><code>d</code> (13): <code>data_length</code> variable. Short description of purpose of payment (UTF-8), e.g. '1 cup of coffee' or 'ナンセンス 1杯'</li>
+
+<li><code>n</code> (19): <code>data_length</code> 53. 33-byte public key of the payee node</li>
+
+<li><code>h</code> (23): <code>data_length</code> 52. 256-bit description of purpose of payment (SHA256). This is used to commit to an associated description that is over 639 bytes, but the transport mechanism for the description in that case is transport specific and not defined here.</li>
+
+<li><code>x</code> (6): <code>data_length</code> variable. <code>expiry</code> time in seconds (big-endian). Default is 3600 (1 hour) if not specified.</li>
+
+<li><code>c</code> (24): <code>data_length</code> variable. <code>min_final_cltv_expiry</code> to use for the last HTLC in the route. Default is 9 if not specified.</li>
+
+<li><code>f</code> (9): <code>data_length</code> variable, depending on version. Fallback on-chain address: for Bitcoin, this starts with a 5-bit <code>version</code> and contains a witness program or P2PKH or P2SH address.</li>
+
+<li><code>r</code> (3): <code>data_length</code> variable. One or more entries containing extra routing information for a private route; there may be more than one <code>r</code> field
+
+
+<ul>
+<li><code>pubkey</code> (264 bits)</li>
+
+<li><code>short_channel_id</code> (64 bits)</li>
+
+<li><code>fee_base_msat</code> (32 bits, big-endian)</li>
+
+<li><code>fee_proportional_millionths</code> (32 bits, big-endian)</li>
+
+<li><code>cltv_expiry_delta</code> (16 bits, big-endian)</li></ul>
+</li>
+</ul>
+
+<h3 id="requirements-3">Requirements</h3>
+
+<p>A writer:</p>
+
+<ul>
+<li>MUST include exactly one <code>p</code> field.</li>
+
+<li>MUST set <code>payment_hash</code> to the SHA2 256-bit hash of the <code>payment_preimage</code>
+that will be given in return for payment.</li>
+
+<li>MUST include either exactly one <code>d</code> or exactly one <code>h</code> field.
+
+
+<ul>
+<li>if <code>d</code> is included:
+
+
+<ul>
+<li>MUST set <code>d</code> to a valid UTF-8 string.</li>
+
+<li>SHOULD use a complete description of the purpose of the payment.</li></ul>
+</li>
+
+<li>if <code>h</code> is included:
+
+
+<ul>
+<li>MUST make the preimage of the hashed description in <code>h</code> available
+through some unspecified means.</li>
+
+<li>SHOULD use a complete description of the purpose of the payment.</li></ul>
+</li></ul>
+</li>
+
+<li>MAY include one <code>x</code> field.</li>
+
+<li>MAY include one <code>c</code> field.
+
+
+<ul>
+<li>MUST set <code>c</code> to the minimum <code>cltv_expiry</code> it will accept for the last
+HTLC in the route.</li></ul>
+</li>
+
+<li>SHOULD use the minimum <code>data_length</code> possible for <code>x</code> and <code>c</code> fields.</li>
+
+<li>MAY include one <code>n</code> field.
+
+
+<ul>
+<li>MUST set <code>n</code> to the public key used to create the <code>signature</code>.</li></ul>
+</li>
+
+<li>MAY include one or more <code>f</code> fields.
+
+
+<ul>
+<li>for Bitcoin payments:
+
+
+<ul>
+<li>MUST set an <code>f</code> field to a valid witness version and program, OR to <code>17</code>
+followed by a public key hash, OR to <code>18</code> followed by a script hash.</li></ul>
+</li></ul>
+</li>
+
+<li>if there is NOT a public channel associated with its public key:
+
+
+<ul>
+<li>MUST include at least one <code>r</code> field.
+
+
+<ul>
+<li><code>r</code> field MUST contain one or more ordered entries, indicating the forward route from
+a public node to the final destination.</li>
+
+<li>Note: for each entry, the <code>pubkey</code> is the node ID of the start of the channel;
+<code>short_channel_id</code> is the short channel ID field to identify the channel; and
+<code>fee_base_msat</code>, <code>fee_proportional_millionths</code>, and <code>cltv_expiry_delta</code> are as
+specified in <a href="07-routing-gossip.md#the-channel_update-message">BOLT #7</a>.</li></ul>
+</li>
+
+<li>MAY include more than one <code>r</code> field to provide multiple routing options.</li></ul>
+</li>
+
+<li>MUST pad field data to a multiple of 5 bits, using 0s.</li>
+
+<li>if a writer offers more than one of any field type, it:
+
+
+<ul>
+<li>MUST specify the most-preferred field first, followed by less-preferred fields, in order.</li></ul>
+</li>
+</ul>
+
+<p>A reader:</p>
+
+<ul>
+<li>MUST skip over unknown fields, OR an <code>f</code> field with unknown <code>version</code>, OR  <code>p</code>, <code>h</code>, or
+<code>n</code> fields that do NOT have <code>data_length</code>s of 52, 52, or 53, respectively.</li>
+
+<li>MUST check that the SHA2 256-bit hash in the <code>h</code> field exactly matches the hashed
+description.</li>
+
+<li>if a valid <code>n</code> field is provided:
+
+
+<ul>
+<li>MUST use the <code>n</code> field to validate the signature instead of performing signature recovery.</li></ul>
+</li>
+</ul>
+
+<h3 id="rationale-2">Rationale</h3>
+
+<p>The type-and-length format allows future extensions to be backward
+compatible. <code>data_length</code> is always a multiple of 5 bits, for easy
+encoding and decoding. Readers also ignore fields of different length,
+for fields that are expected may change.</p>
+
+<p>The <code>p</code> field supports the current 256-bit payment hash, but future
+specs could add a new variant of different length: in which case,
+writers could support both old and new variants, and old readers would
+ignore the variant not the correct length.</p>
+
+<p>The <code>d</code> field allows inline descriptions, but may be insufficient for
+complex orders. Thus, the <code>h</code> field allows a summary: though the method
+by which the description is served is as-yet unspecified and will
+probably be transport dependent. The <code>h</code> format could change in the future,
+by changing the length, so readers ignore it if it's not 256 bits.</p>
+
+<p>The <code>n</code> field can be used to explicitly specify the destination node ID,
+instead of requiring signature recovery.</p>
+
+<p>The <code>x</code> field gives warning as to when a payment will be
+refused: mainly to avoid confusion. The default was chosen
+to be reasonable for most payments and to allow sufficient time for
+on-chain payment, if necessary.</p>
+
+<p>The <code>c</code> field allows a way for the destination node to require a specific
+minimum CLTV expiry for its incoming HTLC. Destination nodes may use this
+to require a higher, more conservative value than the default one (depending
+on their fee estimation policy and their sensitivity to time locks). Note
+that remote nodes in the route specify their required <code>cltv_expiry_delta</code>
+in the <code>channel_update</code> message, which they can update at all times.</p>
+
+<p>The <code>f</code> field allows on-chain fallback; however, this may not make sense for
+tiny or time-sensitive payments. It's possible that new
+address forms will appear; thus, multiple <code>f</code> fields (in an implied
+preferred order) help with transition, and <code>f</code> fields with versions 19-31
+will be ignored by readers.</p>
+
+<p>The <code>r</code> field allows limited routing assistance: as specified, it only
+allows minimum information to use private channels, however, it could also
+assist in future partial-knowledge routing.</p>
+
+<h3 id="securityconsiderationsforpaymentdescriptions">Security Considerations for Payment Descriptions</h3>
+
+<p>Payment descriptions are user-defined and provide a potential avenue for
+injection attacks: during the processes of both rendering and persistence.</p>
+
+<p>Payment descriptions should always be sanitized before being displayed in
+HTML/Javascript contexts (or any other dynamically interpreted rendering
+frameworks). Implementers should be extra perceptive to the possibility of
+reflected XSS attacks, when decoding and displaying payment descriptions. Avoid
+optimistically rendering the contents of the payment request until all
+validation, verification, and sanitization processes have been successfully
+completed.</p>
+
+<p>Furthermore, consider using prepared statements, input validation, and/or
+escaping, to protect against injection vulnerabilities in persistence
+engines that support SQL or other dynamically interpreted querying languages.</p>
+
+<ul>
+<li><a href="https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet">Stored and Reflected XSS Prevention</a></li>
+
+<li><a href="https://www.owasp.org/index.php/DOM_based_XSS_Prevention_Cheat_Sheet">DOM-based XSS Prevention</a></li>
+
+<li><a href="https://www.owasp.org/index.php/SQL_Injection_Prevention_Cheat_Sheet">SQL Injection Prevention</a></li>
+</ul>
+
+<p>Don't be like the school of <a href="https://xkcd.com/327/">Little Bobby Tables</a>.</p>
+
+<h1 id="payerpayeeinteractions">Payer / Payee Interactions</h1>
+
+<p>These are generally defined by the rest of the Lightning BOLT series,
+but it's worth noting that <a href="05-onchain.md">BOLT #5</a> specifies that the payee SHOULD
+accept up to twice the expected <code>amount</code>, so the payer can make
+payments harder to track by adding small variations.</p>
+
+<p>The intent is that the payer recover the payee's node ID from the
+signature, and after checking that conditions such as fees,
+expiry, and block timeout are acceptable, attempt a payment. It can use <code>r</code> fields to
+augment its routing information, if necessary to reach the final node.</p>
+
+<p>If the payment succeeds but there is a later dispute, the payer can
+prove both the signed offer from the payee and the successful
+payment.</p>
+
+<h2 id="payerpayeerequirements">Payer / Payee Requirements</h2>
+
+<p>A payer:</p>
+
+<ul>
+<li>after the <code>timestamp</code> plus <code>expiry</code> has passed:
+
+
+<ul>
+<li>SHOULD NOT attempt a payment.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>if a Lightning payment fails:
+
+
+<ul>
+<li>MAY attempt to use the address given in the first <code>f</code> field that it
+understands for payment.</li></ul>
+</li></ul>
+</li>
+
+<li>MAY use the sequence of channels, specified by the <code>r</code> field, to route to the payee.</li>
+
+<li>SHOULD consider the fee amount and payment timeout before initiating payment.</li>
+
+<li>SHOULD use the first <code>p</code> field that it did NOT skip as the payment hash.</li>
+</ul>
+
+<p>A payee:</p>
+
+<ul>
+<li>after the <code>timestamp</code> plus <code>expiry</code> has passed:
+
+
+<ul>
+<li>SHOULD NOT accept a payment.</li></ul>
+</li>
+</ul>
+
+<h1 id="implementation">Implementation</h1>
+
+<p>https://github.com/rustyrussell/lightning-payencode</p>
+
+
+This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>

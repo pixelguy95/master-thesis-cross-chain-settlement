@@ -15,6 +15,27 @@ The swap vs option discussion is interesting, I will however focus more on the t
 The two sub sections below holds proposals on how wallet and node software could be changed/upgraded to best support atomic swaps in the future. Both runs on the premise that the manual input and interaction from the participants should be kept at minimum possible level and that most of the process should be automated by software and hardware.
 
 \Subsection{Proposed solution}
-The easiest way is to modify wallet software so that it can facilitate atomic swaps, not the matching between the swapees, that could be handled  through other channels. 
+The easiest way is to modify wallet software so that it can facilitate atomic swaps, not the matching between the swapees, 
+that could be handled through other channels. The largest problem is not the creation of the swap it self. But rather
+the fact that the blockchian has to be monitored and the pre-image extracted. Most wallet's do not monitor two diffrent blockchains,
+but rather only the one it was made to hold curreny from. 
+
+There exists wallet's that can handle transactions on multiple blockchains. Something they all have in common is the lack of self-owned
+nodes. When the node your wallet is interacting with is owned by someone other than yourself there is risk. The owner of the node and
+the other party (they could even be the same person) in the swap could be cooperating to deceive you. 
+
+The only truly risk-free way to handle a cross-chain swap is to run your own nodes on the crypto-currency chains which you wish to swap.
+This is a pretty large hassle if you only want to perform a single swap, it's a trade off between invested time and risk. 
+
+For the completly risk-free trustless solution I propose a wallet that is capable of managing cryptocurrencies of different kinds, 
+interactions with blockchains happens via RPC connections to the full-node. Under the assumption that both parties are using this
+hypothetical wallet making an atomic swap is fairly simple. Either the wallets could comunicate and exchange data like addresses 
+and contracts automatically, or that data could be exchanged manually via some other type of channel.
+
+The process will still be as described in previous chapters, in this case the wallet will manage all the time-critical tasks and 
+monitoring that is difficult or tedious for a human to do.
+
+%More here maybe?
 
 \Subsection{Third-party alternative solution}
+If the amount exhanged is small enough, taking a slightly 

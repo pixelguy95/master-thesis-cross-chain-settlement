@@ -1,0 +1,1467 @@
+<h1 id="bolt4onionroutingprotocol">BOLT #4: Onion Routing Protocol</h1>
+
+<h2 id="overview">Overview</h2>
+
+<p>This document describes the construction of an onion routed packet that is
+used to route a payment from an <em>origin node</em> to a <em>final node</em>. The packet
+is routed through a number of intermediate nodes, called <em>hops</em>.</p>
+
+<p>The routing schema is based on the
+<a href="http://www.cypherpunks.ca/~iang/pubs/Sphinx_Oakland09.pdf">Sphinx</a>
+construction and is extended with a per-hop payload.</p>
+
+<p>Intermediate nodes forwarding the message can verify the integrity of
+the packet and can learn which node they should forward the
+packet to. They cannot learn which other nodes, besides their
+predecessor or successor, are part of the packet's route; nor can they learn
+the length of the route or their position within it. The packet is
+obfuscated at each hop, to ensure that a network-level attacker cannot
+associate packets belonging to the same route (i.e. packets belonging
+to the same route do not share any correlating information). Notice that this
+does not preclude the possibility of packet association by an attacker
+via traffic analysis.</p>
+
+<p>The route is constructed by the origin node, which knows the public
+keys of each intermediate node and of the final node. Knowing each node's public key
+allows the origin node to create a shared secret (using ECDH) for each
+intermediate node and for the final node. The shared secret is then
+used to generate a <em>pseudo-random stream</em> of bytes (which is used to obfuscate
+the packet) and a number of <em>keys</em> (which are used to encrypt the payload and
+compute the HMACs). The HMACs are then in turn used to ensure the integrity of
+the packet at each hop.</p>
+
+<p>Each hop along the route only sees an ephemeral key for the origin node, in
+order to hide the sender's identity. The ephemeral key is blinded by each
+intermediate hop before forwarding to the next, making the onions unlinkable
+along the route.</p>
+
+<p>This specification describes <em>version 0</em> of the packet format and routing
+mechanism.</p>
+
+<p>A node:</p>
+
+<ul>
+<li>upon receiving a higher version packet than it implements:
+
+
+<ul>
+<li>MUST report a route failure to the origin node.</li>
+
+<li>MUST discard the packet.</li></ul>
+</li>
+</ul>
+
+<h1 id="tableofcontents">Table of Contents</h1>
+
+<ul>
+<li><a href="#conventions">Conventions</a></li>
+
+<li><a href="#key-generation">Key Generation</a></li>
+
+<li><a href="#pseudo-random-byte-stream">Pseudo Random Byte Stream</a></li>
+
+<li><a href="#packet-structure">Packet Structure</a>
+
+
+<ul>
+<li><a href="#payload-for-the-last-node">Payload for the Last Node</a></li></ul>
+</li>
+
+<li><a href="#shared-secret">Shared Secret</a></li>
+
+<li><a href="#blinding-ephemeral-keys">Blinding Ephemeral Keys</a></li>
+
+<li><a href="#packet-construction">Packet Construction</a></li>
+
+<li><a href="#packet-forwarding">Packet Forwarding</a></li>
+
+<li><a href="#filler-generation">Filler Generation</a></li>
+
+<li><a href="#returning-errors">Returning Errors</a>
+
+
+<ul>
+<li><a href="#failure-messages">Failure Messages</a></li>
+
+<li><a href="#receiving-failure-codes">Receiving Failure Codes</a></li></ul>
+</li>
+
+<li><a href="#test-vector">Test Vector</a>
+
+
+<ul>
+<li><a href="#packet-creation">Packet Creation</a>
+
+
+<ul>
+<li><a href="#parameters">Parameters</a></li>
+
+<li><a href="#per-hop-information">Per-Hop Information</a></li>
+
+<li><a href="#per-packet-information">Per-Packet Information</a></li>
+
+<li><a href="#wrapping-the-onion">Wrapping the Onion</a></li>
+
+<li><a href="#final-packet">Final Packet</a></li></ul>
+</li>
+
+<li><a href="#returning-errors">Returning Errors</a></li></ul>
+</li>
+
+<li><a href="#references">References</a></li>
+
+<li><a href="#authors">Authors</a></li>
+</ul>
+
+<h1 id="conventions">Conventions</h1>
+
+<p>There are a number of conventions adhered to throughout this document:</p>
+
+<ul>
+<li><p>Length: the maximum route length is limited to 20 hops.</p></li>
+
+<li><p>HMAC: the integrity verification of the packet is based on Keyed-Hash
+Message Authentication Code, as defined by the
+<a href="http://csrc.nist.gov/publications/fips/fips198-1/FIPS-198-1_final.pdf">FIPS 198 Standard</a>/<a href="https://tools.ietf.org/html/rfc2104">RFC 2104</a>,
+and using a <code>SHA256</code> hashing algorithm.</p></li>
+
+<li><p>Elliptic curve: for all computations involving elliptic curves, the
+Bitcoin curve is used, as specified in <a href="http://www.secg.org/sec2-v2.pdf"><code>secp256k1</code></a>.</p></li>
+
+<li><p>Pseudo-random stream: <a href="https://tools.ietf.org/html/rfc7539"><code>ChaCha20</code></a> is
+used to generate a pseudo-random byte stream. For its generation, a fixed
+null-nonce (<code>0x0000000000000000</code>) is used, along with a key derived from a
+shared secret and with a <code>0x00</code>-byte stream of the desired output size as the
+message.</p></li>
+
+<li><p>The terms <em>origin node</em> and <em>final node</em> refer to the initial packet sender
+and the final packet recipient, respectively.</p></li>
+
+<li><p>The terms <em>hop</em> and <em>node</em> are sometimes used interchangeably, but a <em>hop</em>
+usually refers to an intermediate node in the route rather than an end node.
+    <em>origin node</em> --> <em>hop</em> --> ... --> <em>hop</em> --> <em>final node</em></p></li>
+
+<li><p>The term <em>processing node</em> refers to the specific node along the route that is
+currently processing the forwarded packet.</p></li>
+
+<li><p>The term <em>peers</em> refers only to hops that are direct neighbors (in the
+overlay network): more specifically, <em>sending peers</em> forward packets to
+<em>receiving peers</em>.
+    <em>sending peer</em> --> <em>receiving peer</em></p></li>
+</ul>
+
+<h1 id="clarifications">Clarifications</h1>
+
+<p>The longest route supported has 20 hops without counting the <em>origin node</em> and <em>final node</em>, thus 19 <em>intermediate nodes</em> and a maximum of 20 channels to be traversed.</p>
+
+<h1 id="keygeneration">Key Generation</h1>
+
+<p>A number of encryption and verification keys are derived from the shared secret:</p>
+
+<ul>
+<li><em>rho</em>: used as key when generating the pseudo-random byte stream that is used
+to obfuscate the per-hop information</li>
+
+<li><em>mu</em>: used during the HMAC generation</li>
+
+<li><em>um</em>: used during error reporting</li>
+</ul>
+
+<p>The key generation function takes a key-type (<em>rho</em>=<code>0x72686F</code>, <em>mu</em>=<code>0x6d75</code>,
+or <em>um</em>=<code>0x756d</code>) and a 32-byte secret as inputs and returns a 32-byte key.</p>
+
+<p>Keys are generated by computing an HMAC (with <code>SHA256</code> as hashing algorithm)
+using the appropriate key-type (i.e. <em>rho</em>, <em>mu</em>, or <em>um</em>) as HMAC-key and the
+32-byte shared secret as the message. The resulting HMAC is then returned as the
+key.</p>
+
+<p>Notice that the key-type does not include a C-style <code>0x00</code>-termination-byte,
+e.g. the length of the <em>rho</em> key-type is 3 bytes, not 4.</p>
+
+<h1 id="pseudorandombytestream">Pseudo Random Byte Stream</h1>
+
+<p>The pseudo-random byte stream is used to obfuscate the packet at each hop of the
+path, so that each hop may only recover the address and HMAC of the next hop.
+The pseudo-random byte stream is generated by encrypting (using <code>ChaCha20</code>) a
+<code>0x00</code>-byte stream, of the required length, which is initialized with a key
+derived from the shared secret and a zero-nonce (<code>0x00000000000000</code>).</p>
+
+<p>The use of a fixed nonce is safe, since the keys are never reused.</p>
+
+<h1 id="packetstructure">Packet Structure</h1>
+
+<p>The packet consists of four sections:</p>
+
+<ul>
+<li>a <code>version</code> byte</li>
+
+<li>a 33-byte compressed <code>secp256k1</code> <code>public_key</code>, used during the shared secret
+generation</li>
+
+<li>a 1300-byte <code>hops_data</code> consisting of twenty fixed-size packets, each containing
+information to be used by its associated hop during message forwarding</li>
+
+<li>a 32-byte <code>HMAC</code>, used to verify the packet's integrity</li>
+</ul>
+
+<p>The network format of the packet consists of the individual sections
+serialized into one contiguous byte-stream and then transferred to the packet
+recipient. Due to the fixed size of the packet, it need not be prefixed by its
+length when transferred over a connection.</p>
+
+<p>The overall structure of the packet is as follows:</p>
+
+<ol>
+<li>type: <code>onion_packet</code></li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>1</code>:<code>version</code>]</li>
+
+<li>[<code>33</code>:<code>public_key</code>]</li>
+
+<li>[<code>20*65</code>:<code>hops_data</code>]</li>
+
+<li>[<code>32</code>:<code>hmac</code>]</li></ul>
+</li>
+</ol>
+
+<p>For this specification (<em>version 0</em>), <code>version</code> has a constant value of <code>0x00</code>.</p>
+
+<p>The <code>hops_data</code> field is a structure that holds obfuscations of the next hop's
+address, transfer information, and its associated HMAC. It is 1300 bytes (<code>20x65</code>) long
+and has the following structure:</p>
+
+<ol>
+<li>type: <code>hops_data</code></li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>1</code>:<code>realm</code>]</li>
+
+<li>[<code>32</code>:<code>per_hop</code>]</li>
+
+<li>[<code>32</code>:<code>HMAC</code>]</li>
+
+<li>...</li>
+
+<li><code>filler</code></li></ul>
+</li>
+</ol>
+
+<p>Where, the <code>realm</code>, <code>per_hop</code> (with contents dependent on <code>realm</code>), and <code>HMAC</code>
+are repeated for each hop; and where, <code>filler</code> consists of obfuscated,
+deterministically-generated padding, as detailed in
+<a href="#filler-generation">Filler Generation</a>. Additionally, <code>hops_data</code> is
+incrementally obfuscated at each hop.</p>
+
+<p>The <code>realm</code> byte determines the format of the <code>per_hop</code> field; currently, only <code>realm</code>
+0 is defined, for which the <code>per_hop</code> format follows:</p>
+
+<ol>
+<li>type: <code>per_hop</code> (for <code>realm</code> 0)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>8</code>:<code>short_channel_id</code>]</li>
+
+<li>[<code>8</code>:<code>amt_to_forward</code>]</li>
+
+<li>[<code>4</code>:<code>outgoing_cltv_value</code>]</li>
+
+<li>[<code>12</code>:<code>padding</code>]</li></ul>
+</li>
+</ol>
+
+<p>Using the <code>per_hop</code> field, the origin node is able to precisely specify the path and
+structure of the HTLCs forwarded at each hop. As the <code>per_hop</code> is protected
+under the packet-wide HMAC, the information it contains is fully authenticated
+with each pair-wise relationship between the HTLC sender (origin node) and each
+hop in the path.</p>
+
+<p>Using this end-to-end authentication,
+each
+hop is able to
+cross-check the HTLC parameters with the <code>per_hop</code>'s specified values
+and to ensure that the sending peer hasn't forwarded an
+ill-crafted HTLC.</p>
+
+<p>Field descriptions:</p>
+
+<ul>
+<li><p><code>short_channel_id</code>: The ID of the outgoing channel used to route the
+  message; the receiving peer should operate the other end of this channel.</p></li>
+
+<li><p><code>amt_to_forward</code>: The amount, in millisatoshis, to forward to the next
+ receiving peer specified within the routing information.</p>
+
+<p>This value amount MUST include the origin node's computed <em>fee</em> for the
+ receiving peer. When processing an incoming Sphinx packet and the HTLC
+ message that it is encapsulated within, if the following inequality doesn't hold,
+ then the HTLC should be rejected as it would indicate that a prior hop has
+ deviated from the specified parameters:</p>
+
+<pre><code>incoming_htlc_amt - fee &gt;= amt_to_forward
+</code></pre>
+
+<p>Where <code>fee</code> is either calculated according to the receiving peer's advertised fee
+ schema (as described in <a href="07-routing-gossip.md#htlc-fees">BOLT #7</a>)
+ or is 0, if the processing node is the final node.</p></li>
+
+<li><p><code>outgoing_cltv_value</code>: The CLTV value that the <em>outgoing</em> HTLC carrying
+ the packet should have.</p>
+
+<pre><code>cltv_expiry - cltv_expiry_delta &gt;= outgoing_cltv_value
+</code></pre>
+
+<p>Inclusion of this field allows a hop to both authenticate the information
+ specified by the origin node, and the parameters of the HTLC forwarded,
+ and ensure the origin node is using the current <code>cltv_expiry_delta</code> value.
+ If there is no next hop, <code>cltv_expiry_delta</code> is 0.
+ If the values don't correspond, then the HTLC should be failed and rejected, as
+ this indicates that either a forwarding node has tampered with the intended HTLC
+ values or that the origin node has an obsolete <code>cltv_expiry_delta</code> value.
+ The hop MUST be consistent in responding to an unexpected
+ <code>outgoing_cltv_value</code>, whether it is the final node or not, to avoid
+ leaking its position in the route.</p></li>
+
+<li><p><code>padding</code>: This field is for future use and also for ensuring that future non-0-<code>realm</code>
+ <code>per_hop</code>s won't change the overall <code>hops_data</code> size.</p></li>
+</ul>
+
+<p>When forwarding HTLCs, nodes MUST construct the outgoing HTLC as specified within
+<code>per_hop</code> above; otherwise, deviation from the specified HTLC parameters
+may lead to extraneous routing failure.</p>
+
+<h2 id="nonstrictforwarding">Non-strict Forwarding</h2>
+
+<p>A node MAY forward an HTLC along an outgoing channel other than the one
+specified by <code>short_channel_id</code>, so long as the receiver has the same node
+public key intended by <code>short_channel_id</code>. Thus, if <code>short_channel_id</code> connects
+nodes A and B, the HTLC can forwarded across any channel connecting A and B.
+Failure to adhere will result in the receiver being unable to decrypt the next
+hop in the onion packet.</p>
+
+<h3 id="rationale">Rationale</h3>
+
+<p>In the event that two peers have multiple channels, the downstream node will be
+able to decrypt the next hop payload regardless of which channel the packet is
+sent across.</p>
+
+<p>Nodes implementing non-strict forwarding are able to make real-time assessments
+of channel bandwidths with a particular peer, and use the channel that is
+locally-optimal. </p>
+
+<p>For example, if the channel specified by <code>short_channel_id</code> connecting A and B
+does not have enough bandwidth at forwarding time, then A is able use a
+different channel that does. This can reduce payment latency by preventing the
+HTLC from failing due to bandwidth constraints across <code>short_channel_id</code>, only
+to have the sender attempt the same route differing only in the channel between
+A and B.</p>
+
+<p>Non-strict forwarding allows nodes to make use of private channels connecting
+them to the receiving node, even if the channel is not known in the public
+channel graph.</p>
+
+<h3 id="recommendation">Recommendation</h3>
+
+<p>Implementations using non-strict forwarding should consider applying the same
+fee schedule to all channels with the same peer, as senders are likely to select
+the channel which results in the lowest overall cost. Having distinct policies
+may result in the forwarding node accepting fees based on the most optimal fee
+schedule for the sender, even though they are providing aggregate bandwidth
+across all channels with the same peer.</p>
+
+<p>Alternatively, implementations may choose to apply non-strict forwarding only to
+like-policy channels to ensure their expected fee revenue does not deviate by
+using an alternate channel.</p>
+
+<h2 id="payloadforthelastnode">Payload for the Last Node</h2>
+
+<p>When building the route, the origin node MUST use a payload for
+the final node with the following values:</p>
+
+<ul>
+<li><code>outgoing_cltv_value</code>: set to the final expiry specified by the recipient</li>
+
+<li><code>amt_to_forward</code>: set to the final amount specified by the recipient</li>
+</ul>
+
+<p>This allows the final node to check these values and return errors if needed,
+but it also eliminates the possibility of probing attacks by the second-to-last
+node. Such attacks could, otherwise, attempt to discover if the receiving peer is the
+last one by re-sending HTLCs with different amounts/expiries.
+The final node will extract its onion payload from the HTLC it has received and
+compare its values against those of the HTLC. See the
+<a href="#returning-errors">Returning Errors</a> section below for more details.</p>
+
+<p>If not for the above, since it need not forward payments, the final node could
+simply discard its payload.</p>
+
+<h1 id="sharedsecret">Shared Secret</h1>
+
+<p>The origin node establishes a shared secret with each hop along the route using
+Elliptic-curve Diffie-Hellman between the sender's ephemeral key at that hop and
+the hop's node ID key. The resulting curve point is serialized to the
+DER-compressed representation and hashed using <code>SHA256</code>. The hash output is used
+as the 32-byte shared secret.</p>
+
+<p>Elliptic-curve Diffie-Hellman (ECDH) is an operation on an EC private key and
+an EC public key that outputs a curve point. For this protocol, the ECDH
+variant implemented in <code>libsecp256k1</code> is used, which is defined over the
+<code>secp256k1</code> elliptic curve. During packet construction, the sender uses the
+ephemeral private key and the hop's public key as inputs to ECDH, whereas
+during packet forwarding, the hop uses the ephemeral public key and its own
+node ID private key. Because of the properties of ECDH, they will both derive
+the same value.</p>
+
+<h1 id="blindingephemeralkeys">Blinding Ephemeral Keys</h1>
+
+<p>In order to ensure multiple hops along the route cannot be linked by the
+ephemeral public keys they see, the key is blinded at each hop. The blinding is
+done in a deterministic way that the allows the sender to compute the
+corresponding blinded private keys during packet construction.</p>
+
+<p>The blinding of an EC public key is a single scalar multiplication of
+the EC point representing the public key with a 32-byte blinding factor. Due to
+the commutative property of scalar multiplication, the blinded private key is
+the multiplicative product of the input's corresponding private key with the
+same blinding factor.</p>
+
+<p>The blinding factor itself is computed as a function of the ephemeral public key
+and the 32-byte shared secret. Concretely, is the <code>SHA256</code> hash value of the
+concatenation of the public key serialized in its compressed format and the
+shared secret.</p>
+
+<h1 id="packetconstruction">Packet Construction</h1>
+
+<p>In the following example, it's assumed that a <em>sending node</em> (origin node),
+<code>n_0</code>, wants to route a packet to a <em>receiving node</em> (final node), <code>n_r</code>.
+First, the sender computes a route <code>{n_0, n_1, ..., n_{r-1}, n_r}</code>, where <code>n_0</code>
+is the sender itself and <code>n_r</code> is the final recipient. All nodes <code>n_i</code> and
+<code>n_{i+1}</code> MUST be peers in the overlay network route. The sender then gathers the
+public keys for <code>n_1</code> to <code>n_r</code> and generates a random 32-byte <code>sessionkey</code>.
+Optionally, the sender may pass in <em>associated data</em>, i.e. data that the
+packet commits to but that is not included in the packet itself. Associated
+data will be included in the HMACs and must match the associated data provided
+during integrity verification at each hop.</p>
+
+<p>To construct the onion, the sender initializes the ephemeral private key for the
+first hop <code>ek_1</code> to the <code>sessionkey</code> and derives from it the corresponding
+ephemeral public key <code>epk_1</code> by multiplying with the <code>secp256k1</code> base point. For
+each of the <code>k</code> hops along the route, the sender then iteratively computes the
+shared secret <code>ss_k</code> and ephemeral key for the next hop <code>ek_{k+1}</code> as follows:</p>
+
+<ul>
+<li>The sender executes ECDH with the hop's public key and the ephemeral private
+key to obtain a curve point, which is hashed using <code>SHA256</code> to produce the
+shared secret <code>ss_k</code>.</li>
+
+<li>The blinding factor is the <code>SHA256</code> hash of the concatenation between the
+ephemeral public key <code>epk_k</code> and the shared secret <code>ss_k</code>.</li>
+
+<li>The ephemeral private key for the next hop <code>ek_{k+1}</code> is computed by
+multiplying the current ephemeral private key <code>ek_k</code> by the blinding factor.</li>
+
+<li>The ephemeral public key for the next hop <code>epk_{k+1}</code> is derived from the
+ephemeral private key <code>ek_{k+1}</code> by multiplying with the base point.</li>
+</ul>
+
+<p>Once the sender has all the required information above, it can construct the
+packet. Constructing a packet routed over <code>r</code> hops requires <code>r</code> 32-byte
+ephemeral public keys, <code>r</code> 32-byte shared secrets, <code>r</code> 32-byte blinding factors,
+and <code>r</code> 65-byte <code>per_hop</code> payloads. The construction returns a single 1366-byte
+packet along with the first receiving peer's address.</p>
+
+<p>The packet construction is performed in the reverse order of the route, i.e.
+the last hop's operations are applied first.</p>
+
+<p>The packet is initialized with 1366 <code>0x00</code>-bytes.</p>
+
+<p>A 65-byte filler is generated (see <a href="#filler-generation">Filler Generation</a>)
+using the shared secret.</p>
+
+<p>For each hop in the route, in reverse order, the sender applies the
+following operations:</p>
+
+<ul>
+<li>The <em>rho</em>-key and <em>mu</em>-key are generated using the hop's shared secret.</li>
+
+<li>The <code>hops_data</code> field is right-shifted by 65 bytes, discarding the last 65
+bytes that exceed its 1300-byte size.</li>
+
+<li>The <code>version</code>, <code>short_channel_id</code>, <code>amt_to_forward</code>, <code>outgoing_cltv_value</code>,
+<code>padding</code>, and <code>HMAC</code> are copied into the following 65 bytes.</li>
+
+<li>The <em>rho</em>-key is used to generate 1300 bytes of pseudo-random byte stream
+which is then applied, with <code>XOR</code>, to the <code>hops_data</code> field.</li>
+
+<li>If this is the last hop, i.e. the first iteration, then the tail of the
+<code>hops_data</code> field is overwritten with the routing information <code>filler</code>.</li>
+
+<li>The next HMAC is computed (with the <em>mu</em>-key as HMAC-key) over the
+concatenated <code>hops_data</code> and associated data.</li>
+</ul>
+
+<p>The resulting final HMAC value is the HMAC that will be used by the first
+receiving peer in the route.</p>
+
+<p>The packet generation returns a serialized packet that contains the <code>version</code>
+byte, the ephemeral pubkey for the first hop, the HMAC for the first hop, and
+the obfuscated <code>hops_data</code>.</p>
+
+<p>The following Go code is an example implementation of the packet construction:</p>
+
+<pre><code class="Go language-Go">func NewOnionPacket(paymentPath []*btcec.PublicKey, sessionKey *btcec.PrivateKey,
+    hopsData []HopData, assocData []byte) (*OnionPacket, error) {
+
+    numHops := len(paymentPath)
+    hopSharedSecrets := make([][sha256.Size]byte, numHops)
+
+    // Initialize ephemeral key for the first hop to the session key.
+    var ephemeralKey big.Int
+    ephemeralKey.Set(sessionKey.D)
+
+    for i := 0; i &lt; numHops; i++ {
+        // Perform ECDH and hash the result.
+        ecdhResult := scalarMult(paymentPath[i], ephemeralKey)
+        hopSharedSecrets[i] = sha256.Sum256(ecdhResult.SerializeCompressed())
+
+        // Derive ephemeral public key from private key.
+        ephemeralPrivKey := btcec.PrivKeyFromBytes(btcec.S256(), ephemeralKey.Bytes())
+        ephemeralPubKey := ephemeralPrivKey.PubKey()
+
+        // Compute blinding factor.
+        sha := sha256.New()
+        sha.Write(ephemeralPubKey.SerializeCompressed())
+        sha.Write(hopSharedSecrets[i])
+
+        var blindingFactor big.Int
+        blindingFactor.SetBytes(sha.Sum(nil))
+
+        // Blind ephemeral key for next hop.
+        ephemeralKey.Mul(&amp;ephemeralKey, &amp;blindingFactor)
+        ephemeralKey.Mod(&amp;ephemeralKey, btcec.S256().Params().N)
+    }
+
+    // Generate the padding, called "filler strings" in the paper.
+    filler := generateHeaderPadding("rho", numHops, hopDataSize, hopSharedSecrets)
+
+    // Allocate and initialize fields to zero-filled slices
+    var mixHeader [routingInfoSize]byte
+    var nextHmac [hmacSize]byte
+
+    // Compute the routing information for each hop along with a
+    // MAC of the routing information using the shared key for that hop.
+    for i := numHops - 1; i &gt;= 0; i-- {
+        rhoKey := generateKey("rho", hopSharedSecrets[i])
+        muKey := generateKey("mu", hopSharedSecrets[i])
+
+        hopsData[i].HMAC = nextHmac
+
+        // Shift and obfuscate routing information
+        streamBytes := generateCipherStream(rhoKey, numStreamBytes)
+
+        rightShift(mixHeader[:], hopDataSize)
+        buf := &amp;bytes.Buffer{}
+        hopsData[i].Encode(buf)
+        copy(mixHeader[:], buf.Bytes())
+        xor(mixHeader[:], mixHeader[:], streamBytes[:routingInfoSize])
+
+        // These need to be overwritten, so every node generates a correct padding
+        if i == numHops-1 {
+            copy(mixHeader[len(mixHeader)-len(filler):], filler)
+        }
+
+        packet := append(mixHeader[:], assocData...)
+        nextHmac = calcMac(muKey, packet)
+    }
+
+    packet := &amp;OnionPacket{
+        Version:      0x00,
+        EphemeralKey: sessionKey.PubKey(),
+        RoutingInfo:  mixHeader,
+        HeaderMAC:    nextHmac,
+    }
+    return packet, nil
+}
+</code></pre>
+
+<h1 id="packetforwarding">Packet Forwarding</h1>
+
+<p>This specification is limited to <code>version</code> <code>0</code> packets; the structure
+of future versions may change.</p>
+
+<p>Upon receiving a packet, a processing node compares the version byte of the
+packet with its own supported versions and aborts the connection if the packet
+specifies a version number that it doesn't support.
+For packets with supported version numbers, the processing node first parses the
+packet into its individual fields.</p>
+
+<p>Next, the processing node computes the shared secret using the private key
+corresponding to its own public key and the ephemeral key from the packet, as
+described in <a href="#shared-secret">Shared Secret</a>.</p>
+
+<p>The above requirements prevent any hop along the route from retrying a payment
+multiple times, in an attempt to track a payment's progress via traffic
+analysis. Note that disabling such probing could be accomplished using a log of
+previous shared secrets or HMACs, which could be forgotten once the HTLC would
+not be accepted anyway (i.e. after <code>outgoing_cltv_value</code> has passed). Such a log
+may use a probabilistic data structure, but it MUST rate-limit commitments as
+necessary, in order to constrain the worst-case storage requirements or false
+positives of this log.</p>
+
+<p>Next, the processing node uses the shared secret to compute a <em>mu</em>-key, which it
+in turn uses to compute the HMAC of the <code>hops_data</code>. The resulting HMAC is then
+compared against the packet's HMAC.</p>
+
+<p>Comparison of the computed HMAC and the packet's HMAC MUST be
+time-constant to avoid information leaks.</p>
+
+<p>At this point, the processing node can generate a <em>rho</em>-key and a <em>gamma</em>-key.</p>
+
+<p>The routing information is then deobfuscated, and the information about the
+next hop is extracted.
+To do so, the processing node copies the <code>hops_data</code> field, appends 65 <code>0x00</code>-bytes,
+generates 1365 pseudo-random bytes (using the <em>rho</em>-key), and applies the result
+,using <code>XOR</code>, to the copy of the <code>hops_data</code>.
+The first 65 bytes of the resulting routing information become the <code>per_hop</code>
+field used for the next hop. The next 1300 bytes are the <code>hops_data</code> for the
+outgoing packet.</p>
+
+<p>A special <code>per_hop</code> <code>HMAC</code> value of 32 <code>0x00</code>-bytes indicates that the currently
+processing hop is the intended recipient and that the packet should not be forwarded.</p>
+
+<p>If the HMAC does not indicate route termination, and if the next hop is a peer of the
+processing node; then the new packet is assembled. Packet assembly is accomplished
+by blinding the ephemeral key with the processing node's public key, along with the
+shared secret, and by serializing the <code>hops_data</code>.
+The resulting packet is then forwarded to the addressed peer.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>The processing node:</p>
+
+<ul>
+<li>if the ephemeral public key is NOT on the <code>secp256k1</code> curve:
+
+
+<ul>
+<li>MUST abort processing the packet.</li>
+
+<li>MUST report a route failure to the origin node.</li></ul>
+</li>
+
+<li>if the packet has previously been forwarded or locally redeemed, i.e. the
+packet contains duplicate routing information to a previously received packet:
+
+
+<ul>
+<li>if preimage is known:
+
+
+<ul>
+<li>MAY immediately redeem the HTLC using the preimage.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>MUST abort processing and report a route failure.</li></ul>
+</li></ul>
+</li>
+
+<li>if the computed HMAC and the packet's HMAC differ:
+
+
+<ul>
+<li>MUST abort processing.</li>
+
+<li>MUST report a route failure.</li></ul>
+</li>
+
+<li>if the <code>realm</code> is unknown:
+
+
+<ul>
+<li>MUST drop the packet.</li>
+
+<li>MUST signal a route failure.</li></ul>
+</li>
+
+<li>MUST address the packet to another peer that is its direct neighbor.</li>
+
+<li>if the processing node does not have a peer with the matching address:
+
+
+<ul>
+<li>MUST drop the packet.</li>
+
+<li>MUST signal a route failure.</li></ul>
+</li>
+</ul>
+
+<h1 id="fillergeneration">Filler Generation</h1>
+
+<p>Upon receiving a packet, the processing node extracts the information destined
+for it from the route information and the per-hop payload.
+The extraction is done by deobfuscating and left-shifting the field.
+This would make the field shorter at each hop, allowing an attacker to deduce the
+route length. For this reason, the field is pre-padded before forwarding.
+Since the padding is part of the HMAC, the origin node will have to pre-generate an
+identical padding (to that which each hop will generate) in order to compute the
+HMACs correctly for each hop.
+The filler is also used to pad the field-length, in the case that the selected
+route is shorter than the maximum allowed route length of 20.</p>
+
+<p>Before deobfuscating the <code>hops_data</code>, the processing node pads it with 65
+<code>0x00</code>-bytes, such that the total length is <code>(20 + 1) * 65</code>.
+It then generates the pseudo-random byte stream, of matching length, and applies
+it with <code>XOR</code> to the <code>hops_data</code>.
+This deobfuscates the information destined for it, while simultaneously
+obfuscating the added <code>0x00</code>-bytes at the end.</p>
+
+<p>In order to compute the correct HMAC, the origin node has to pre-generate the
+<code>hops_data</code> for each hop, including the incrementally obfuscated padding added
+by each hop. This incrementally obfuscated padding is referred to as the
+<code>filler</code>.</p>
+
+<p>The following example code shows how the filler is generated in Go:</p>
+
+<pre><code class="Go language-Go">func generateFiller(key string, numHops int, hopSize int, sharedSecrets [][sharedSecretSize]byte) []byte {
+    fillerSize := uint((numMaxHops + 1) * hopSize)
+    filler := make([]byte, fillerSize)
+
+    // The last hop does not obfuscate, it's not forwarding anymore.
+    for i := 0; i &lt; numHops-1; i++ {
+
+        // Left-shift the field
+        copy(filler[:], filler[hopSize:])
+
+        // Zero-fill the last hop
+        copy(filler[len(filler)-hopSize:], bytes.Repeat([]byte{0x00}, hopSize))
+
+        // Generate pseudo-random byte stream
+        streamKey := generateKey(key, sharedSecrets[i])
+        streamBytes := generateCipherStream(streamKey, fillerSize)
+
+        // Obfuscate
+        xor(filler, filler, streamBytes)
+    }
+
+    // Cut filler down to the correct length (numHops+1)*hopSize
+    // bytes will be prepended by the packet generation.
+    return filler[(numMaxHops-numHops+2)*hopSize:]
+}
+</code></pre>
+
+<p>Note that this example implementation is for demonstration purposes only; the
+<code>filler</code> can be generated much more efficiently.
+The last hop need not obfuscate the <code>filler</code>, since it won't forward the packet
+any further and thus need not extract an HMAC either.</p>
+
+<h1 id="returningerrors">Returning Errors</h1>
+
+<p>The onion routing protocol includes a simple mechanism for returning encrypted
+error messages to the origin node.
+The returned error messages may be failures reported by any hop, including the
+final node.
+The format of the forward packet is not usable for the return path, since no hop
+besides the origin has access to the information required for its generation.
+Note that these error messages are not reliable, as they are not placed on-chain
+due to the possibility of hop failure.</p>
+
+<p>Intermediate hops store the shared secret from the forward path and reuse it to
+obfuscate any corresponding return packet during each hop.
+In addition, each node locally stores data regarding its own sending peer in the
+route, so it knows where to return-forward any eventual return packets.
+The node generating the error message (<em>erring node</em>) builds a return packet
+consisting of the following fields:</p>
+
+<ol>
+<li>data:
+
+
+<ul>
+<li>[<code>32</code>:<code>hmac</code>]</li>
+
+<li>[<code>2</code>:<code>failure_len</code>]</li>
+
+<li>[<code>failure_len</code>:<code>failuremsg</code>]</li>
+
+<li>[<code>2</code>:<code>pad_len</code>]</li>
+
+<li>[<code>pad_len</code>:<code>pad</code>]</li></ul>
+</li>
+</ol>
+
+<p>Where <code>hmac</code> is an HMAC authenticating the remainder of the packet, with a key
+generated using the above process, with key type <code>um</code>, <code>failuremsg</code> as defined
+below, and <code>pad</code> as the extra bytes used to conceal length.</p>
+
+<p>The erring node then generates a new key, using the key type <code>ammag</code>.
+This key is then used to generate a pseudo-random stream, which is in turn
+applied to the packet using <code>XOR</code>.</p>
+
+<p>The obfuscation step is repeated by every hop along the return path.
+Upon receiving a return packet, each hop generates its <code>ammag</code>, generates the
+pseudo-random byte stream, and applies the result to the return packet before
+return-forwarding it.</p>
+
+<p>The origin node is able to detect that it's the intended final recipient of the
+return message, because of course, it was the originator of the corresponding
+forward packet.
+When an origin node receives an error message matching a transfer it initiated
+(i.e. it cannot return-forward the error any further) it generates the <code>ammag</code>
+and <code>um</code> keys for each hop in the route.
+It then iteratively decrypts the error message, using each hop's <code>ammag</code>
+key, and computes the HMAC, using each hop's <code>um</code> key.
+The origin node can detect the sender of the error message by matching the
+<code>hmac</code> field with the computed HMAC.</p>
+
+<p>The association between the forward and return packets is handled outside of
+this onion routing protocol, e.g. via association with an HTLC in a payment
+channel.</p>
+
+<h3 id="requirements-1">Requirements</h3>
+
+<p>The <em>erring node</em>:</p>
+
+<ul>
+<li>SHOULD set <code>pad</code> such that the <code>failure_len</code> plus <code>pad_len</code> is equal to 256.
+
+
+<ul>
+<li>Note: this value is 118 bytes longer than the longest currently-defined
+message.</li></ul>
+</li>
+</ul>
+
+<p>The <em>origin node</em>:</p>
+
+<ul>
+<li>once the return message has been decrypted:
+
+
+<ul>
+<li>SHOULD store a copy of the message.</li>
+
+<li>SHOULD continue decrypting, until the loop has been repeated 20 times.</li>
+
+<li>SHOULD use constant <code>ammag</code> and <code>um</code> keys to obfuscate the route length.</li></ul>
+</li>
+</ul>
+
+<h2 id="failuremessages">Failure Messages</h2>
+
+<p>The failure message encapsulated in <code>failuremsg</code> has an identical format as
+a normal message: a 2-byte type <code>failure_code</code> followed by data applicable
+to that type. Below is a list of the currently supported <code>failure_code</code>
+values, followed by their use case requirements.</p>
+
+<p>Notice that the <code>failure_code</code>s are not of the same type as other message types,
+defined in other BOLTs, as they are not sent directly on the transport layer
+but are instead wrapped inside return packets.
+The numeric values for the <code>failure_code</code> may therefore reuse values, that are
+also assigned to other message types, without any danger of causing collisions.</p>
+
+<p>The top byte of <code>failure_code</code> can be read as a set of flags:</p>
+
+<ul>
+<li>0x8000 (BADONION): unparsable onion encrypted by sending peer</li>
+
+<li>0x4000 (PERM): permanent failure (otherwise transient)</li>
+
+<li>0x2000 (NODE): node failure (otherwise channel)</li>
+
+<li>0x1000 (UPDATE): new channel update enclosed</li>
+</ul>
+
+<p>Please note that the <code>channel_update</code> field is mandatory in messages whose
+<code>failure_code</code> includes the <code>UPDATE</code> flag.</p>
+
+<p>The following <code>failure_code</code>s are defined:</p>
+
+<ol>
+<li>type: PERM|1 (<code>invalid_realm</code>)</li>
+</ol>
+
+<p>The <code>realm</code> byte was not understood by the processing node.</p>
+
+<ol>
+<li>type: NODE|2 (<code>temporary_node_failure</code>)</li>
+</ol>
+
+<p>General temporary failure of the processing node.</p>
+
+<ol>
+<li>type: PERM|NODE|2 (<code>permanent_node_failure</code>)</li>
+</ol>
+
+<p>General permanent failure of the processing node.</p>
+
+<ol>
+<li>type: PERM|NODE|3 (<code>required_node_feature_missing</code>)</li>
+</ol>
+
+<p>The processing node has a required feature which was not in this onion.</p>
+
+<ol>
+<li>type: BADONION|PERM|4 (<code>invalid_onion_version</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>32</code>:<code>sha256_of_onion</code>]</li></ul>
+</li>
+</ol>
+
+<p>The <code>version</code> byte was not understood by the processing node.</p>
+
+<ol>
+<li>type: BADONION|PERM|5 (<code>invalid_onion_hmac</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>32</code>:<code>sha256_of_onion</code>]</li></ul>
+</li>
+</ol>
+
+<p>The HMAC of the onion was incorrect when it reached the processing node.</p>
+
+<ol>
+<li>type: BADONION|PERM|6 (<code>invalid_onion_key</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>32</code>:<code>sha256_of_onion</code>]</li></ul>
+</li>
+</ol>
+
+<p>The ephemeral key was unparsable by the processing node.</p>
+
+<ol>
+<li>type: UPDATE|7 (<code>temporary_channel_failure</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The channel from the processing node was unable to handle this HTLC,
+but may be able to handle it, or others, later.</p>
+
+<ol>
+<li>type: PERM|8 (<code>permanent_channel_failure</code>)</li>
+</ol>
+
+<p>The channel from the processing node is unable to handle any HTLCs.</p>
+
+<ol>
+<li>type: PERM|9 (<code>required_channel_feature_missing</code>)</li>
+</ol>
+
+<p>The channel from the processing node requires features not present in
+the onion.</p>
+
+<ol>
+<li>type: PERM|10 (<code>unknown_next_peer</code>)</li>
+</ol>
+
+<p>The onion specified a <code>short_channel_id</code> which doesn't match any
+leading from the processing node.</p>
+
+<ol>
+<li>type: UPDATE|11 (<code>amount_below_minimum</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>8</code>:<code>htlc_msat</code>]</li>
+
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The HTLC amount was below the <code>htlc_minimum_msat</code> of the channel from
+the processing node.</p>
+
+<ol>
+<li>type: UPDATE|12 (<code>fee_insufficient</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>8</code>:<code>htlc_msat</code>]</li>
+
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The fee amount was below that required by the channel from the
+processing node.</p>
+
+<ol>
+<li>type: UPDATE|13 (<code>incorrect_cltv_expiry</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>4</code>:<code>cltv_expiry</code>]</li>
+
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The <code>cltv_expiry</code> does not comply with the <code>cltv_expiry_delta</code> required by
+the channel from the processing node: it does not satisfy the following
+requirement:</p>
+
+<pre><code>    cltv_expiry - cltv_expiry_delta &gt;= outgoing_cltv_value
+</code></pre>
+
+<ol>
+<li>type: UPDATE|14 (<code>expiry_too_soon</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The CLTV expiry is too close to the current block height for safe
+handling by the processing node.</p>
+
+<ol>
+<li>type: PERM|15 (<code>incorrect_or_unknown_payment_details</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>8</code>:<code>htlc_msat</code>]</li></ul>
+</li>
+</ol>
+
+<p>The <code>payment_hash</code> is unknown to the final node or the amount for that
+<code>payment_hash</code> is incorrect.</p>
+
+<p>Note: Originally PERM|16 (<code>incorrect_payment_amount</code>) was
+used to differentiate incorrect final amount from unknown payment
+hash. Sadly, sending this response allows for probing attacks whereby a node
+which receives an HTLC for forwarding can check guesses as to its final
+destination by sending payments with the same hash but much lower values to
+potential destinations and check the response.</p>
+
+<ol>
+<li>type: 17 (<code>final_expiry_too_soon</code>)</li>
+</ol>
+
+<p>The CLTV expiry is too close to the current block height for safe
+handling by the final node.</p>
+
+<ol>
+<li>type: 18 (<code>final_incorrect_cltv_expiry</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>4</code>:<code>cltv_expiry</code>]</li></ul>
+</li>
+</ol>
+
+<p>The CLTV expiry in the HTLC doesn't match the value in the onion.</p>
+
+<ol>
+<li>type: 19 (<code>final_incorrect_htlc_amount</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>8</code>:<code>incoming_htlc_amt</code>]</li></ul>
+</li>
+</ol>
+
+<p>The amount in the HTLC doesn't match the value in the onion.</p>
+
+<ol>
+<li>type: UPDATE|20 (<code>channel_disabled</code>)</li>
+
+<li>data:
+
+
+<ul>
+<li>[<code>2</code>: <code>flags</code>]</li>
+
+<li>[<code>2</code>:<code>len</code>]</li>
+
+<li>[<code>len</code>:<code>channel_update</code>]</li></ul>
+</li>
+</ol>
+
+<p>The channel from the processing node has been disabled.</p>
+
+<ol>
+<li>type: 21 (<code>expiry_too_far</code>)</li>
+</ol>
+
+<p>The CLTV expiry in the HTLC is too far in the future.</p>
+
+<h3 id="requirements-2">Requirements</h3>
+
+<p>An <em>erring node</em>:</p>
+
+<ul>
+<li>MUST select one of the above error codes when creating an error message.</li>
+
+<li>MUST include the appropriate data for that particular error type.</li>
+
+<li>if there is more than one error:
+
+
+<ul>
+<li>SHOULD select the first error it encounters from the list above.</li></ul>
+</li>
+</ul>
+
+<p>Any <em>erring node</em> MAY:</p>
+
+<ul>
+<li>if the <code>realm</code> byte is unknown:
+
+
+<ul>
+<li>return an <code>invalid_realm</code> error.</li></ul>
+</li>
+
+<li>if an otherwise unspecified transient error occurs for the entire node:
+
+
+<ul>
+<li>return a <code>temporary_node_failure</code> error.</li></ul>
+</li>
+
+<li>if an otherwise unspecified permanent error occurs for the entire node:
+
+
+<ul>
+<li>return a <code>permanent_node_failure</code> error.</li></ul>
+</li>
+
+<li>if a node has requirements advertised in its <code>node_announcement</code> <code>features</code>,
+which were NOT included in the onion:
+
+
+<ul>
+<li>return a <code>required_node_feature_missing</code> error.</li></ul>
+</li>
+</ul>
+
+<p>A <em>forwarding node</em> MAY, but a <em>final node</em> MUST NOT:</p>
+
+<ul>
+<li>if the onion <code>version</code> byte is unknown:
+
+
+<ul>
+<li>return an <code>invalid_onion_version</code> error.</li></ul>
+</li>
+
+<li>if the onion HMAC is incorrect:
+
+
+<ul>
+<li>return an <code>invalid_onion_hmac</code> error.</li></ul>
+</li>
+
+<li>if the ephemeral key in the onion is unparsable:
+
+
+<ul>
+<li>return an <code>invalid_onion_key</code> error.</li></ul>
+</li>
+
+<li>if during forwarding to its receiving peer, an otherwise unspecified,
+transient error occurs in the outgoing channel (e.g. channel capacity reached,
+too many in-flight HTLCs, etc.):
+
+
+<ul>
+<li>return a <code>temporary_channel_failure</code> error.</li></ul>
+</li>
+
+<li>if an otherwise unspecified, permanent error occurs during forwarding to its
+receiving peer (e.g. channel recently closed):
+
+
+<ul>
+<li>return a <code>permanent_channel_failure</code> error.</li></ul>
+</li>
+
+<li>if the outgoing channel has requirements advertised in its
+<code>channel_announcement</code>'s <code>features</code>, which were NOT included in the onion:
+
+
+<ul>
+<li>return a <code>required_channel_feature_missing</code> error.</li></ul>
+</li>
+
+<li>if the receiving peer specified by the onion is NOT known:
+
+
+<ul>
+<li>return an <code>unknown_next_peer</code> error.</li></ul>
+</li>
+
+<li>if the HTLC amount is less than the currently specified minimum amount:
+
+
+<ul>
+<li>report the amount of the outgoing HTLC and the current channel setting for
+the outgoing channel.</li>
+
+<li>return an <code>amount_below_minimum</code> error.</li></ul>
+</li>
+
+<li>if the HTLC does NOT pay a sufficient fee:
+
+
+<ul>
+<li>report the amount of the incoming HTLC and the current channel setting for
+the outgoing channel.</li>
+
+<li>return a <code>fee_insufficient</code> error.</li>
+
+<li>if the incoming <code>cltv_expiry</code> minus the <code>outgoing_cltv_value</code> is below the
+<code>cltv_expiry_delta</code> for the outgoing channel:</li>
+
+<li>report the <code>cltv_expiry</code> of the outgoing HTLC and the current channel setting for the outgoing
+channel.</li>
+
+<li>return an <code>incorrect_cltv_expiry</code> error.</li></ul>
+</li>
+
+<li>if the <code>cltv_expiry</code> is unreasonably near the present:
+
+
+<ul>
+<li>report the current channel setting for the outgoing channel.</li>
+
+<li>return an <code>expiry_too_soon</code> error.</li></ul>
+</li>
+
+<li>if the <code>cltv_expiry</code> is unreasonably far in the future:
+
+
+<ul>
+<li>return an <code>expiry_too_far</code> error.</li></ul>
+</li>
+
+<li>if the channel is disabled:
+
+
+<ul>
+<li>report the current channel setting for the outgoing channel.</li>
+
+<li>return a <code>channel_disabled</code> error.</li></ul>
+</li>
+</ul>
+
+<p>An <em>intermediate hop</em> MUST NOT, but the <em>final node</em>:</p>
+
+<ul>
+<li>if the payment hash has already been paid:
+
+
+<ul>
+<li>MAY treat the payment hash as unknown.</li>
+
+<li>MAY succeed in accepting the HTLC.</li></ul>
+</li>
+
+<li>if the amount paid is less than the amount expected:
+
+
+<ul>
+<li>MUST fail the HTLC.</li>
+
+<li>MUST return an <code>incorrect_or_unknown_payment_details</code> error.</li></ul>
+</li>
+
+<li>if the payment hash is unknown:
+
+
+<ul>
+<li>MUST fail the HTLC.</li>
+
+<li>MUST return an <code>incorrect_or_unknown_payment_details</code> error.</li></ul>
+</li>
+
+<li>if the amount paid is more than twice the amount expected:
+
+
+<ul>
+<li>SHOULD fail the HTLC.</li>
+
+<li>SHOULD return an <code>incorrect_or_unknown_payment_details</code> error.
+
+
+<ul>
+<li>Note: this allows the origin node to reduce information leakage by
+altering the amount while not allowing for accidental gross overpayment.</li></ul>
+</li></ul>
+</li>
+
+<li>if the <code>cltv_expiry</code> value is unreasonably near the present:
+
+
+<ul>
+<li>MUST fail the HTLC.</li>
+
+<li>MUST return a <code>final_expiry_too_soon</code> error.</li></ul>
+</li>
+
+<li>if the <code>outgoing_cltv_value</code> does NOT correspond with the <code>cltv_expiry</code> from
+the final node's HTLC:
+
+
+<ul>
+<li>MUST return <code>final_incorrect_cltv_expiry</code> error.</li></ul>
+</li>
+
+<li>if the <code>amt_to_forward</code> is greater than the <code>incoming_htlc_amt</code> from the
+final node's HTLC:
+
+
+<ul>
+<li>MUST return a <code>final_incorrect_htlc_amount</code> error.</li></ul>
+</li>
+</ul>
+
+<h2 id="receivingfailurecodes">Receiving Failure Codes</h2>
+
+<h3 id="requirements-3">Requirements</h3>
+
+<p>The <em>origin node</em>:</p>
+
+<ul>
+<li>MUST ignore any extra bytes in <code>failuremsg</code>.</li>
+
+<li>if the <em>final node</em> is returning the error:
+
+
+<ul>
+<li>if the PERM bit is set:
+
+
+<ul>
+<li>SHOULD fail the payment.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>if the error code is understood and valid:</li>
+
+<li>MAY retry the payment. In particular, <code>final_expiry_too_soon</code> can
+occur if the block height has changed since sending, and in this case
+<code>temporary_node_failure</code> could resolve within a few seconds.</li></ul>
+</li></ul>
+</li>
+
+<li>otherwise, an <em>intermediate hop</em> is returning the error:
+
+
+<ul>
+<li>if the NODE bit is set:
+
+
+<ul>
+<li>SHOULD remove all channels connected with the erring node from
+consideration.</li></ul>
+</li>
+
+<li>if the PERM bit is NOT set:
+
+
+<ul>
+<li>SHOULD restore the channels as it receives new <code>channel_update</code>s.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>if UPDATE is set, AND the <code>channel_update</code> is valid and more recent
+than the <code>channel_update</code> used to send the payment:</li>
+
+<li>if <code>channel_update</code> should NOT have caused the failure:
+
+
+<ul>
+<li>MAY treat the <code>channel_update</code> as invalid.</li></ul>
+</li>
+
+<li>otherwise:
+
+
+<ul>
+<li>SHOULD apply the <code>channel_update</code>.</li></ul>
+</li>
+
+<li>MAY queue the <code>channel_update</code> for broadcast.</li>
+
+<li>otherwise:</li>
+
+<li>SHOULD eliminate the channel outgoing from the erring node from
+consideration.</li>
+
+<li>if the PERM bit is NOT set:
+
+
+<ul>
+<li>SHOULD restore the channel as it receives new <code>channel_update</code>s.</li></ul>
+</li></ul>
+</li>
+
+<li>SHOULD then retry routing and sending the payment.</li></ul>
+</li>
+
+<li>MAY use the data specified in the various failure types for debugging
+purposes.</li>
+</ul>
+
+This work is licensed under a <a href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>
