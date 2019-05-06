@@ -12,7 +12,7 @@ Transactions in Bitcoin are not as straight forward as you might expect a transa
 
 In simplified terms an output could be seen as the destination of a transaction, in other words it says how much and to whom the transaction is sent to. An input is a reference to a previous output. The inputs take the money from the outputs they reference and that money is used to fund the new outputs. 
 
-The inputs and outputs is where Script comes into the picture. Both outputs and inputs contains an incomplete script, together however they complete the script. The script in an output could be seen as a challenge, and the script in the input is the response. When a transaction is tested for validity the input script is appended to the script in the output and is executed. If the script comes out as valid the transaction is also valid. Here is a basic example: Let's say Alice wants to send a transaction to whoever can answer the very complex equation $4+3$. Her transaction output would contain the script:
+The inputs and outputs is where Script comes into the picture. Both outputs and inputs contains an incomplete script, together however they complete the script. The script in an output could be seen as a challenge, and the script in the input is the response. When a transaction is tested for validity the input script is appended to the script in the output and is executed. If the script comes out as valid the transaction is also valid. Here is a basic example: Let's say Alice wants to send a transaction to whoever can answer the equation $4+3$. Her transaction output would contain the script:
 
 \texttt{4 3 OP\_ADD OP\_EQUALS}
 
@@ -113,5 +113,3 @@ There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERITY}, what it
 Let's say you have two transactions transaction $T_A$ and transaction $T_B$, $T_A$ is included in a block on the blockchain. If $T_B$ tries to spend one of $T_A$ outputs and has that specific input marked with a  sequence of 10. It means that $T_B$ can't be included in the block chain until $T_A$ is at least 10 blocks deep in the blockchain.
 
 \texttt{OP\_CHECKSEQUENCEVERIFY} enforces this in the output. If $T_A$ has \texttt{10 OP\_CHECKSEQUENCEVERIFY}, then if $T_B$ tries to spend that output it has to be at least 10 blocks deep.
-
-\Subsection{Raw transaction}

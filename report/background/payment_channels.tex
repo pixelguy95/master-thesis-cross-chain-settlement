@@ -1,7 +1,7 @@
 
 \Section{Payment channels}
 A payment channel is a channel where transactions can be exchanged trustlessly on channels other than directly on the blockchain.
-This is what is sually refered to as off-chain transactions.
+This is what is usually referred to as off-chain transactions.
 In their most naive form a payment channel can simply be Alice and Bob exchanging promises of future transactions later.
 This however is not trustless and any of the parties could later withdraw from the promise without punishment (other than maybe loss of friendship).
 
@@ -10,10 +10,10 @@ The method that will be covered here uses a type of channel \textbf{funding tran
 Let's take a look at a naive example:
 
 \Subsubsection{The naive payment channel}
-Imagine Alice and Bob wants to open a payment channel between eachother. They create a funding transaction and the initial commitment transactions. Let's say they both funded the channel with 1 Bitcoin each. The initial commitment transactions would then have one output paying 1 Bitcoin to Alice and one output paying 1 Bitcoin to Bob, let's call this commit (\textbf{C0}).
-The funding transaction is braodcast to the blockchain.
+Imagine Alice and Bob wants to open a payment channel between each other. They create a funding transaction and the initial commitment transactions. Let's say they both funded the channel with 1 Bitcoin each. The initial commitment transactions would then have one output paying 1 Bitcoin to Alice and one output paying 1 Bitcoin to Bob, let's call this commit (\textbf{C0}).
+The funding transaction is broadcast to the blockchain.
 
-A bit later Alice buys one funny hat from Bob for 0.1 Bitcoins. To complete the transaction they create two new commitment transaction that pays 0.9 Bitcoin to Alice and 1.1 Bitcoin to Bob and signs them for each other, let's call this new commitment (\textbf{C1}). Any number of transactions could be exhanged this way. The channel could be closed by any one broadcasting their commitment transaction. This naive implementation of a payment channel has a fatal flaw however. 
+A bit later Alice buys one funny hat from Bob for 0.1 Bitcoins. To complete the transaction they create two new commitment transaction that pays 0.9 Bitcoin to Alice and 1.1 Bitcoin to Bob and signs them for each other, let's call this new commitment (\textbf{C1}). Any number of transactions could be exchanged this way. The channel could be closed by any one broadcasting their commitment transaction. This naive implementation of a payment channel has a fatal flaw however. 
 
 A payment channel needs some safety measures to be safe from malicious actors. The above example lacks a mechanism for preventing old commitment transactions from making their way into the blockchain and still paying the malicious party.. For example after the initial funny hat transaction above (\textbf{C1}) Alice could just broadcast the initial commit transaction (\textbf{C0}) and reclaim the 0.1 Bitcoins she spent. Bob would have no way of preventing this in this naive implementation.
 
@@ -41,13 +41,13 @@ Instead of both parties holding the same commit. They each get an individual one
 
 Figure \ref{fig:pre-breach} shows how the payment channel appears after the first commitment transactions has been made. Let's say the channel is between Alice (A) and Bob (B) and the balance in the channel is 0.5 BTC for Alice and 0.5 BTC for Bob. 
 
-Lets' take a look at the left side of this diagram. \textbf{$C1_{A}$} is the commitment transaction on Alice's side of the channel. As with all commitment transactions it spends the funding transaction. It has two outputs. Output 0 sends 0.5 BTC to Bob completely unencumbered. Output 1 is a bit more complicated however. It pays into a revocable delivery contract worth 0.5 BTC.\footnote{The contract is a script, and it's payed to via P2SH} The contract is constructed with a relative time lock that allows Alice to claim her share of the money after x amount of time (relative to the broadcast time of $C1_{A}$, opften described in terms of blocks) or pays to whomever can sign using the pre-generated revocation keys (See section \ref{homomorphism})
+Lets' take a look at the left side of this diagram. \textbf{$C1_{A}$} is the commitment transaction on Alice's side of the channel. As with all commitment transactions it spends the funding transaction. It has two outputs. Output 0 sends 0.5 BTC to Bob completely unencumbered. Output 1 is a bit more complicated however. It pays into a revocable delivery contract worth 0.5 BTC.\footnote{The contract is a script, and it's payed to via P2SH} The contract is constructed with a relative time lock that allows Alice to claim her share of the money after x amount of time (relative to the broadcast time of $C1_{A}$, often described in terms of blocks) or pays to whomever can sign using the pre-generated revocation keys (See section \ref{homomorphism})
 
 D1 is the transaction Bob uses to claim his money in case Alice decides to broadcast her commitment transaction ($C1_{A}$).
 
 RD1 is the transaction that Alice uses to claim her money. The transaction has a relative timelock on it that makes it so it can't be broadcast until x blocks has passed since $C1_{A}$ was included in the blockchain. \textbf{From now on the relative timelock will be 100 blocks in all the following examples}.
 
-The right side is identical, only that the RD1 and D1 relationship is reversed, meaning that Alice caan claim her money directly and Bob has to wait. 
+The right side is identical, only that the RD1 and D1 relationship is reversed, meaning that Alice can claim her money directly and Bob has to wait. 
 
 If Alice wants to send 0.1 BTC to Bob they need to update the channel with new commitment transactions and then invalidate the old transaction. The transaction diagram will now look like figure \ref{fig:pc-update}
 
@@ -68,7 +68,7 @@ These are the steps taken whenever someone wants to send money in the channel (U
 	\textbf{1.} Both parties create new revocation public keys.\\
 	\textbf{2.} Alice creates the commitment on Bob's side ($Cn_{b}$) using the revocation key from the previous step, signs it and sends it to Bob.\\
 	\textbf{3.} Bob creates the commitment on Alice's side ($Cn_{a}$) using the revocation key from the previous step, signs it and sends it to Alice.\\
-	\textbf{4.} Each party generates their repective Delivery and Revocable delivery transactions (Dn and BRn)\\
+	\textbf{4.} Each party generates their respective Delivery and Revocable delivery transactions (Dn and BRn)\\
 	\textbf{5.} Both parties reveal the secret used to create the revocation keys for the previous commitment transactions ($C_{n-1}$)\\
 	\textbf{6.} From these revocation keys each party constructs the breach remedy ($BR_{n-1}$) for the previous commitment on the other persons side.\\
 %\end{enumerate}

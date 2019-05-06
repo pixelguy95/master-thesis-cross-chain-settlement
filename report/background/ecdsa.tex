@@ -175,7 +175,7 @@ Base58 of public key hash (Address):\\
 \Subsection{Homomorphism}\label{homomorphism}
 Elliptic curves has a attribute called homomorphism. It will not be covered in depth, but what it can be used for is that two public keys ($P_1$, $P_2$) can be combined to form a third public key ($P_R$). If $P_1$ and $P_2$ was generated with corresponding private keys $k_1$ and $k_2$ then they can be combined to form the private key that generates $P_R$ ($k_R$).
 
-There are several ways of calculating a a new homomorphic key, this is the one used in later implementations:
+There are several ways of calculating a new homomorphic key, this is the one used in later implementations:
 
 Let's say you have private key k with corresponding public key P. And another temporary private key $k_c$ with corresponding public key $P_c$. To generate the homomorphic public key ($P_h$) you can use the following equation (All the operations in equation \ref{generate} below are in elliptic-curve addition and multiplication, The second (\ref{resolve}) uses regular operators):
 
@@ -190,7 +190,7 @@ Resolve(k, k_c) = k * SHA_{256}(P || P_c) + k_c * SHA_{256}(P_c || P) = k_h
 \end{equation}
 
 \Subsubsection{Revocation keys}
-Imagine Alice and Bob wanting a public key that neither hold the private key to, that could at a later date be revealed. Alice holds the key set ($k_A$, $P_A$), and Bob has the set ($k_B$, $P_B$). Bob creates another key set ($k_T$, $P_T$) and sends $P_T$ to Alice.
+Imagine Alice and Bob wanting a public key that neither hold the private key to, that could be revealed at a later date. Alice holds the key set ($k_A$, $P_A$), and Bob has the set ($k_B$, $P_B$). Bob creates another key set ($k_T$, $P_T$) and sends $P_T$ to Alice.
 
 Alice generates a a new public key ($P_R$) from $P_A$ and $P_T$ with equation \ref{generate}. Now the public key $P_R$ could be used for whatever purpose needed, even though neither party knows the private key $k_c$ at this point as calculating it requires both $k_A$ and $k_T$ and neither party holds both. At a later date Bob could reveal $k_T$ to Alice, she could then use equation \ref{resolve} to determine $k_R$. 
 

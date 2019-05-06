@@ -64,7 +64,7 @@ Figure \ref{fig:pc-htlc} is the equivalent transaction flow diagram for a channe
 	\label{fig:pc-htlc-revoked-alice}
 \end{figure}
 
-Figure \ref{fig:pc-htlc-revoked-alice} shows an example of a channel that was closed abruptly and how a party that tries to cheat the other loses all the money they had in the channel. Le'ts say Alice and Bob has a channel and commit 3 (C3, the one in the figure) is an old commit that has been revoked. Bob has the pre-image required to claim the HTLC-output in commit 3 so he decides to close the channel using this commitment in an attempt to gain money that is not his according to the rules. 
+Figure \ref{fig:pc-htlc-revoked-alice} shows an example of a channel that was closed abruptly and how a party that tries to cheat the other loses all the money they had in the channel. Let's say Alice and Bob has a channel and commit 3 (C3, the one in the figure) is an old commit that has been revoked. Bob has the pre-image required to claim the HTLC-output in commit 3 so he decides to close the channel using this commitment in an attempt to gain money that is not his according to the rules. 
 
 He broadcasts his third commit ($C3_{B}$), thus invalidating any other commitment transactions derived from the funding transaction (F). All transactions on Alices side of the commitment tree are thus invalidated. The 0th output of $C3_{B}$ can only be claimed by Alice, and she does this with $C3_B$-$D$ (Delivery). The 1st output is the one that normally would go to Bob after a relative timelock had passed (using $C3_B$-$RD$ (Revocable delivery)), but when this commitment was revoked a new breach remedy was created. Alice can claim the 1st output immidietly by broadcasting $C3_B$-1$BR$ (Breach remedy).
 
