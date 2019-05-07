@@ -33,11 +33,10 @@ Section \ref{ecdsa} covers public keys and signatures in depth.
 
 Perhaps the most important operation in script is the \texttt{OP\_CHECKSIG} operation and its cousins. \texttt{OP\_CHECKSIG} pops two values from the stack, if the script is correctly implemented these two values should be the public key and a signature created with the private key that correlates with mentioned public key
 
-The question is: what is signed when the signature is created? Broadly speaking it is the hash of the transaction that is trying to spend the output, this is not entirely accurate however. Appended to the signature that is a flag called \textbf{sighash}. The value of sighash tells the script interpreter what hash was signed during the creation of the signature. There are 4 types of sighash implemented:
+The question is: what is signed when the signature is created? Broadly speaking it is the hash of the transaction that is trying to spend the output, this is not entirely accurate however.\cite{antonopoulos_2017} Appended to the signature that is a flag called \textbf{sighash} (Signature hash). The value of sighash tells the script interpreter what hash was signed during the creation of the signature.\cite{bitcoin_core_sighash} There are 4 types of sighash implemented:
 
 \Subsubsection{SIGHASH\_ALL}
 This can be considered the default sighash, if it is not stated otherwise it can safely be assumed that this type was used. This simply means that the entire transaction is signed with all outputs and all other inputs.
-
 
 \Subsubsection{SIGHASH\_NONE}
 This one signs the transaction but without the outputs, it could be thought of as ''I don't care where the money goes''.
@@ -56,7 +55,7 @@ Signs the transaction with all the outputs but none of the other inputs. This ba
 %\newpage
 
 \Subsection{Pay to public key hash (P2PKH)}\label{p2pkh}
-P2PKH is as mentioned the most common form of transaction. This transaction can be thought of as paying to somebodies address. In other words the output of this transaction contains a script where the one who wants to redeem it must prove that they own the private key which created the public key the address is referring too. This is what the script looks like in the output:
+P2PKH is as mentioned the most common form of transaction.\cite{antonopoulos_2017} This transaction can be thought of as paying to somebodies address. In other words the output of this transaction contains a script where the one who wants to redeem it must prove that they own the private key which created the public key the address is referring too. This is what the script looks like in the output:
 
 \texttt{OP\_DUP OP\_HASH160 <public key hash> OP\_EQUALVERIFY OP\_CHECKSIG}
 
@@ -74,10 +73,10 @@ When the input and output is executed together the process goes like this:
 	\item At this point the stack has the following elements: (\texttt{<signature>}, \texttt{<public key>}). \texttt{OP\_CHECKSIG} pops these from the stack and checks if the signature is valid.
 \end{enumerate}
 
-In the early days of bitcoin you payed directly to public keys instead of hashed public key. The reason the hash part was added at all has to do with extra security. If an exploit is found in elliptic curve cryptography that makes it so someone could calculate the private key from a public key then all unspent outputs would be at risk of being stolen. With the hashed public key the actual public key is not revealed until the output is spent, and then it is too late for it to be stolen. This of course requires that everyone uses a different public key for every transaction, which is the standard today.
+In the early days of bitcoin you payed directly to public keys instead of hashed public key. The reason the hash part was added at all has to do with extra security. If an exploit is found in elliptic curve cryptography that makes it so someone could calculate the private key from a public key then all unspent outputs would be at risk of being stolen. With the hashed public key the actual public key is not revealed until the output is spent, and then it is too late for it to be stolen. This of course requires that everyone uses a different public key for every transaction, which is the standard today.\cite{bitcoin_core_tx}
 
 \Subsection{Pay to script hash (P2SH)}
-Pay to script hash is slightly newer and a bit more complex to understand. Instead of paying to someones address, you pay to a script. Let's say Alice has partial script S, that can be solved with the partial script K. She can then hash S and get $H_S$. She then creates transaction with an output containing the following script:
+Pay to script hash is slightly newer and a bit more complex to understand. Instead of paying to someones address, you pay to a script, this was initially proposed by Gavin Andreasen in 2012.\cite{scripthash} Let's say Alice has partial script S, that can be solved with the partial script K. She can then hash S and get $H_S$. She then creates transaction with an output containing the following script:
 
 \texttt{OP\_HASH160 <$H_S$> OP\_EQUAL}
 
@@ -92,12 +91,12 @@ The execution of the combined input output script is not straight forward as mos
 	\item This is where the execution takes a strange and not so intuitive path, as you will see. First the script is hashed with the \texttt{OP\_HASH160} operation.
 	\item The script hash from the output is pushed on the stack.
 	\item OP\_EQUAL checks if the top two items on the stack are equal. If they are it means that the script S provided in the input is the correct script.
-	\item Unique to P2SH, the execution goes back to the original script S that was pushed to the stack in stage 2. And executes it together with whatever K pushed to the stack. This script also has to be valid. 
+	\item Unique to P2SH, the execution goes back to the original script S that was pushed to the stack in stage 2. And executes it together with whatever K pushed to the stack. This script also has to be valid.\cite{scripthash} 
 \end{enumerate}
 
 If all stages are executed without error the redeeming transaction is valid. 
 
-P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''
+P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''\cite{antonopoulos_2017}\cite{scripthash}
 
 \Subsection{Timelock and sequence}
 Transactions have a very useful feature that is widely used in more complex scripts and transactions, and that is timelock and sequence. These variables are used for locking a transaction, meaning it can't be included in the blockchain until a certain time has been passed. Timelock is for absolute locks, for example this transaction can't be spent until \texttt{10th June 2019}, sequence is for relative timelocks, for example this transaction can't be spent until 10 days has passed since the original output was included in the blockchain.
