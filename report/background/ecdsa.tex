@@ -1,16 +1,16 @@
 
 %https://wstein.org/edu/2007/spring/ent/ent-html/node89.html
 \Section{Elliptic-curve cryptography \& ECDSA}\label{ecdsa}
-As covered in the introduction, Elliptic-curve cryptography (\textbf{ECC}) and ECDSA 
+As covered in the introduction, Elliptic-curve cryptography (\textbf{ECC}) and ECDS (Elliptic curve digital signature) 
 is a fundamental building block of bitcoin. Elliptic curve cryptography relies on 
 intractability of calculating the discrete logarithm of a elliptic curve element with 
-respect to a publicly known base point. Or put another way: It is easy to calculate 
+respect to a publicly known base point.\cite{miller_1986}\cite{nakamoto_bitcoin}\cite{antonopoulos_2017}\cite{ecc_def} Or put another way: It is easy to calculate 
 elliptic curve multiplication with multiplicand $n$. But calculating $n$ from the 
-resulting point is considered infeasible with sufficiently large curves and multiplicands.
+resulting point is considered infeasible with sufficiently large curves and multiplicands.\cite{antonopoulos_2017}
 
 %Not sure about the field
 An elliptic curve is defined by the equation $Y^2=x^3+ax+b$ and six domain parameters 
-$E(p,a,b,G,n,h)$. $\textbf{p}$ is the field that the curve is defined over, this 
+$E(p,a,b,G,n,h)$.\cite{Secp256k1_def}\cite{ecc_def} $\textbf{p}$ is the field that the curve is defined over, this 
 is usually a very large prime number. The curve being defined over a field simply 
 means that the points on the curve fall within $[0, p]$ rather than within the 
 real numbers $\mathbb{R}$. In other words the curve is defined over the field 
@@ -18,7 +18,7 @@ $\mathbb{F}_{p}$. $\textbf{a}$ and $\textbf{b}$ are whatever number you put into
 the equation. $\textbf{G}$ is the generator point, that is the point on the curve 
 that will be used in point multiplication later. $\textbf{n}$ is the order of G. What 
 that means is that $n$ is the largest number that $G$ can be multiplied by before 
-a point at infinity is produced. $n$ pretty much tells you the limit on how points 
+a point at infinity is produced. $n$ pretty much tells you the limit on how many points 
 on the curve that can be generated from $G$. $\textbf{h}$ is the co-factor of the 
 curve. It can be calculated as follows: $h=\frac{1}{n}|(E(\mathbb{F}_{p})|$, where 
 $|(E(\mathbb{F}_{p})|$ is the order/cardinality of the group of points possible on 
@@ -27,7 +27,7 @@ be chosen in such a way that $h \leq 4$, preferably $h=1$.
 
 These domain parameters can be chosen manually or you can use predefined parameters. 
 Elliptic curves that used predefined domain parameters are called named-curves. 
-The named curve used by Bitcoin is called \texttt{Secp256k1}
+The named curve used by Bitcoin is called \texttt{Secp256k1}.\cite{Secp256k1_def}\cite{antonopoulos_2017}\cite{nakamoto_bitcoin}
 
 \Subsection{Secp256k1}
 \texttt{Secp256k1} is defined with the following domain parameters (hexadecimal):\\\\
@@ -47,7 +47,7 @@ $h=\texttt{1}$
 
 \Subsection{Math on the elliptic curve}
 Two mathematical operations needs to be defined to operate on the elliptic curve: 
-addition and multiplication
+addition and multiplication, as they are defined by \textbf{SECG} (Standards For Efficient CryptoGraphy). In their paper: SEC 1: Elliptic curve cryptography.\cite{ecc_def}
 
 \Subsubsection{Point addition}
 Let's say you have to distinct points P and Q that both fall on curve $E(p,a,b,G,n,h)$ 
@@ -94,13 +94,13 @@ Just as \texttt{RSA} cryptography, ECC relies on public-private key encryption a
 The public key can be shared freely to everyone, while the private key should, as the name implies, 
 be kept private. Each unique private key has a corresponding public key, through mathematics it 
 can be proven that someone holds the private key paired with a certain public key, without actually 
-revealing the private key. 
+revealing the private key.\cite{antonopoulos_2017}\cite{Secp256k1_def}
 
 In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ 
 and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any 
 $k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is 
-represented by a point in 2D space}, more specifically a point that falls on the curve. To generate a 
-public key P from a private key k you perform $kG = P$ as described in the section above.
+represented by a point in 2D space}, more specifically a point that falls on the curve.\cite{antonopoulos_2017} To generate a 
+public key P from a private key k you perform $kG = P$ as described in the section above.\cite{ecc_def}\cite{Secp256k1_def}
 
 \Subsubsection{Compressed key}
 \begin{wrapfigure}{r}{0.3\textwidth}
@@ -115,17 +115,19 @@ The public key is quite large, with two 256-bit numbers representing coordinates
 clever trick we can use to compress the size of the key. Take the \texttt{Secp256k1} curve for 
 example ($Y^2=x^3+7$). It is mirrored around the x-axis, meaning that for each x value there 
 are two possible y values. Thus a public key can be represented by only it's x value plus a 
-prefix telling you which resulting y-value to choose. 
+prefix telling you which resulting y-value to choose.\cite{antonopoulos_2017}
 
 Note that because y and x is over $\mathbb{F}_{p}$ there is no negative value, instead the y 
 value is referred to as even or odd. 
 
 \Subsection{ECDSA}
-The main usage of ECC in cryptocurrency is for proving ownership of coins. The proof relies 
+The main usage of ECC in cryptocurrency is for proving ownership of coins.\cite{antonopoulos_2017}\cite{nakamoto_bitcoin} The proof relies 
 on elliptic curve mathematics like before. Lets say \textbf{Alice} has a message $m$ and want 
 to send it to \textbf{Bob} and also prove that the message came from her. First of let's 
 establish some variables: $k_A$ is the private key belonging to Alice, from that private 
 key $P_A$ was generated (The public key). Bob knows $P_A$ but not $k_A$ 
+
+The signature generation and validation are as described by \textbf{SECG} (Standards For Efficient CryptoGraphy). In their paper: SEC 1: Elliptic curve cryptography.\cite{ecc_def}
 
 \Subsubsection{Signing}
 First calculate the hash of the message:
@@ -154,9 +156,9 @@ From $u_1$ and $u_2$ calculate the point $(x_1, y_1) = u_1 \times G + u_2 \times
 The signature is valid if and only if $r = x_1 \mod n$
 
 \Subsection{Addresses}
-While using Bitcoin normally you rarely interact with the public keys directly, instead you mostly see  and use something that is called addresses. For example if you want to send money to someone you use their bitcoin-address (see section \ref{p2pkh}). What the address really is, is just a obfuscated representation of a public key.  
+While using Bitcoin normally you rarely interact with the public keys directly, instead you mostly see  and use something that is called addresses.\cite{antonopoulos_2017} For example if you want to send money to someone you use their bitcoin-address (see section \ref{p2pkh}). What the address really is, is just a obfuscated representation of a public key.  
 
-To transform a public key to an address you first hash it using \texttt{SHA256} then hash the result of that with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address. 
+To transform a public key to an address you first hash it using \texttt{SHA256} then hash the result of that with \texttt{RIPEMD160}, this entire process is called HASH160. After doing HASH160 you encode the resulting bytes in Base58, this is your address.\cite{antonopoulos_2017}
 
 HASH160($P_A$) = RIPEMD160(SHA256($P_A$))\\
 $A_A$ = BASE58(HASH160($P_A$))
@@ -173,7 +175,7 @@ Base58 of public key hash (Address):\\
 \texttt{ms5UVmKaaz8kiL7DbMA1NG3t6T4C4GmGzG}
 
 \Subsection{Homomorphism}\label{homomorphism}
-Elliptic curves has a attribute called homomorphism. It will not be covered in depth, but what it can be used for is that two public keys ($P_1$, $P_2$) can be combined to form a third public key ($P_R$). If $P_1$ and $P_2$ was generated with corresponding private keys $k_1$ and $k_2$ then they can be combined to form the private key that generates $P_R$ ($k_R$).
+Elliptic curves has a attribute called homomorphism. It will not be covered in depth, but what it can be used for is that two public keys ($P_1$, $P_2$) can be combined to form a third public key ($P_R$). If $P_1$ and $P_2$ was generated with corresponding private keys $k_1$ and $k_2$ then they can be combined to form the private key that generates $P_R$ ($k_R$).\cite{miller_1986}\cite{bolt}
 
 There are several ways of calculating a new homomorphic key, this is the one used in later implementations:
 
@@ -192,6 +194,6 @@ Resolve(k, k_c) = k * SHA_{256}(P || P_c) + k_c * SHA_{256}(P_c || P) = k_h
 \Subsubsection{Revocation keys}
 Imagine Alice and Bob wanting a public key that neither hold the private key to, that could be revealed at a later date. Alice holds the key set ($k_A$, $P_A$), and Bob has the set ($k_B$, $P_B$). Bob creates another key set ($k_T$, $P_T$) and sends $P_T$ to Alice.
 
-Alice generates a a new public key ($P_R$) from $P_A$ and $P_T$ with equation \ref{generate}. Now the public key $P_R$ could be used for whatever purpose needed, even though neither party knows the private key $k_c$ at this point as calculating it requires both $k_A$ and $k_T$ and neither party holds both. At a later date Bob could reveal $k_T$ to Alice, she could then use equation \ref{resolve} to determine $k_R$. 
+Alice generates a a new public key ($P_R$) from $P_A$ and $P_T$ with equation \ref{generate}. Now the public key $P_R$ could be used for whatever purpose needed, even though neither party knows the private key $k_c$ at this point as calculating it requires both $k_A$ and $k_T$ and neither party holds both. At a later date Bob could reveal $k_T$ to Alice, she could then use equation \ref{resolve} to determine $k_R$.\cite{bolt}
 
-This method is used later in a concept called revocable deliveries, see section \ref{breach_remedy}. In that case ($k_T$, $P_T$) key set would be called commitment point keys, and ($k_R$, $P_R$) would be called revocation keys
+This method is used later in a concept called revocable deliveries, see section \ref{breach_remedy}. In that case ($k_T$, $P_T$) key set would be called commitment point keys, and ($k_R$, $P_R$) would be called revocation keys.\cite{bolt}

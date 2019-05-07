@@ -1,7 +1,7 @@
 %https://en.bitcoin.it/wiki/Transaction
 %mastering bitcoin
 \Section{Transactions}\label{transactions}
-Transactions in Bitcoin are not as straight forward as you might expect a transaction to be. A transaction contains a list of inputs and a list of outputs as well as some metadata like version number and lock-time. 
+Transactions in Bitcoin are not as straight forward as you might expect a transaction to be. A transaction contains a list of inputs and a list of outputs as well as some metadata like version number and lock-time.\cite{bitcoin_core_tx}\cite{antonopoulos_2017}
 
 \begin{figure}[H]
 	\centering
@@ -10,9 +10,9 @@ Transactions in Bitcoin are not as straight forward as you might expect a transa
 	\label{fig:transaction_input_output}
 \end{figure}
 
-In simplified terms an output could be seen as the destination of a transaction, in other words it says how much and to whom the transaction is sent to. An input is a reference to a previous output. The inputs take the money from the outputs they reference and that money is used to fund the new outputs. 
+In simplified terms an output could be seen as the destination of a transaction, in other words it says how much and to whom the transaction is sent to. An input is a reference to a previous output. The inputs take the money from the outputs they reference and that money is used to fund the new outputs.\cite{antonopoulos_2017}\cite{bitcoin_core_tx}
 
-The inputs and outputs is where Script comes into the picture. Both outputs and inputs contains an incomplete script, together however they complete the script. The script in an output could be seen as a challenge, and the script in the input is the response. When a transaction is tested for validity the input script is appended to the script in the output and is executed. If the script comes out as valid the transaction is also valid. Here is a basic example: Let's say Alice wants to send a transaction to whoever can answer the equation $4+3$. Her transaction output would contain the script:
+The inputs and outputs is where Script comes into the picture. Both outputs and inputs contains an incomplete script, together however they complete the script. The script in an output could be seen as a challenge, and the script in the input is the response. When a transaction is tested for validity the input script is appended to the script in the output and is executed. If the script comes out as valid the transaction is also valid.\cite{antonopoulos_2017}\cite{bitcoin_core_tx} Here is a basic example: Let's say Alice wants to send a transaction to whoever can answer the equation $4+3$. Her transaction output would contain the script:
 
 \texttt{4 3 OP\_ADD OP\_EQUALS}
 
