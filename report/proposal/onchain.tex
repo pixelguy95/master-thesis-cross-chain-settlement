@@ -1,0 +1,44 @@
+\Section{On-chain atomic swaps}
+In my implementation I created a scenario where two pararties swapped bitcoins for litecoins, on their respective testnets. 
+The swap was tested for all possible outcomes and possible actions by the actors. And in all cases the swap acted in an atomic way, meaning that either the exchange tock place fully or the state was eventually reset to the original. 
+As expected an onchain atomic swap takes some time to perform. With the values for the timelocks used in my experiment the swap could take up to 48 hours to complete in a worst case scenario. The timelock values could be decreased at the cost of increased risk of failure. 
+
+Under the assumption that the contract transactions, and claim transactions are included in their respective next block an atomic swap can take at best $\sim25$ minutes (Using the average block times for the respective chains, 10 minutes and 2.5 minutes). Both participants have to stay attentive during the whole span (25m - 2880m), in computing terms this is a very long time. 
+
+Under the assumption that Alice (A) is the one who initiated the swap, and Bob (B) is the counter party. A holds the power to control the earliest time that the swap could be completed, before A reveals the pre-image in the blockchain B can do nothing but wait. It could be argued that this is not a swap at all but instead a type of option. If A never reveals the pre-image the swap will be revert back to the pre-swap state. Alice and Bob could agree on a swap at a certain rate, then A could wait it out to see if she could get a better deal (as exchange rates are constantly changing) or decide not to go through with it if agreed upon exchange rate is worse than the current one. A cost for the privilege of this decision could be added to the initial contract transaction as an extra output giving a small sum of money to Bob. 
+
+The swap vs option discussion is interesting, I will however focus more on the technical details in this report, and will leave this topic for future discussion at another time. 
+
+The two sub sections below holds proposals on how wallet and node software could be changed/upgraded to best support atomic swaps in the future. Both runs on the premise that the manual input and interaction from the participants should be kept at minimum possible level and that most of the process should be automated by software and hardware.
+
+\Subsection{Proposed solution}
+The easiest way is to modify wallet software so that it can facilitate atomic swaps, not the matching between the swapees, 
+that could be handled through other channels. The largest problem is not the creation of the swap it self. But rather
+the fact that the blockchian has to be monitored and the pre-image extracted. Most wallet's do not monitor two different blockchains,
+but rather only the one it was made to hold currency from. 
+
+There exists wallet's that can handle transactions on multiple blockchains. Something they all have in common is the lack of self-owned
+nodes. When the node your wallet is interacting with is owned by someone other than yourself there is risk. The owner of the node and
+the other party (they could even be the same person) in the swap could be cooperating to deceive you. 
+
+The only truly risk-free way to handle a cross-chain swap is to run your own nodes on the crypto-currency chains which you wish to swap.
+This is a pretty large hassle if you only want to perform a single swap, it's a trade off between invested time and risk. 
+
+For the completely risk-free trustless solution I propose a wallet that is capable of managing cryptocurrencies of different kinds, 
+interactions with blockchains happens via RPC connections to the full-node. Under the assumption that both parties are using this
+hypothetical wallet making an atomic swap is fairly simple. Either the wallets could communicate and exchange data like addresses 
+and contracts automatically, or that data could be exchanged manually via some other type of channel.
+
+The process will still be as described in previous chapters, in this case the wallet will manage all the time-critical tasks and 
+monitoring that is difficult or tedious for a human to do.
+
+%More here maybe?
+
+\Subsection{Third-party alternative solution}
+If the amount exchanged is small enough, taking a slightly higher risk might be deemed acceptable by the participants. A third-party service could be constructed so that it can handle the time-critical parts of the swap. The contract transactions will be broadcast normally by the participants. If using segregated witness, both the claiming and timelock-refund transactions could be pre-constructed and signed by the participants, then sent to this hypothetical service.
+
+The service could take a small fee for the job, but for now let's imagine it is free. The service monitors all blockchains that it supports swaps for. When it receives a contract and the related spending transactions it can monitor the blockchains for the contract transactions. When it sees one that it has the spending transaction for it can extract the pre-image and insert it into the input script of the claim transaction. It can do this for both sides of the swap. If the initiator never reveals the pre-image the service can broadcast the refund transactions to revert the state back to normal (only after the timelock has expired of course). 
+
+Inserting the pre-image into and already signed transaction is only possible thanks to segregated witness as otherwise the pre-image would aalter the transaction id and the signature would be invalid. 
+
+This is as mentioned earlier not entirely risk free, a rouge service could choose to not broadcast a claim transaction in time and thus letting one participant claim both sides of the swap. If the service came with a small fee the service would be encouraged to not cheat the users and losing out on future fee revenue. Using a third-party is very convenient but comes at a price, in the form of risk. I would only recommend using such a service if you rarely do atomic swaps or you are swapping tiny amounts.

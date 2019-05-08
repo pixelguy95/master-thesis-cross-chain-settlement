@@ -99,16 +99,18 @@ If all stages are executed without error the redeeming transaction is valid.
 P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''\cite{antonopoulos_2017}\cite{scripthash}
 
 \Subsection{Timelock and sequence}
-Transactions have a very useful feature that is widely used in more complex scripts and transactions, and that is timelock and sequence. These variables are used for locking a transaction, meaning it can't be included in the blockchain until a certain time has been passed. Timelock is for absolute locks, for example this transaction can't be spent until \texttt{10th June 2019}, sequence is for relative timelocks, for example this transaction can't be spent until 10 days has passed since the original output was included in the blockchain.
+Since the start of bitcoin; transactions has had two fields in them called \textbf{nTimelock} and \textbf{nSequence}. The timelock variable stopped a transaction from being  included in a block until a certain unix-timestamp or a certain blockheight\footnote{Blockheight is the number of blocks on the current chain} had passed. The sequence field is part of each input into a transaction, it's original purpose was to give users a mechanism for updating a transaction that were still in the transaction-pool. Miners were supposed to include the transaction version with highest sequence number, this however was unenforceable, as there is no way of knowing which transactions were in the transaction-pool of the miner at the time of block creation. So nSequence became mostly defunct and saw little use.
 
-Both sequence and timestamp can be interpreted in terms of number of blocks and time measured in seconds. For example if the timestamp is equal to or larger than 500 million it is seen as a unix-timestamp if it's less than it is seen as a blockheight\footnote{Blockheight is the number of blocks on the current chain}.
+To make timelocks more versatile and more easily enforceable Peter Todd proposed an addition to Script, a new op-code that verifies that the correct timestamp is set, \\\texttt{OP\_CHECKTIMELOCKVERIFY}.
+
+As timelocks only allows for absolute wait time, like for example: ''this transaction can only be spent after \texttt{10th June 2019}''. Mark Friedenbach et al. proposed in 2015 to add an additonal op code to Script that can check for relative time passage as well, \texttt{OP\_CHECKSEQUENCEVERIFY}.
 
 \Subsubsection{OP\_CHECKTIMELOCKVERIFY}
-There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERITY}, what it does is that it compares the timestamp or blockheight that is on the stack and compares it to the timestamp that is in the transaction trying to spend the output that this op code is part of. 
+There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERIFY}, what it does is that it compares the timestamp or blockheight that is on the stack and compares it to the timestamp that is in the transaction trying to spend the output that this op code is part of.\cite{antonopoulos_2017}\cite{checklocktime}\cite{script_wiki}\cite{bitcoin_core_tx}
 
 \Subsubsection{OP\_CHECKSEQUENCEVERIFY}
 \texttt{OP\_CHECKSEQUENCEVERIFY} is a lot like the previous one except it it deals with relative time. 
 
-Let's say you have two transactions transaction $T_A$ and transaction $T_B$, $T_A$ is included in a block on the blockchain. If $T_B$ tries to spend one of $T_A$ outputs and has that specific input marked with a  sequence of 10. It means that $T_B$ can't be included in the block chain until $T_A$ is at least 10 blocks deep in the blockchain.
+Let's say you have two transactions transaction $T_A$ and transaction $T_B$, $T_A$ is included in a block on the blockchain. If $T_B$ tries to spend one of $T_A$ outputs and has that specific input marked with a  sequence of 10. It means that $T_B$ can't be included in the block chain until $T_A$ is at least 10 blocks deep in the blockchain.\cite{antonopoulos_2017}\cite{checksequence}\cite{script_wiki}\cite{bitcoin_core_tx}
 
 \texttt{OP\_CHECKSEQUENCEVERIFY} enforces this in the output. If $T_A$ has \texttt{10 OP\_CHECKSEQUENCEVERIFY}, then if $T_B$ tries to spend that output it has to be at least 10 blocks deep.
