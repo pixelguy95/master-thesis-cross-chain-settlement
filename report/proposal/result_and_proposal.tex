@@ -1,10 +1,78 @@
 \chapter{Results \& Proposal}
-In this section I will talk about the results I got when performing the types of atomic swaps detailed in previous chapters, and from these and my experience I will make a few proposals on how atomic swaps could  be standardized into clearly defined protocols and procedures. 
+In this section I will talk about the results I got when performing the types 
+of atomic swaps detailed in previous chapters, and from these and my experience 
+I will make a few proposals on how atomic swaps could  be standardized into 
+clearly defined protocols and procedures. 
 
 \input{proposal/onchain.tex}
 
 
 \Section{Off-chain atomic swaps}
-How off-chain atomic swaps are performed are a bit harder to understand and required a lot more work, and yet in my opinion they hold more potential for the future. The limitation that comes with having more than one node running still exists, but the cost that comes with broadcasting transactions on-chain is almost completely removed. 
+How off-chain atomic swaps are performed are a bit harder to understand and 
+required a lot more work, and yet in my opinion they hold more potential for 
+the future. The limitation that comes with having more than one node running 
+still exists, but the cost that comes with broadcasting transactions on-chain 
+is almost completely removed. 
 
-In my experiments I did open a proper channel and performed an atomic swap. I did not however do it over the real lightning  network. 
+In my experiments I did open a proper channel and performed an atomic swap. 
+I did not however do it over the real lightning  network, mostly due to time 
+constraints and it not being neccessary to prove that it worked. Doing it over 
+a proper lightning network would require addtional tweaks to the protocol and 
+would take significantly more time. In my simulation I did not perform any 
+multi-hop transactions over nodes not involved in the swap, the fact that it
+still would work over multiple hops is evident in the mechanisms of the swap.
+
+\Subsection{Solution proposal}
+Doing the swaps on a payment channel that is not part of the lightnint network
+like I did in my experiemtns works fine, the problem is that the two participants
+have to have channels open that are dedicated to doing swaps betwwen them and nobody
+else. This is fine for a couple of implementations, like for exchanges or banks 
+etc. It would not be very fitting as a general solution however. 
+
+To make off-chain atomic swaps possible in a more general setting, like the main
+lightning network, some changes have to be made to the protocol. 
+
+\Subsubsection{BOLT and c-lightning}
+All nodes participating in the lightning netowork follow a set of rules and 
+protocols that are defined in the BOLT specification. My first thought were to
+simply propose a few changes to the protocol to allow swaps, but there is a 
+simpler solution that makes the implementation even more versatile. 
+
+The writers of the BOLT specification has purpusley left openings in the
+flag and protocol structure to allow for easy extensions. This is what is known
+as ''it's ok to be odd rule'', what that means is that any  message with
+and even number should be supported by all nodes. Messages with odd numbers 
+are interpreted as optional. If the node receives a message with an odd number 
+that it does not recognize it will simply be ignored (unknown even messages 
+should result in closing of the connection as the nodes most likely
+have different version numbers).
+
+There are also flags in the BOLT specification that nodes tell each other about
+upon connection. A flag is a bit set to 1 or 0 in a bytestring, and they 
+represent a supported feature. As before these
+flags follow the ''it's ok to be odd rule''. Thus flags in even positions are 
+features that must be supported, and flags in odd positions represent optional
+features that this node support.
+
+%Add something about chainhash
+
+Another interesting aspect is the new plugin system for the node implemenation: 
+\textb{c-lightning}. This plugin system allows for functionality additions that
+does not need to be part of the main implementation code. 
+
+\Subsubsection{A non-disruptive solution}
+My proposed solution involves making a plugin for c-lightning (and any other 
+node as soon as they add plugin support). The plugin add an additional 
+feature flag in any open odd position. The flag represents support and potential
+willingness to perform swaps across chains. 
+
+One of the aspects i find most interesting with the off-chain atomic swaps is
+the fact that the other nodes (in the case of a multi-hop path) does not need
+to know that the transaction they are propagating is part of a swap. In other 
+words they do not need to have the plugin themselves to be part of the atomic
+swap. Only the two end nodes on each side of the swap, meaning the two 
+participants in the swap needs to run special plugin software. 
+
+
+
+\Subsection{Alternative solutions}
