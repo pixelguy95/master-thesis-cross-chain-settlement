@@ -16,16 +16,16 @@ is almost completely removed.
 
 In my experiments I did open a proper channel and performed an atomic swap. 
 I did not however do it over the real lightning  network, mostly due to time 
-constraints and it not being neccessary to prove that it worked. Doing it over 
-a proper lightning network would require addtional tweaks to the protocol and 
+constraints and it not being necessary to prove that it worked. Doing it over 
+a proper lightning network would require additional tweaks to the protocol and 
 would take significantly more time. In my simulation I did not perform any 
 multi-hop transactions over nodes not involved in the swap, the fact that it
 still would work over multiple hops is evident in the mechanisms of the swap.
 
 \Subsection{Solution proposal}
-Doing the swaps on a payment channel that is not part of the lightnint network
-like I did in my experiemtns works fine, the problem is that the two participants
-have to have channels open that are dedicated to doing swaps betwwen them and nobody
+Doing the swaps on a payment channel that is not part of the lightning network
+like I did in my experiments works fine, the problem is that the two participants
+have to have channels open that are dedicated to doing swaps between them and nobody
 else. This is fine for a couple of implementations, like for exchanges or banks 
 etc. It would not be very fitting as a general solution however. 
 
@@ -33,12 +33,12 @@ To make off-chain atomic swaps possible in a more general setting, like the main
 lightning network, some changes have to be made to the protocol. 
 
 \Subsubsection{BOLT and c-lightning}
-All nodes participating in the lightning netowork follow a set of rules and 
+All nodes participating in the lightning network follow a set of rules and 
 protocols that are defined in the BOLT specification. My first thought were to
 simply propose a few changes to the protocol to allow swaps, but there is a 
 simpler solution that makes the implementation even more versatile. 
 
-The writers of the BOLT specification has purpusley left openings in the
+The writers of the BOLT specification has purposely left openings in the
 flag and protocol structure to allow for easy extensions. This is what is known
 as ''it's ok to be odd rule'', what that means is that any  message with
 and even number should be supported by all nodes. Messages with odd numbers 
@@ -56,8 +56,8 @@ features that this node support.
 
 %Add something about chainhash
 
-Another interesting aspect is the new plugin system for the node implemenation: 
-\textb{c-lightning}. This plugin system allows for functionality additions that
+Another interesting aspect is the new plugin system for the node implementation: 
+\textbf{c-lightning}. This plugin system allows for functionality additions that
 does not need to be part of the main implementation code. 
 
 \Subsubsection{A non-disruptive solution}
@@ -73,6 +73,14 @@ words they do not need to have the plugin themselves to be part of the atomic
 swap. Only the two end nodes on each side of the swap, meaning the two 
 participants in the swap needs to run special plugin software. 
 
+The plugin's normal operation outside the feature flag addition will be handling 
+of forwarding new htlc outputs. When it receives a pre-image that is not related 
+to any atomic-swap it will be handled like any normal htlc request would. 
+When it sees a htlc related to a known atomic swap however it will handle it as 
+a special case.
 
+For now let's assume that the swapping parties reached their agreement through 
+a separate channel. The details they need to agree upon are how much to be 
+exchanged and at what rate, but also 
 
 \Subsection{Alternative solutions}
