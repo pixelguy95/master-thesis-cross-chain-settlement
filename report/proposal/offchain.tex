@@ -1,0 +1,151 @@
+\Section{Off-chain atomic swaps}
+How off-chain atomic swaps are performed are a bit harder to understand and 
+required a lot more work, and yet in my opinion they hold more potential for 
+the future. The limitation that comes with having more than one node running 
+still exists, but the cost that comes with broadcasting transactions on-chain 
+is almost completely removed. 
+
+In my experiments I did open a proper channel and performed an atomic swap. 
+I did not however do it over the real lightning  network, mostly due to time 
+constraints and it not being necessary to prove that it worked. Doing it over 
+a proper lightning network would require additional tweaks to the protocol and 
+would take significantly more time. In my simulation I did not perform any 
+multi-hop transactions over nodes not involved in the swap, the fact that it
+still would work over multiple hops is evident in the mechanisms of the swap.
+
+\Subsection{Solution proposal}
+Doing the swaps on a payment channel that is not part of the lightning network
+like I did in my experiments works fine, the problem is that the two participants
+have to have channels open that are dedicated to doing swaps between them and nobody
+else. This is fine for a couple of implementations, like for exchanges or banks 
+etc. It would not be very fitting as a general solution however. 
+
+To make off-chain atomic swaps possible in a more general setting, like the main
+lightning network, some changes have to be made to the protocol. 
+
+\Subsubsection{BOLT and c-lightning}
+All nodes participating in the lightning network follow a set of rules and 
+protocols that are defined in the BOLT specification. My first thought were to
+simply propose a few changes to the protocol to allow swaps, but there is a 
+simpler solution that makes the implementation even more versatile. 
+
+The writers of the BOLT specification has purposely left openings in the
+flag and protocol structure to allow for easy extensions. This is what is known
+as ''it's ok to be odd rule'', what that means is that any  message with
+and even number should be supported by all nodes. Messages with odd numbers 
+are interpreted as optional. If the node receives a message with an odd number 
+that it does not recognize it will simply be ignored (unknown even messages 
+should result in closing of the connection as the nodes most likely
+have different version numbers).
+
+There are also flags in the BOLT specification that nodes tell each other about
+upon connection. A flag is a bit set to 1 or 0 in a bytestring, and they 
+represent a supported feature. As before these
+flags follow the ''it's ok to be odd rule''. Thus flags in even positions are 
+features that must be supported, and flags in odd positions represent optional
+features that this node support.
+
+BOLT is designed to support more than bitcoin with the help of the chain\_hash 
+variable. The chain hash is the unique identifier for the genesis block on
+whatever blockchain you refer to in a specifc protocol message. If a node
+receives a chain hash it does not recognize or does not support it will ignore
+that message.
+
+Another interesting aspect is the new plugin system for the node implementation: 
+\textbf{c-lightning}. This plugin system allows for functionality additions that
+does not need to be part of the main implementation code. 
+
+\Subsubsection{A non-disruptive solution}
+My proposed solution involves making a plugin for c-lightning (and any other 
+node as soon as they add plugin support). The plugin add an additional 
+feature flag in any open odd position. The flag represents support and potential
+willingness to perform swaps across chains. 
+
+One of the aspects i find most interesting with the off-chain atomic swaps is
+the fact that the other nodes (in the case of a multi-hop path) does not need
+to know that the transaction they are propagating is part of a swap. In other 
+words they do not need to have the plugin themselves to be part of the atomic
+swap. Only the two end nodes on each side of the swap, meaning the two 
+participants in the swap needs to run special plugin software. 
+
+The plugin's normal operation outside the feature flag addition will be handling 
+of forwarding new htlc outputs. When it receives a pre-image that is not related 
+to any atomic-swap it will be handled like any normal htlc request would. 
+When it sees a htlc related to a known atomic swap however it will handle it as 
+a special case.
+
+For now let's assume that the swapping parties reached their agreement through 
+a separate channel. The details they need to agree upon are how much to be 
+exchanged and at what rate, and also they need to make sure that there is a 
+viable path between them on sides of the network, both to know if the swap 
+is possible at all, and to know what timelock to start on. Let's also 
+assume that Alice is the one who initiates the exchange.
+
+In a normal transaction Bob would be the one who generates the pre-image used 
+in the transaction chain started by Alice. In the case of a swap this would not 
+work however, as she will ultimately be the nreceiver on the other end
+when she receives the other type of crypto-currency. Thus before the exchange
+begins Alice will generate the pre-image and sends the hash of it to Bob.
+
+When these variables are agreed upon Alice can send the bitcoins to Bob on the
+bitcoin side of the network. When the transaction reaches Bob is where the plugin
+kicks in. It keeps track of agrred upon swaps and what pre-image hash that they
+will use. When the new transaction comes in with the hash they agreed upon earlier
+the plugin will act differently than normal operations. It will recognize the hash
+and match it to the details of the swap. It can then send the promised money on 
+the litecoin side of the network to Alice, using the same pre-image hash and 
+continuing on the same timelock. 
+
+As can be seen the plugin is quite simple but still allows for some complex 
+behaviour, and it is very non-disruptive. It requires no extra software or special
+nodes running on their own network. 
+
+\Subsection{Alternative third-party solutions}
+Even in off-chain atomic swaps there is a possibility for a third-party solution, 
+though in this case it's not entirely atomic, the risk in the exchanged can be 
+minimized as much as the participants want. One thing we are used to in our regular
+financial system is that most transactions and exchanges are made in lump sums, meaning 
+the whole value of something is transacted in one go. Payment channels and lightning network 
+introduces a new method: streaming. In the lightning network there is nothing stopping you 
+from splitting up a transaction into smaller parts. This could be seen
+as packets in a stream, each packet shifting the value balance between two parties. 
+
+This streaming could change how we think of transactions. As an example imagine a tv-series 
+streaming service. Instead of paying per month with money streaming you could be paying per 
+watched hour, or even minute or second. You could imagine a parking space that automatically
+withdraws money per minute that you are parked in that spot. The future of these money streams 
+is a discussion for another day though and for now I will focus on how they could be utilized 
+for swaps.
+
+A service could be setup so that anyone wanting to exchange a currency for 
+another (for example bitcoin to litecoin) could stream bitcoin into the service and have 
+a stream of litecoin coming back. The service itself would not be the one providing 
+the litecoins, instead someone on the other end would have the same stream setup
+but with the currencies swapped. It could be said that what the service really does is 
+connecting streams, like pipes. The users does not even need to know who they are 
+connected to, they only need to worry about getting the currency they requested 
+at the rate they want.
+
+So what is stopping the service from just closing all channels and running away with the money?
+This is where the streams come in handy. Each participant only sends a really tiny amount at
+a time, and does not send the next package until thy have received the right amount on the 
+channel of the other currency. The service could at most steal the amount used in one 
+''stream'' package. The user could adjust the amount sent in each package to 
+whatever value they are willing to risk. With a functioning fee system, the service would
+be encouraged to not cheat their users and being seen as not trustworthy, the fee could be sent 
+with each package, and be proportional to the amount.
+
+Some logistical problems arises when users are using different amounts in their packages. 
+If the amounts does not even out the exchange can dead-lock as I have described it so far. 
+Let's say one user uses package size of x and another user is trying to exchange for that
+currency but is using size x1.5. Then the latter user will not send the next package as 
+they have have not received the full promised amount, and the former user will stop sending 
+after only receiving x0.5 for their second package. This could be solved by the service 
+communicating with the users about the situation and they simply have to adjust accordingly. 
+It could also be solved by the service setting a set package size for each currency that
+all users have to adhere to. 
+
+All said and done this is not an atomic swap, as it is not fully atomic. It is however a 
+method of swapping where the risk could be minimized as much as the user wants. It could
+also end up being more practical than organizing all swaps in a completely 
+distributed manner.
