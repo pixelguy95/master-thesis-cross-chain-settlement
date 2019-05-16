@@ -9,7 +9,7 @@ To build a trustless payment channel there are several ways to go about as Scrip
 The method that will be covered here uses a type of channel \textbf{funding transaction that requires the signature from both parties to spend}, and the channel balance is updated via special commitment transactions that spend the funding output. Each party in the channel has their own version of the commitment transaction. Whenever a commitment transaction is broadcast to the blockchain the channel is closed as the funding transaction can't be spent twice. To update the balance in the channel both parties create new commitment transactions and signs the other parties commitment transaction.\cite{lightningnetwork_2019}\cite{antonopoulos_2017}
 Let's take a look at a naive example:
 
-\Subsubsection{The naive payment channel}
+\Subsection{The naive payment channel}
 Imagine Alice and Bob wants to open a payment channel between each other. They create a funding transaction and the initial commitment transactions. Let's say they both funded the channel with 1 Bitcoin each. The initial commitment transactions would then have one output paying 1 Bitcoin to Alice and one output paying 1 Bitcoin to Bob, let's call this commit (\textbf{C0}).
 The funding transaction is broadcast to the blockchain.
 
@@ -17,7 +17,7 @@ A bit later Alice buys one funny hat from Bob for 0.1 Bitcoins. To complete the 
 
 A payment channel needs some safety measures to be safe from malicious actors. The above example lacks a mechanism for preventing old commitment transactions from making their way into the blockchain and still paying the malicious party.. For example after the initial funny hat transaction above (\textbf{C1}) Alice could just broadcast the initial commit transaction (\textbf{C0}) and reclaim the 0.1 Bitcoins she spent. Bob would have no way of preventing this in this naive implementation.
 
-\Subsubsection{Transaction flow diagrams}
+\Subsection{Transaction flow diagrams}
 The transactions that are involved in making payment channels grows larger the more features that are added. To make it easier to understand, diagrams are used together with the descriptions. In Figure \ref{fig:anatomy} a basic overview of the diagram-realm transaction is shown. Lines leading from outputs to inputs means that the connected input are spending that output. Note that one output can be connected to several inputs but each input can only be connected to one output, of course an output can only be spent once, this will be clarified later. A question mark (\textbf{?}) in the broadcaster field indicates either that the sender is unknown or that who sends it is irrelevant. 
 
 

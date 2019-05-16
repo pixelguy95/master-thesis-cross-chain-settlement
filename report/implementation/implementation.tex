@@ -1,10 +1,78 @@
 \chapter{Implementation}
-To implement the described types of atomic swaps, Go (golang) was used together with the standard libraries plus external libraries from the \textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, as well as \textbf{lightningnetwork/lnd}, all of which can be found on github.com. The implementations are simplified, just like with this report the focus was on making it easy to understand for newcomers. 
+To implement the described types of atomic swaps, Go (golang) was used 
+together with the standard libraries plus external libraries from the 
+\textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, 
+as well as \textbf{lightningnetwork/lnd}, all of which can be found 
+on github.com. The implementations are simplified, just like with 
+this report the focus was on making it easy to understand for newcomers. 
 
-To interact with the different blockchains two different full-nodes was setup. \textbf{Bitcoin Core 17.1} for bitcoin and \textbf{Litecoin Core  v0.16.3.0-82cacfef8}. Both running on their respective \textit{testnet}. Both nodes have a RPC interface to interact with the blockchain and the rest of the network. 
+To interact with the different blockchains two different full-nodes 
+was setup. \textbf{Bitcoin Core 17.1} for bitcoin and 
+\textbf{Litecoin Core  v0.16.3.0-82cacfef8}. Both running on their 
+respective \textit{testnet}. Both nodes have a RPC interface to interact 
+with the blockchain and the rest of the network. 
 
 \Section{Onchain atomic swaps}
-The implementation creates two simulated peers, called Alice and Bob 
+The implementation creates two simulated peers, called Alice and Bob. 
+Each participant is represented by the wallet name used in the node
+programs. The entire process is divided up into 4 smaller programs.
+The first program generates the contract and contract transactions and 
+prints it on \texttt{stdout} in hex format. The second program takes 
+the contract as input and prints the contract transaction for the 
+litecoin side of the swap. 
+
+The last two programs are used to redeem the contract transactions.
+Logically you should run the litecoin side program first and
+claim the litecoins as Alice knows the secret. The third program
+takes the secret as input and prints the transaction that can
+claim the litecoins. The fourth program takes the secret and creates 
+the claim transaction for the bitcoins. 
+
+Overall the onchain swap implementation is sloppy and not super easy to follow. 
+In the off-chain swap implementation everything was put into one program, with 
+clearly defined datatypes and it relies a lot less on the nodes for support 
+with private keys and public keys.
+
+The swapping programs does not themselves send any transactions to the blockchain,
+that has to be done by the user manually. 
+
+\Subsection{Details on script}
+The script used to create the contract is based on the suggested atomic-swap 
+contract that can be found in \textbf{btcd}. More specifically there 
+is a function that comes with the btcd library that can extract data from 
+swap contracts, so the contract designed in this solution was designed so that
+it is compatible with this function. 
+
+\begin{verbatim}
+OP_IF
+    OP_SIZE
+    <Byte length of secret>
+    OP_EQUALVERIFY
+    
+    OP_SHA256
+    <Hash of secret>
+    OP_EQUALVERIFY
+    
+    OP_DUP
+    OP_HASH160
+    <Receiver address>
+OP_ELSE
+    <Locktime>
+    OP_CHECKLOCKTIMEVERIFY
+    OP_DROP
+    
+    OP_DUP
+    OP_HAASH160
+    <Refund address>
+OP_ENDIF
+
+OP_EQUALVERIFY
+OP_CHECKSIG
+\end{verbatim}
+
+A contract following this format can be used by the contract details 
+extractor function to extract all the data pushes, like locktime and 
+hash of secret.
 
 \vspace{20mm}
 More to come...
