@@ -12,7 +12,7 @@ was setup. \textbf{Bitcoin Core 17.1} for bitcoin and
 respective \textit{testnet}. Both nodes have a RPC interface to interact 
 with the blockchain and the rest of the network. 
 
-\Section{Onchain atomic swaps}
+\Section{On-chain atomic swaps}
 The implementation creates two simulated peers, called Alice and Bob. 
 Each participant is represented by the wallet name used in the node
 programs. The entire process is divided up into 4 smaller programs.
@@ -73,6 +73,23 @@ OP_CHECKSIG
 A contract following this format can be used by the contract details 
 extractor function to extract all the data pushes, like locktime and 
 hash of secret.
+
+\Section{Off-chain atomic swap}
+The implementation of the off-chain swap was considerably more robust and better coded.
+The solution creates two fake people Alice and Bob, who via two payment channels performs
+an atomic swap from bitcoin to litecoin (In Alices perspective). Both the peers and
+channel has proper data structures  and related functions. The process starts with 
+opening of both channels. The channel opening consists of generating the funding transaction 
+and the first commitment transaction. Just as before they are printed to \texttt{stdout} 
+in hex encoding, and also like before all transactions has to be broadcast manually. In
+this case however you dont really need to transmit any transactions until the channel closes,
+The commitments coming after the first ones assume that the funding transaction has been broadcast,
+but they never check for it. SO you could run the simulation without actually performing any transactions
+on-chain.
+
+The payment channels in this implementation supports regular transactions between the peers. The implementation
+is an exact clone of how it works in the lightning network minus all the protocol and multi-hoping.
+Some liberties are taken with how data is stored and when 
 
 \vspace{20mm}
 More to come...
