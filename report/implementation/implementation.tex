@@ -84,12 +84,39 @@ and the first commitment transaction. Just as before they are printed to \texttt
 in hex encoding, and also like before all transactions has to be broadcast manually. In
 this case however you dont really need to transmit any transactions until the channel closes,
 The commitments coming after the first ones assume that the funding transaction has been broadcast,
-but they never check for it. SO you could run the simulation without actually performing any transactions
+but they never check for it. So you could run the simulation without actually performing any transactions
 on-chain.
 
 The payment channels in this implementation supports regular transactions between the peers. The implementation
 is an exact clone of how it works in the lightning network minus all the protocol and multi-hoping.
-Some liberties are taken with how data is stored and when 
+Some liberties are taken with how data is stored and the order of how things are done. For example 
+all data related to things like private keys are stored on the same computer. In a real life scenario this
+would be very unsafe, but making the experiment using two computers would be needlessly complicated, so
+it was skipped. An example of things being out of order is the revocation of commitment transactions, which 
+in this solution is done at the same time as the commitment itself. This is also completely unsafe 
+in any real life scenario, all money would be stolen if any commitment transaction was broadcast. 
 
-\vspace{20mm}
-More to come...
+The implementation has a special function where the real swapping magic takes place. 
+It takes in two channels, the ones we created earlier, and performs the atomic swap between them.
+The regular channel payment function that is contained in the payment channel object
+takes in a payment descriptor that takes in information about the transaction, the 
+descriptor holds data like amount, sender and receiver, but also the pre+image hash
+that should be used plus the timelock.
+
+The swap function performs the swap by first sending bitcoins from Alice to Bob, then litecoin 
+from Bob to Alice using the same pre-image hash and with a halved time in the future in the timelock.
+It then simulates pre-image reveal and settles both channels with the updated value.
+
+All outcomes of the transaction is tested. That means all possible scenarios and outcomes from 
+the htlc contract on both channels. The test was by trying all scenarios by broadcasting 
+the commitment transactions on the testnet chains along with all transactions that settles the htlc
+and other outputs. 
+
+\Subsection{Implementation specifics}
+Both the channels used a variabtion of the implementation that can be found in lnd. With a few modifications
+to allow the custom channel setup. As mentioned none of the BOLT protocol and databases were used. 
+
+All the scripts for the different contracts were as described in the BOLT specification. 
+Because of an initial misunderstanding there is a second-level htlc bot on the htlc-success path
+and the timeout-path on both sides of the commitment transaction. This is not correct, but it
+does not affect the security or the swaps in any way so it was left in.
