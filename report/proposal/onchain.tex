@@ -22,7 +22,7 @@ nodes. When the node your wallet is interacting with is owned by someone other t
 the other party (they could even be the same person) in the swap could be cooperating to deceive you. 
 
 The only truly risk-free way to handle a cross-chain swap is to run your own nodes on the crypto-currency chains which you wish to swap.
-This is a pretty large hassle if you only want to perform a single swap, it's a trade off between invested time and risk. 
+This is a pretty large hassle if you only want to perform a single swap, it is a trade off between invested time and risk. 
 
 For the completely risk-free trustless solution I propose a wallet that is capable of managing cryptocurrencies of different kinds, 
 interactions with blockchains happens via RPC connections to the full-node. Under the assumption that both parties are using this
@@ -37,7 +37,7 @@ monitoring that is difficult or tedious for a human to do.
 \Subsection{Third-party alternative solution}
 If the amount exchanged is small enough, taking a slightly higher risk might be deemed acceptable by the participants. A third-party service could be constructed so that it can handle the time-critical parts of the swap. The contract transactions will be broadcast normally by the participants. If using segregated witness, both the claiming and timelock-refund transactions could be pre-constructed and signed by the participants, then sent to this hypothetical service.
 
-The service could take a small fee for the job, but for now let's imagine it is free. The service monitors all blockchains that it supports swaps for. When it receives a contract and the related spending transactions it can monitor the blockchains for the contract transactions. When it sees one that it has the spending transaction for it can extract the pre-image and insert it into the input script of the claim transaction. It can do this for both sides of the swap. If the initiator never reveals the pre-image the service can broadcast the refund transactions to revert the state back to normal (only after the timelock has expired of course). 
+The service could take a small fee for the job, but for now let us imagine it is free. The service monitors all blockchains that it supports swaps for. When it receives a contract and the related spending transactions it can monitor the blockchains for the contract transactions. When it sees one that it has the spending transaction for it can extract the pre-image and insert it into the input script of the claim transaction. It can do this for both sides of the swap. If the initiator never reveals the pre-image the service can broadcast the refund transactions to revert the state back to normal (only after the timelock has expired of course). 
 
 Inserting the pre-image into and already signed transaction is only possible thanks to segregated witness as otherwise the pre-image would aalter the transaction id and the signature would be invalid. 
 

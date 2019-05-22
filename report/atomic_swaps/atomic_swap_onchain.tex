@@ -43,7 +43,7 @@ Easiest way to show the atomicity of the swap is to show what happens if one par
 	\end{minipage}}
 }[4]
 
-The first case we will look at is if Bob stops responding after step 2. Meaning he never broadcasts his side of the contract. Then Alice simply never reveals $x$, Bob needs $x$ to claim the Bitcoins. Alice then just waits on till timelock $T$ has passed and refunds the transaction. After the refund the state has been reset to the initial state.
+The first case we will look at is if Bob stops responding after step 2. Meaning he never broadcasts his side of the contract. Then Alice simply never reveals $x$, Bob needs $x$ to claim the Bitcoins. Alice then just waits until timelock $T$ has passed and refunds the transaction. After the refund the state has been reset to the initial state.
 
 The second case is if Alice becomes unresponsive after Bob has broadcast his side of the contract. Bob can't do anything until he knows $x$ or the timelock ($T/2$) of his transaction expires. If Alice does nothing Bob will never know $x$ and thus has to wait to refund his transaction. Presumably Alice does the same after timelock $T$ expires. The state has been reset to the initial one.
 
@@ -56,4 +56,4 @@ The atomicity of the swap depends on each party acting rationally and not doing 
 
 Malformed contracts could also lead to money being stolen. This is why the validation steps are very important. For example Alice could maliciously set her contract to expire earlier than Bobs if Bob is not careful.
 
-Actors in the scenario doing nothing also compromises the swap. If Alice waits til after $T/2$ expires before attempting to claim the Litecoins she is risking out on losing both the currencies. Bob could monitor the transaction pool, seeing what $x$ was, then sneak in his own refund transaction reclaiming his Litecoins (This is possible as the refund branch of the contract now is unlocked). Then also claiming the Bitcoins before $T$ expires.
+Actors in the scenario doing nothing also compromises the swap. If Alice waits until after $T/2$ expires before attempting to claim the Litecoins she is risking out on losing both the currencies. Bob could monitor the transaction pool, seeing what $x$ was, then sneak in his own refund transaction reclaiming his Litecoins (This is possible as the refund branch of the contract now is unlocked). Then also claiming the Bitcoins before $T$ expires.

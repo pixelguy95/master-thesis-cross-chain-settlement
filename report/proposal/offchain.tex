@@ -74,11 +74,11 @@ to any atomic-swap it will be handled like any normal htlc request would.
 When it sees a htlc related to a known atomic swap however it will handle it as 
 a special case.
 
-For now let's assume that the swapping parties reached their agreement through 
+For now let us assume that the swapping parties reached their agreement through 
 a separate channel. The details they need to agree upon are how much to be 
 exchanged and at what rate, and also they need to make sure that there is a 
 viable path between them on sides of the network, both to know if the swap 
-is possible at all, and to know what timelock to start on. Let's also 
+is possible at all, and to know what timelock to start on. Let us also 
 assume that Alice is the one who initiates the exchange.
 
 In a normal transaction Bob would be the one who generates the pre-image used 
@@ -102,7 +102,7 @@ nodes running on their own network.
 
 \Subsection{Alternative third-party solutions}
 Even in off-chain atomic swaps there is a possibility for a third-party solution, 
-though in this case it's not entirely atomic, the risk in the exchanged can be 
+though in this case it is not entirely atomic, the risk in the exchanged can be 
 minimized as much as the participants want. One thing we are used to in our regular
 financial system is that most transactions and exchanges are made in lump sums, meaning 
 the whole value of something is transacted in one go. Payment channels and lightning network 
@@ -137,7 +137,7 @@ with each package, and be proportional to the amount.
 
 Some logistical problems arises when users are using different amounts in their packages. 
 If the amounts does not even out the exchange can dead-lock as I have described it so far. 
-Let's say one user uses package size of x and another user is trying to exchange for that
+Let us say one user uses package size of x and another user is trying to exchange for that
 currency but is using size x1.5. Then the latter user will not send the next package as 
 they have have not received the full promised amount, and the former user will stop sending 
 after only receiving x0.5 for their second package. This could be solved by the service 

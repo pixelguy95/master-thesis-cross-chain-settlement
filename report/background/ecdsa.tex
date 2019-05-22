@@ -96,13 +96,6 @@ be kept private. Each unique private key has a corresponding public key, through
 can be proven that someone holds the private key paired with a certain public key, without actually 
 revealing the private key.\cite{antonopoulos_2017}\cite{Secp256k1_def}
 
-In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ 
-and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any 
-$k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is 
-represented by a point in 2D space}, more specifically a point that falls on the curve.\cite{antonopoulos_2017} To generate a 
-public key P from a private key k you perform $kG = P$ as described in the section above.\cite{ecc_def}\cite{Secp256k1_def}
-
-\Subsubsection{Compressed key}
 \begin{wrapfigure}{r}{0.3\textwidth}
 	\begin{center}
 		\includegraphics[width=0.4\textwidth]{background/images/key_compression.png}
@@ -111,6 +104,13 @@ public key P from a private key k you perform $kG = P$ as described in the secti
 	\caption{How to compress the public key in ecc}
 \end{wrapfigure}
 
+In ECC \textbf{a private key is a really large number}. Imagine you have curve $E(p,a,b,G,n,h)$ 
+and you want to generate a brand new private key k. k could be any number between 0 and $n$. Any 
+$k > n$ will produce the exact same public key so that will not work. \textbf{A public key in ECC is 
+represented by a point in 2D space}, more specifically a point that falls on the curve.\cite{antonopoulos_2017} To generate a 
+public key P from a private key k you perform $kG = P$ as described in the section above.\cite{ecc_def}\cite{Secp256k1_def}
+
+\Subsubsection{Compressed key}
 The public key is quite large, with two 256-bit numbers representing coordinates. But there is a 
 clever trick we can use to compress the size of the key. Take the \texttt{Secp256k1} curve for 
 example ($Y^2=x^3+7$). It is mirrored around the x-axis, meaning that for each x value there 
@@ -120,12 +120,14 @@ prefix telling you which resulting y-value to choose.\cite{antonopoulos_2017}
 Note that because y and x is over $\mathbb{F}_{p}$ there is no negative value, instead the y 
 value is referred to as even or odd. 
 
+
+
+
 \Subsection{ECDSA}
 The main usage of ECC in cryptocurrency is for proving ownership of coins.\cite{antonopoulos_2017}\cite{nakamoto_bitcoin} The proof relies 
 on elliptic curve mathematics like before. Lets say \textbf{Alice} has a message $m$ and want 
 to send it to \textbf{Bob} and also prove that the message came from her. First of let's 
-establish some variables: $k_A$ is the private key belonging to Alice, from that private 
-key $P_A$ was generated (The public key). Bob knows $P_A$ but not $k_A$ 
+establish some variables: $k_A$ is the private key belonging to Alice, and from it the public key $P_A$ was generated. Bob knows $P_A$ but not $k_A$ 
 
 The signature generation and validation are as described by \textbf{SECG} (Standards For Efficient CryptoGraphy). In their paper: SEC 1: Elliptic curve cryptography.\cite{ecc_def}
 
