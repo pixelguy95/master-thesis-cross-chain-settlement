@@ -6,4 +6,17 @@ If I could do the project over again my focus would have been more on actually d
 I plan to at least give it a try to implement the plugin, but it will be during the coming summer and outside the scope of this thesis. 
 
 \Section{Future research}
-There is plenty of 
+There are plenty of topics of interest around swaps that could be explored further:
+\begin{itemize}
+	\item \textbf{eltoo and transaction binding}\\A potential update to bitcoin will add an additional sighash called \texttt{SIGHASH\_NOINPUT}. This new sighash removes the need to sign the input field of the transaction. This makes opening of channels easier as now both participants can safely fund the channel. But more importantly it allows for something called transaction binding, this is a concept where the txid that reference where which transaction output is bering spent can be changed after signing, thus ''changing the binding''\\
+	
+	eltoo is the name of the proposed change in payment channel protocol, this change requires the new sighash to work. I will not go into detail here bu the gist of the update is a change so that the commitment transactions that make up the channel become symmetrical and it removes the breach remedy entirely, because there is no way to broadcast and spend an old commitment transaction. As far as I know there is little change to how htlcs operate so my master-thesis should still be compatible, but it is worth looking into.\\
+	
+	Perhaps there is a yet undiscovered method of doing swaps using the new utility provided by \texttt{SIGHHASH\_NOINPUT}. This is also worth looking into\\
+	
+	\item \textbf{Economics of atomic swaps}\\Another potential for future research is the viability of using atomic swaps in actual financial settings. Analyzing things like time and cost could be very valuable, and could decide if atomic swaps actually have a future outside of being an interesting gimmick.\\
+	
+	\item \textbf{Off-chain swaps as routing method}\\This is a pretty wild idea and I have no idea if it is viable in anyway, but as shown by the off-chain atomic swap a multi-hop transaction does not have to do all hops on the same chain, in fact the atomic swap described in the chapters above only switches chain once along the path but that is by no way a requirement, the transaction could switch chain any arbitrary number of times along the path. But at great cost of organizing and etc... Perhaps this method could be used to make cheaper multi-hop transactions, by making it travel across a chain with lower fees part of the way to it's destination. This is probably way to complicated to organize and gives very little benefit, but might be worth looking into anyways.\\
+	
+	The fact that the only requirement for a multi-hop transaction staying safe and consistent is keeping the same pre-image hash and using a strictly decreasing timelock all the way to the destination opens up potential for use and abuse by routing nodes. If you imagine someone hosting several routing nodes in the lightning network. If they know the destination node of a mutli-hop transaction passing through one of their routing nodes, and they have a routing node along the path, they could ''teleport'' the transaction to the latter node and claim all the fees of the nodes that the transaction should normally have passed through. This might not work with the onion routing implemented by the lightning network protocol, but still worth taking a look at.
+\end{itemize}
