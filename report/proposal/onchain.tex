@@ -1,7 +1,7 @@
 \Section{On-chain atomic swaps}
 In my implementation I created a scenario where two pararties swapped bitcoins for litecoins, on their respective testnets. 
 The swap was tested for all possible outcomes and possible actions by the actors. And in all cases the swap acted in an atomic way, meaning that either the exchange tock place fully or the state was eventually reset to the original. 
-As expected an onchain atomic swap takes some time to perform. With the values for the timelocks used in my experiment the swap could take up to 48 hours to complete in a worst case scenario. The timelock values could be decreased at the cost of increased risk of failure. 
+As expected an on-chain atomic swap takes some time to perform. With the values for the timelocks used in my experiment the swap could take up to 48 hours to complete in a worst case scenario. The timelock values could be decreased at the cost of increased risk of failure. 
 
 Under the assumption that the contract transactions, and claim transactions are included in their respective next block an atomic swap can take at best $\sim25$ minutes (Using the average block times for the respective chains, 10 minutes and 2.5 minutes). Both participants have to stay attentive during the whole span (25m - 2880m), in computing terms this is a very long time. 
 
