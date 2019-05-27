@@ -25,12 +25,12 @@ lightning network, some changes have to be made to the protocol.
 
 \Subsubsection{BOLT and c-lightning}
 All nodes participating in the lightning network follow a set of rules and 
-protocols that are defined in the BOLT specification. My first thought were to
+protocols that are defined in the BOLT specification.\cite{bolt} My first thought were to
 simply propose a few changes to the protocol to allow swaps, but there is a 
 simpler solution that makes the implementation even more versatile. 
 
 The writers of the BOLT specification has purposely left openings in the
-flag and protocol structure to allow for easy extensions. This is what is known
+flag and protocol structure to allow for easy extensions.\cite{bolt} This is what is known
 as ''it's ok to be odd rule'', what that means is that any  message with
 and even number should be supported by all nodes. Messages with odd numbers 
 are interpreted as optional. If the node receives a message with an odd number 
@@ -49,7 +49,7 @@ BOLT is designed to support more than bitcoin with the help of the chain\_hash
 variable. The chain hash is the unique identifier for the genesis block on
 whatever blockchain you refer to in a specifc protocol message. If a node
 receives a chain hash it does not recognize or does not support it will ignore
-that message.
+that message.\cite{bolt}
 
 Another interesting aspect is the new plugin system for the node implementation: 
 \textbf{c-lightning}. This plugin system allows for functionality additions that
