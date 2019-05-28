@@ -1,5 +1,5 @@
 \Section{On-chain Atomic swaps}
-Onchain atomic swaps is a method where two parties can exchange cryptocurrencies between different chains in an atomic way, in this case it means that none of the parties can cheat the other and no matter what state in the exchange-process the swap is either completed or reversed entirely, to the pre-exchange state. The onchain distinction comes from the fact that this type of atomic swap occurs entirely on the chains (There is no offchain transaction in the process).
+On-chain atomic swaps is a method where two parties can exchange cryptocurrencies between different chains in an atomic way, in this case it means that none of the parties can cheat the other and no matter what state in the exchange-process the swap is either completed or reversed entirely, to the pre-exchange state. The on-chain distinction comes from the fact that this type of atomic swap occurs entirely on the chains (There is no off-chain transaction in the process).
 
 There are several ways atomic swaps can be performed, scripts, signatures and time locks can take several different combinations in transactions and still retain atomicity. The method that will be described in this report will be a P2SH, pay to contract type. This swap is done with the help of time locked contracts constructed with scripts. 
 
@@ -33,19 +33,11 @@ Imagine Alice and Bob wants to swap cryptocurrencies. Alice has Bitcoin and want
 The next page contains a diagram visualizing the process described above. T is set to 48 hour after initialization in the example, thus T/2 would be 24 hours.
 
 \Subsection{Atomicity}
-Easiest way to show the atomicity of the swap is to show what happens if one party stops cooperating during any step in the process. The two trivial cases are before any step in the process, then no transaction has been made and the state did not change at all. If one becomes uncooperative at the end of the process the state change has already been completed and it doesn't matter what anyone does. The non-trivial cases is when someone becomes uncooperative mid process.\\
+Easiest way to show the atomicity of the swap is to show what happens if one party stops cooperating during any step in the process. The two trivial cases are before any step in the process, then no transaction has been made and the state did not change at all. If one becomes uncooperative at the end of the process the state change has already been completed and it does not matter what anyone does. The non-trivial cases is when someone becomes uncooperative mid process.\\
 
-\InsertBoxR{0}{
-	\footnotesize\setlength\fboxsep{10pt}\setlength\fboxrule{1pt}
-	\fcolorbox{IndianRed3}{SlateGray1}{\begin{minipage}{2.1in}
-			\subsection*{Can Alice wait to the last second before she claims the Litecoins?}
-			Yes, but remember that Bob's contract expires before Alice's contract does: $T > T/2$, Even if Alice waits to the very last second, Bob will still have an equal amount of time to claim Alice's Bitcoins after that.
-	\end{minipage}}
-}[4]
+The first case we will look at is if Bob stops responding after step 2. Meaning he never broadcasts his side of the contract. Then Alice simply never reveals $x$, Bob needs $x$ to claim the Bitcoins. Alice then just waits until timelock $T$ has passed and refunds the transaction. After the refund the state has been reset to the initial state.
 
-The first case we will look at is if Bob stops responding after step 2. Meaning he never broadcasts his side of the contract. Then Alice simply never reveals $x$, Bob needs $x$ to claim the Bitcoins. Alice then just waits on till timelock $T$ has passed and refunds the transaction. After the refund the state has been reset to the initial state.
-
-The second case is if Alice becomes unresponsive after Bob has broadcast his side of the contract. Bob can't do anything until he knows $x$ or the timelock ($T/2$) of his transaction expires. If Alice does nothing Bob will never know $x$ and thus has to wait to refund his transaction. Presumably Alice does the same after timelock $T$ expires. The state has been reset to the initial one.
+The second case is if Alice becomes unresponsive after Bob has broadcast his side of the contract. Bob can not do anything until he knows $x$ or the timelock ($T/2$) of his transaction expires. If Alice does nothing Bob will never know $x$ and thus has to wait to refund his transaction. Presumably Alice does the same after timelock $T$ expires. The state has been reset to the initial one.
 
 \newpage
 \centerline{\includegraphics[width=1.35\textwidth]{background/images/atomic_swap_flow_large.png}}
@@ -56,4 +48,4 @@ The atomicity of the swap depends on each party acting rationally and not doing 
 
 Malformed contracts could also lead to money being stolen. This is why the validation steps are very important. For example Alice could maliciously set her contract to expire earlier than Bobs if Bob is not careful.
 
-Actors in the scenario doing nothing also compromises the swap. If Alice waits til after $T/2$ expires before attempting to claim the Litecoins she is risking out on losing both the currencies. Bob could monitor the transaction pool, seeing what $x$ was, then sneak in his own refund transaction reclaiming his Litecoins (This is possible as the refund branch of the contract now is unlocked). Then also claiming the Bitcoins before $T$ expires.
+Actors in the scenario doing nothing also compromises the swap. If Alice waits until after $T/2$ expires before attempting to claim the Litecoins she is risking out on losing both the currencies. Bob could monitor the transaction pool, seeing what $x$ was, then sneak in his own refund transaction reclaiming his Litecoins (This is possible as the refund branch of the contract now is unlocked). Then also claiming the Bitcoins before $T$ expires.

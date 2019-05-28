@@ -1,10 +1,122 @@
 \chapter{Implementation}
-To implement the described types of atomic swaps, Go (golang) was used together with the standard libraries plus external libraries from the \textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, as well as \textbf{lightningnetwork/lnd}, all of which can be found on github.com. The implementations are simplified, just like with this report the focus was on making it easy to understand for newcomers. 
+To implement the described types of atomic swaps, Go (golang) was used 
+together with the standard libraries plus external libraries from the 
+\textbf{btcsuite}: \textbf{btcsuite/btcd} and \textbf{btcsuite/btcutil}, 
+as well as \textbf{lightningnetwork/lnd}, all of which can be found 
+on github.com. The implementations are simplified, just like with 
+this report the focus was on making it easy to understand for newcomers. 
 
-To interact with the different blockchains two different full-nodes was setup. \textbf{Bitcoin Core 17.1} for bitcoin and \textbf{Litecoin Core  v0.16.3.0-82cacfef8}. Both running on their respective \textit{testnet}. Both nodes have a RPC interface to interact with the blockchain and the rest of the network. 
+To interact with the different blockchains two different full-nodes 
+was setup. \textbf{Bitcoin Core 17.1} for bitcoin and 
+\textbf{Litecoin Core  v0.16.3.0-82cacfef8}. Both running on their 
+respective \textit{testnet}. Both nodes have a RPC interface to interact 
+with the blockchain and the rest of the network. 
 
-\Section{Onchain atomic swaps}
-The implementation creates two simulated peers, called Alice and Bob 
+\Section{On-chain atomic swaps}
+The implementation creates two simulated peers, called Alice and Bob. 
+Each participant is represented by the wallet name used in the node
+programs. The entire process is divided up into 4 smaller programs.
+The first program generates the contract and contract transactions and 
+prints it on \texttt{stdout} in hex format. The second program takes 
+the contract as input and prints the contract transaction for the 
+litecoin side of the swap. 
 
-\vspace{20mm}
-More to come...
+The last two programs are used to redeem the contract transactions.
+Logically you should run the litecoin side program first and
+claim the litecoins as Alice knows the secret. The third program
+takes the secret as input and prints the transaction that can
+claim the litecoins. The fourth program takes the secret and creates 
+the claim transaction for the bitcoins. 
+
+Overall the on-chain swap implementation is sloppy and not super easy to follow. 
+In the off-chain swap implementation everything was put into one program, with 
+clearly defined datatypes and it relies a lot less on the nodes for support 
+with private keys and public keys.
+
+The swapping programs does not themselves send any transactions to the blockchain,
+that has to be done by the user manually. 
+
+\Subsection{Details on script}
+The script used to create the contract is based on the suggested atomic-swap 
+contract that can be found in \textbf{btcd}. More specifically there 
+is a function that comes with the btcd library that can extract data from 
+swap contracts, so the contract designed in this solution was designed so that
+it is compatible with this function. 
+
+\begin{verbatim}
+OP_IF
+    OP_SIZE
+    <Byte length of secret>
+    OP_EQUALVERIFY
+    
+    OP_SHA256
+    <Hash of secret>
+    OP_EQUALVERIFY
+    
+    OP_DUP
+    OP_HASH160
+    <Receiver address>
+OP_ELSE
+    <Locktime>
+    OP_CHECKLOCKTIMEVERIFY
+    OP_DROP
+    
+    OP_DUP
+    OP_HAASH160
+    <Refund address>
+OP_ENDIF
+
+OP_EQUALVERIFY
+OP_CHECKSIG
+\end{verbatim}
+
+A contract following this format can be used by the contract details 
+extractor function to extract all the data pushes, like locktime and 
+hash of secret.
+
+\Section{Off-chain atomic swap}
+The implementation of the off-chain swap was considerably more robust and better coded.
+The solution creates two fake people Alice and Bob, who via two payment channels performs
+an atomic swap from bitcoin to litecoin (In Alices perspective). Both the peers and
+channel has proper data structures  and related functions. The process starts with 
+opening of both channels. The channel opening consists of generating the funding transaction 
+and the first commitment transaction. Just as before they are printed to \texttt{stdout} 
+in hex encoding, and also like before all transactions has to be broadcast manually. In
+this case however you dont really need to transmit any transactions until the channel closes,
+The commitments coming after the first ones assume that the funding transaction has been broadcast,
+but they never check for it. So you could run the simulation without actually performing any transactions
+on-chain.
+
+The payment channels in this implementation supports regular transactions between the peers. The implementation
+is an exact clone of how it works in the lightning network minus all the protocol and multi-hoping.
+Some liberties are taken with how data is stored and the order of how things are done. For example 
+all data related to things like private keys are stored on the same computer. In a real life scenario this
+would be very unsafe, but making the experiment using two computers would be needlessly complicated, so
+it was skipped. An example of things being out of order is the revocation of commitment transactions, which 
+in this solution is done at the same time as the commitment itself. This is also completely unsafe 
+in any real life scenario, all money would be stolen if any commitment transaction was broadcast. 
+
+The implementation has a special function where the real swapping magic takes place. 
+It takes in two channels, the ones we created earlier, and performs the atomic swap between them.
+The regular channel payment function that is contained in the payment channel object
+takes in a payment descriptor that takes in information about the transaction, the 
+descriptor holds data like amount, sender and receiver, but also the pre+image hash
+that should be used plus the timelock.
+
+The swap function performs the swap by first sending bitcoins from Alice to Bob, then litecoin 
+from Bob to Alice using the same pre-image hash and with a halved time in the future in the timelock.
+It then simulates pre-image reveal and settles both channels with the updated value.
+
+All outcomes of the transaction is tested. That means all possible scenarios and outcomes from 
+the htlc contract on both channels. The test was by trying all scenarios by broadcasting 
+the commitment transactions on the testnet chains along with all transactions that settles the htlc
+and other outputs. 
+
+\Subsection{Implementation specifics}
+Both the channels used a variation of the implementation that can be found in lnd. With a few modifications
+to allow the custom channel setup. As mentioned none of the BOLT protocol and databases were used. 
+
+All the scripts for the different contracts were as described in the BOLT specification. 
+Because of an initial misunderstanding there is a second-level htlc bot on the htlc-success path
+and the timeout-path on both sides of the commitment transaction. This is not correct, but it
+does not affect the security or the swaps in any way so it was left in.

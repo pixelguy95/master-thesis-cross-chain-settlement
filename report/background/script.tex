@@ -36,7 +36,7 @@ There are some operations in Script with slightly higher complexity, which do no
 	\footnotesize\setlength\fboxsep{10pt}\setlength\fboxrule{1pt}
 	\fcolorbox{IndianRed3}{SlateGray1}{\begin{minipage}{2.1in}
 			\subsection*{Bug in Script}
-			An interesting bit of trivia is that there is a bug in the language implementation. More specifically with the operation \texttt{OP\_CHECKMULTISIG}. The bug makes it so this operation pops one more value from the stack than it is supposed to. This was not discovered until the network had been running for a while. It can't be easily fixed as it is now a part of the consensus rules. All implementations of Bitcoin node has to implement the bugged version of this op code otherwise consensus on the validity of transactions will break.
+			An interesting bit of trivia is that there is a bug in the language implementation. More specifically with the operation \texttt{OP\_CHECKMULTISIG}. The bug makes it so this operation pops one more value from the stack than it is supposed to. This was not discovered until the network had been running for a while. It can not be easily fixed as it is now a part of the consensus rules. All implementations of Bitcoin node has to implement the bugged version of this op code otherwise consensus on the validity of transactions will break.
 			A fix to this bug would require a hardfok, see section \ref{soft_hard_fork}, so far it has not been done as it is considered to be not worth the time and effort.
 	\end{minipage}}
 }[9]

@@ -1,6 +1,6 @@
 
 \Section{Payment channels}
-One of the biggest problems facing Bitcoin is scalability. At the time of writing
+One of the biggest problems facing Bitcoin is scalability. At the time of writing,
 on-chain\footnote{See glossary} transactions is capped at about $\approx 7$ T/s (transactions per second).\cite{scaling}
 The throughput is limited by network propagation and a hard cap on block sizes, a block
 can only contain so many transactions before it is full. There are a couple of
@@ -16,7 +16,7 @@ After that the participants in the channel exchange commitment transactions that
 Any of the commitment transactions could be broadcast to the blockchain whenever a participant
 want to close the channel. Once a channel has been closed it cannot be used for further transactions.
 Mechanisms exists in the construction of these channels that makes it so one participant
-can't cheat the system and spend money that does not belong to them.
+can not cheat the system and spend money that does not belong to them.
 
 Payment channels alone were not enough to fix the scaling problem however, as a payment channel
 only allows two parties to exchange unlimited transactions. A proposed extension to the
