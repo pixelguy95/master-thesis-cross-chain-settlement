@@ -28,7 +28,7 @@ takes the secret as input and prints the transaction that can
 claim the litecoins. The fourth program takes the secret and creates 
 the claim transaction for the bitcoins. 
 
-Overall the on-chain swap implementation is sloppy and not super easy to follow. 
+Overall the on-chain swap implementation is pretty sloppy. 
 In the off-chain swap implementation everything was put into one program, with 
 clearly defined datatypes and it relies a lot less on the nodes for support 
 with private keys and public keys.
@@ -77,7 +77,7 @@ hash of secret.
 \Section{Off-chain atomic swap}
 The implementation of the off-chain swap was considerably more robust and better coded.
 The solution creates two fake people Alice and Bob, who via two payment channels performs
-an atomic swap from bitcoin to litecoin (In Alices perspective). Both the peers and
+an atomic swap from bitcoin to litecoin (From Alice's perspective). Both the peers and
 channel has proper data structures  and related functions. The process starts with 
 opening of both channels. The channel opening consists of generating the funding transaction 
 and the first commitment transaction. Just as before they are printed to \texttt{stdout} 
@@ -94,13 +94,13 @@ all data related to things like private keys are stored on the same computer. In
 would be very unsafe, but making the experiment using two computers would be needlessly complicated, so
 it was skipped. An example of things being out of order is the revocation of commitment transactions, which 
 in this solution is done at the same time as the commitment itself. This is also completely unsafe 
-in any real life scenario, all money would be stolen if any commitment transaction was broadcast. 
+in any real life scenario, all money would be stolen if any commitment transaction were to be broadcast. 
 
 The implementation has a special function where the real swapping magic takes place. 
 It takes in two channels, the ones we created earlier, and performs the atomic swap between them.
 The regular channel payment function that is contained in the payment channel object
 takes in a payment descriptor that takes in information about the transaction, the 
-descriptor holds data like amount, sender and receiver, but also the pre+image hash
+descriptor holds data like amount, sender and receiver, but also the pre-image hash
 that should be used plus the timelock.
 
 The swap function performs the swap by first sending bitcoins from Alice to Bob, then litecoin 
@@ -114,9 +114,9 @@ and other outputs.
 
 \Subsection{Implementation specifics}
 Both the channels used a variation of the implementation that can be found in lnd. With a few modifications
-to allow the custom channel setup. As mentioned none of the BOLT protocol and databases were used. 
+to allow the custom channel setup. As mentioned none of the BOLT protocols and no databases were used (Data exists only while the program is running). 
 
 All the scripts for the different contracts were as described in the BOLT specification. 
-Because of an initial misunderstanding there is a second-level htlc bot on the htlc-success path
+Because of an initial misunderstanding there is a second-level htlc on the htlc-success path
 and the timeout-path on both sides of the commitment transaction. This is not correct, but it
 does not affect the security or the swaps in any way so it was left in.

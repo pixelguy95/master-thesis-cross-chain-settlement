@@ -5,7 +5,7 @@ the future. The limitation that comes with having more than one node running
 still exists, but the cost that comes with broadcasting transactions on-chain 
 is almost completely removed. 
 
-In my experiments I did open a proper channel and performed an atomic swap. 
+In my experiments I did open proper channels and performed an atomic swap. 
 I did not however do it over the real lightning  network, mostly due to time 
 constraints and it not being necessary to prove that it worked. Doing it over 
 a proper lightning network would require additional tweaks to the protocol and 
@@ -57,7 +57,7 @@ does not need to be part of the main implementation code.
 
 \Subsubsection{A non-disruptive solution}
 My proposed solution involves making a plugin for c-lightning (and any other 
-node as soon as they add plugin support). The plugin add an additional 
+node as soon as they add plugin support). The plugin adds an additional 
 feature flag in any open odd position. The flag represents support and potential
 willingness to perform swaps across chains. 
 
@@ -77,19 +77,19 @@ a special case.
 For now let us assume that the swapping parties reached their agreement through 
 a separate channel. The details they need to agree upon are how much to be 
 exchanged and at what rate, and also they need to make sure that there is a 
-viable path between them on sides of the network, both to know if the swap 
+viable path between them on both sides of the network, both to know if the swap 
 is possible at all, and to know what timelock to start on. Let us also 
 assume that Alice is the one who initiates the exchange.
 
 In a normal transaction Bob would be the one who generates the pre-image used 
 in the transaction chain started by Alice. In the case of a swap this would not 
-work however, as she will ultimately be the nreceiver on the other end
+work however, as she will ultimately be the receiver on the other end
 when she receives the other type of crypto-currency. Thus before the exchange
-begins Alice will generate the pre-image and sends the hash of it to Bob.
+begins Alice will generate the pre-image and also start the transaction chain.
 
 When these variables are agreed upon Alice can send the bitcoins to Bob on the
 bitcoin side of the network. When the transaction reaches Bob is where the plugin
-kicks in. It keeps track of agrred upon swaps and what pre-image hash that they
+kicks in. It keeps track of agreed upon swaps and what pre-image hash that they
 will use. When the new transaction comes in with the hash they agreed upon earlier
 the plugin will act differently than normal operations. It will recognize the hash
 and match it to the details of the swap. It can then send the promised money on 
