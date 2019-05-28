@@ -2,7 +2,7 @@
 Most people, even the layman with no blockchain experience, have at least heard
 of Bitcoin. But the exact details of how it works is not common knowledge.
 Described in a single sentence: Bitcoin is a currency where a communal ledger,
-that is shared between all participants in the whole world, dictates who owns what in terms of money or other assets. 
+that is shared between all participants in the whole world, dictates who owns what in terms of money or other assets.
 The regular monetary system we are
 used to has a centralized authority, for example a central bank, who decides
 how much money is in circulation, who can transact with who etc. The monetary
@@ -19,7 +19,7 @@ These usually are the main concerns people have with distributed ledgers:
 	\item What type of transactions can you make?
 \end{itemize}
 
-These questions will be given ansers in the sections below.
+These questions will be given answers in the sections below.
 
 %http://www.secg.org/sec1-v2.pdf
 %http://www.secg.org/sec2-v2.pdf
@@ -40,9 +40,9 @@ nearly impossible.
 
 The reason for it not being completely impossible is because any potential
 attacker could always just keep guessing private keys until the right one is
-found. However with a sufficiently large private key, let's say 256-bits, and a
+found. However with a sufficiently large private key, let's say 256-bits, even a
 computer that could check one billion billion ($10^{18}$) private keys every
-second (If such a machine could exist at all) it would still take
+second (If such a machine could exist at all), it would still take
 $\frac{(2^{256} / 10^{18})}{(60\cdot60\cdot24\cdot365)}\approx3.67\cdot10^{51}$
 years to check all possible private keys.
 
@@ -72,9 +72,9 @@ section \ref{ecdsa}
 %Mastering bitcoin
 \Subsection{Blocks and the blockchain}
 A block is fairly simple to understand, it is simply a datatype or structure
-that holds information about itself, all the transactions that can fit and the
-previous block in the chain (more on that in a bit). Because every block holds
-information about the previous block you can follow all blocks backwards in time
+that holds information about itself, all the transactions that can fit and a
+reference to the previous block in the chain. Because every block links the previous
+block you can follow all blocks backwards in time
 all the way back to the original, also called the genesis block.\cite{genesis}
 This is what is referred to as the blockchain.
 
@@ -90,20 +90,20 @@ consensus is reached in the network.\cite{antonopoulos_2017}
 \end{figure}
 
 \Subsubsection{Block-header}
-Each block has a section of data called a header. The header contains meta-data 
-about the block itself such as the version number, the id of the previous block 
-in the chain, a timestamp of when the block was mined, the merkle root of 
-all transactions (serves as proof of what transactions was included in the block) 
-and a 32-bit field called nonce. 
+Each block has a section of data called a header. The header contains meta-data
+about the block itself such as the version number, the id of the previous block
+in the chain, a timestamp of when the block was mined, the merkle root of
+all transactions (serves as proof of what transactions was included in the block)
+and a 32-bit field called nonce.
 
-The size of the header is always 80-bytes, a blocks id\footnote{Block id and 
-block hash refers to the same thing. The terms might be mixed throughout the report.} 
-is equal to the hash of its header. For example the genesis block in the 
+The size of the header is always 80-bytes, a blocks id\footnote{Block id and
+block hash refers to the same thing. The terms might be mixed throughout the report.}
+is equal to the hash of its header. For example the genesis block in the
 Bitcoin blockchain has the id:
 
 \texttt{000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f}
 
-Something that you will find with all block-ids is that they always have leading zeroes. 
+Something that you will find with all block-ids is that they always have leading zeroes.
 This is a side-effect  caused by mining and proof-of-work as explained in section \ref{intro-proof}.
 
 %The section on SHA256 can be improved
@@ -157,7 +157,7 @@ that chain. The yellow block is what is known as a stale block, a block that is
 part of the chain but not part of the longest chain of blocks. Transactions in
 a stale block are not considered valid, and eventually they can be pruned
 (deleted) because they do not effect the future in any way. A stale block occurs
-if a new block is found in different parts of the network at almost the same
+if new blocks are found in different parts of the network at almost the same
 time. Then the network will be split, each node tries to find the next block on
 the chain of whatever block they received first. In the case shown below the
 chain on the left ''won'' and the green block is now the longest chain.
@@ -196,4 +196,5 @@ public key.
 
 This is not the only type of transaction possible, Bitcoin has its own little
 programming language called \texttt{Script}. Any type of transaction that can
-be described in script is possible as a transaction. This is the basis for atomic swaps, payment channels and lightning network, which will be discussed in the following sections
+be described in script is possible. This is the basis for atomic swaps, payment
+channels and lightning network, which will be discussed in the following sections
