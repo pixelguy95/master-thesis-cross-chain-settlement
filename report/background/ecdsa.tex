@@ -86,7 +86,7 @@ thus $200P=R$ could be written as
 $$2^7P+2^6P+2^3P=R$$ 
 which can be expanded to: 
 $$2(2(2(2(2(2(2P)))))) + 2(2(2(2(2(2P))))) + 2(2(2P))$$ 
-This looks more cumbersome but now instead of 200 calculations you only have to do 19. Or more exactly instead of 200 elliptic-curve additions you have to do 3 elliptic-curve additions and 16 elliptic-curve multiplications
+This looks more cumbersome but now instead of 200 calculations you only have to do 19, or more exactly instead of 200 elliptic-curve additions you have to do 3 elliptic-curve additions and 16 elliptic-curve multiplications
 
 
 \Subsection{Private and public key}
@@ -181,7 +181,7 @@ Elliptic curves has a attribute called homomorphism. It will not be covered in d
 
 There are several ways of calculating a new homomorphic key, this is the one used in later implementations:
 
-Let's say you have private key k with corresponding public key P. And another temporary private key $k_c$ with corresponding public key $P_c$. To generate the homomorphic public key ($P_h$) you can use the following equation (All the operations in equation \ref{generate} below are in elliptic-curve addition and multiplication, The second (\ref{resolve}) uses regular operators):
+Let's say you have private key k with corresponding public key P. And another temporary private key $k_c$ with corresponding public key $P_c$. To generate the homomorphic public key ($P_h$) you can use the following equation (All the operations in equation \ref{generate} below are in elliptic-curve addition and multiplication. The second (\ref{resolve}) uses regular operators):
 
 \begin{equation}\label{generate}
 Generate(P, P_c) = P * SHA_{256}(P || P_c) + P_c * SHA_{256}(P_c || P) = P_h
@@ -196,6 +196,6 @@ Resolve(k, k_c) = k * SHA_{256}(P || P_c) + k_c * SHA_{256}(P_c || P) = k_h
 \Subsubsection{Revocation keys}
 Imagine Alice and Bob wanting a public key that neither hold the private key to, that could be revealed at a later date. Alice holds the key set ($k_A$, $P_A$), and Bob has the set ($k_B$, $P_B$). Bob creates another key set ($k_T$, $P_T$) and sends $P_T$ to Alice.
 
-Alice generates a a new public key ($P_R$) from $P_A$ and $P_T$ with equation \ref{generate}. Now the public key $P_R$ could be used for whatever purpose needed, even though neither party knows the private key $k_c$ at this point as calculating it requires both $k_A$ and $k_T$ and neither party holds both. At a later date Bob could reveal $k_T$ to Alice, she could then use equation \ref{resolve} to determine $k_R$.\cite{bolt}
+Alice generates a new public key ($P_R$) from $P_A$ and $P_T$ with equation \ref{generate}. Now the public key $P_R$ could be used for whatever purpose needed, even though neither party knows the private key $k_c$ at this point as calculating it requires both $k_A$ and $k_T$ and neither party holds both. At a later date Bob could reveal $k_T$ to Alice, she could then use equation \ref{resolve} to determine $k_R$.\cite{bolt}
 
 This method is used later in a concept called revocable deliveries, see section \ref{breach_remedy}. In that case ($k_T$, $P_T$) key set would be called commitment point keys, and ($k_R$, $P_R$) would be called revocation keys.\cite{bolt}

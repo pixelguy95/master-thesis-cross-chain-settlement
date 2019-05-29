@@ -18,7 +18,7 @@ This operation pushes 4 bytes to the stack, the bytes have the hexadecimal value
 
 \texttt{4 5 OP\_ADD 9 OP\_EQUAL}
 
-This simple program will push 4 and 5 to the stack, \texttt{OP\_ADD}\cite{script_wiki} pops two values from the stack (4 and 5) adds them together and pushes the result back on the stack. Then a 9 is pushed to the stack. \texttt{OP\_EQUAL}\cite{script_wiki} pops two values form the stack and pushes a 1 if they were equal, 0 otherwise. In this case a 1 will be left on the stack as $4 + 5 = 9$. Figure \ref{fig:script} visualizes what happens at each step of execution. There are other cases where the verify op-code is combined with other instructions.
+This simple program will push 4 and 5 to the stack, \texttt{OP\_ADD}\cite{script_wiki} pops two values from the stack (4 and 5) adds them together and pushes the result back on the stack. Then a 9 is pushed to the stack. \texttt{OP\_EQUAL}\cite{script_wiki} pops two values form the stack and pushes a 1 if they were equal, 0 otherwise. In this case a 1 will be left on the stack as $4 + 5 = 9$. Figure \ref{fig:script} visualizes what happens at each step of execution.
 \\
 \begin{figure}[H]
 	\centering
@@ -29,7 +29,7 @@ This simple program will push 4 and 5 to the stack, \texttt{OP\_ADD}\cite{script
 
 \Subsection{Complex operations}
 
-There are some operations in Script with slightly higher complexity, which do not act like the others. One of them is \texttt{OP\_VERIFY}, this will perform a verify check on the script. It will pop one value from the stack, and if that value equates to false execution will end immidietly and the entire script will be marked as invalid (see section \ref{script_valid}).\cite{antonopoulos_2017}\cite{script_wiki} If the value equals true execution will continue where it left off. Some operations are combinations with the verify check, like for example \texttt{OP\_EQUALVERIFY}. This is equal to writing \texttt{OP\_EQUAL OP\_VERIFY}, meaning that it first does an equal check then verifys the result.
+There are some operations in Script with slightly higher complexity, which do not act like the others. One of them is \texttt{OP\_VERIFY}, this will perform a verify check on the script. It will pop one value from the stack, and if that value equates to false execution will end immidietly and the entire script will be marked as invalid (see section \ref{script_valid}).\cite{antonopoulos_2017}\cite{script_wiki} If the value equals true execution will continue where it left off. Some operations are combinations with the verify check, like for example \texttt{OP\_EQUALVERIFY}. This is equal to writing \texttt{OP\_EQUAL OP\_VERIFY}, meaning that it first does an equal check then verifys the result. There are other cases where the verify op-code is combined with other instructions.
 
 \vspace{7mm}
 \InsertBoxR{0}{

@@ -5,7 +5,7 @@ This is what is usually referred to as off-chain transactions.
 In their most naive form a payment channel can simply be Alice and Bob exchanging promises of future transactions later.
 This however is not trustless and any of the parties could later withdraw from the promise without punishment (other than maybe loss of friendship and future trust).
 
-To build a trustless payment channel there are several ways to go about as Script is quite versatile.
+To build a trustless payment channel there are several ways to go about, as Script is quite versatile.
 The method that will be covered here uses a type of channel \textbf{funding transaction that requires the signature from both parties to spend}, and the channel balance is updated via special commitment transactions that spend the funding output. Each party in the channel has their own version of the commitment transaction. Whenever a commitment transaction is broadcast to the blockchain the channel is closed as the funding transaction can not be spent twice. To update the balance in the channel both parties create new commitment transactions and signs the other parties commitment transaction.\cite{lightningnetwork_2019}\cite{antonopoulos_2017}
 Let's take a look at a naive example:
 
@@ -28,8 +28,8 @@ The transactions that are involved in making payment channels grows larger the m
 	\label{fig:anatomy}
 \end{figure}
 
-\Subsubsection{Payment channel with breach remedy}\label{breach_remedy}
-To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be done via something called revocable delivery and breach remedy (Some times called just revocation).
+\Subsection{Payment channel with breach remedy}\label{breach_remedy}
+To prevent old transactions from being sent to the blockchain a new mechanism needs to be devised. This can be done via something called revocable delivery and breach remedy (Sometimes called just revocation).
 Instead of both parties holding the same commit. They each get an individual one that differs in its outputs. 
 
 \begin{figure}[H]
