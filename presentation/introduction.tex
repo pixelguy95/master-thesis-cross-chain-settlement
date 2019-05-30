@@ -2,8 +2,13 @@
 Alright, so the thing that is on everybody's mind is probably: what is an atomic 
 swap? An atomic swap is where two parties exchange assets atomically, which means
 that either the transaction takes place fully, or the state is reset to the pre-
-exchange state. This is made possible by clever use of cryptography and 
-programmable contracts on the bitcoin network and blockchain. 
+exchange state. 
+
+*Read from oracle defenition*
+
+This is made possible by clever use of cryptography and 
+programmable contracts on the bitcoin network and blockchain. So before we can 
+go into more detail on this I should first cover the basics of Bitcoin.
 
 So, most people, especially in computer science, have heard of Bitcoin, but I could 
 almost count on one hand the number of people I have met that have more than 
@@ -50,4 +55,9 @@ chain as truth, in other words the chain with most accumulated proof-of-work.
 This works as long as the majority of participants is honest. However due to the
 probabilistic manner of how new valid blocks are found there is still a chance for 
 contention even if all participants are honest. For example what will the network do
-in the case where two different blocks 
+in the case where two different blocks are found at almost the same time, in 
+different parts of the network? Now 
+there are two chains of equal length. So how does the network decide which one
+is correct?
+
+
