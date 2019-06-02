@@ -1,0 +1,36 @@
+\Subsection{Script \& Transactions}
+Alright, now that we gconsensus down let's take a closer look at how programmable contracts
+are made possible over the bitcoin network.
+
+Built into Bitcoin there is a programming language called Script. Not the best of names,
+but let's not think about that for now. Script is the code that defines exactly what a transaction can and 
+cannot do. It is a very barebones language, with byte sized instructions, no heap memory,
+and only a very limited stack memory, that strictly operates like a stack. 
+Very reminicent of the Forth language. 
+
+A piece of Script code can be defined as either valid or invalid. The only 
+way a script could be valid is if at the end of executing the last instruction
+there is only one value on the stack, and it equates to true. Anything else
+will make the script invalid, infact under certain circumstances the
+script could be marked as invalid before the execution is even finnished.
+
+Script has one major limitation compared to other programming languages, it is by design 
+not turing complete. Basically meaning
+that it cannot do anything. What is missing from the usual programming language repetoire
+is loops. Script has no construct that allows for repeated instruction execution. 
+Instead all Script programs are completly linear and always execute in a limited time.
+The reason for this has to do with the halting problem and a bunch of anti-spam
+measures. Even with this limitation Script has a very wide usecase as you will soon see.
+
+Transactions in Bitcoin are not as straight forward as you might expect.
+It's not just a matterof moving fu from one attached name to another.
+A transaction in Bitdcoin is a datatype consisting of meta data, a list
+of inputs and a list of outputs. An input is a reference to a previous
+output from an earlier transaction, an output could be seen as a destination,
+it holds the amount sent and the ''destination''. 
+
+THe inputs and outputs are where Script comes into the picture.
+A output contains a partial script. A input contains the 
+complementatry part forming the enitre script.
+
+
