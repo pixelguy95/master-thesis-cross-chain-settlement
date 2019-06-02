@@ -1,36 +1,57 @@
 \Subsection{Script \& Transactions}
-Alright, now that we gconsensus down let's take a closer look at how programmable contracts
+Alright, now that we got consensus and the cryptography down let's take a closer look at how programmable contracts
 are made possible over the bitcoin network.
 
 Built into Bitcoin there is a programming language called Script. Not the best of names,
-but let's not think about that for now. Script is the code that defines exactly what a transaction can and 
-cannot do. It is a very barebones language, with byte sized instructions, no heap memory,
-and only a very limited stack memory, that strictly operates like a stack. 
-Very reminicent of the Forth language. 
+but let's not think about that for now. Script is the code that defines exactly what a transaction can and
+cannot do. It is a very bare bones language, with byte sized instructions, no heap memory,
+and only a very limited stack memory, that strictly operates like a stack.
+Very reminiscent of the Forth language.
 
-A piece of Script code can be defined as either valid or invalid. The only 
+A piece of Script code can be defined as either valid or invalid. The only
 way a script could be valid is if at the end of executing the last instruction
 there is only one value on the stack, and it equates to true. Anything else
-will make the script invalid, infact under certain circumstances the
-script could be marked as invalid before the execution is even finnished.
+will make the script invalid, in fact under certain circumstances the
+script could be marked as invalid before the execution is even finished.
 
-Script has one major limitation compared to other programming languages, it is by design 
-not turing complete. Basically meaning
-that it cannot do anything. What is missing from the usual programming language repetoire
-is loops. Script has no construct that allows for repeated instruction execution. 
-Instead all Script programs are completly linear and always execute in a limited time.
+Script has one major limitation compared to other programming languages, it is by design
+not Turing complete. Basically meaning
+that it cannot do anything. What is missing from the usual programming language repertoire
+is loops. Script has no construct that allows for repeated instruction execution.
+Instead all Script programs are completely linear and always execute in a limited time.
 The reason for this has to do with the halting problem and a bunch of anti-spam
-measures. Even with this limitation Script has a very wide usecase as you will soon see.
+measures. Even with this limitation Script has a very wide use case as you will soon see.
 
 Transactions in Bitcoin are not as straight forward as you might expect.
-It's not just a matterof moving fu from one attached name to another.
-A transaction in Bitdcoin is a datatype consisting of meta data, a list
+It's not just a matter of moving from one attached name to another.
+A transaction in Bitcoin is a datatype consisting of meta data, a list
 of inputs and a list of outputs. An input is a reference to a previous
 output from an earlier transaction, an output could be seen as a destination,
-it holds the amount sent and the ''destination''. 
+it holds the amount sent and the ''destination''. Because of
+the references to previous transactions in the input you can
+follow transaction all the way back to the generation
+transaction when the coins were created in the first place.
 
-THe inputs and outputs are where Script comes into the picture.
-A output contains a partial script. A input contains the 
-complementatry part forming the enitre script.
+The inputs and outputs are where Script comes into the picture.
+A output contains a partial script. A input contains the
+complementary part forming the entire script. This is what makes Bitcoin
+transactions so versatile. You could make the output script
+be anything that is describable in Script.
 
+For example *Show simple script on screen*. This script requires the redeemer
+to give the answer to this equation to spend the money in the output.
+*Show redeeming input script*.
 
+Obviously most Bitcoin transactions are not this basic. The most common
+script type has a name, P2PKH, Pay to public key hash. In this script
+the output is given a hashed public key, and the one who wants to
+spend the output has to provide a signature from the private key related to the
+given public key. *Show script and redeeming script*
+
+A slightly newer development in Bitcoin is P2SH, Pay to script hash.
+If the previous example can be seen as paying to a bitcoin address,
+this one can be seen as paying to a script, or a contract.
+In this case anyone who can provide the contract together with
+a partial script that makes the contact valid, is allowed to redeem.
+The output paying to the script contains only the hash of the script,
+as the name implies.
