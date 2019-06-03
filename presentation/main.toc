@@ -1,2 +1,0 @@
-\babel@toc {english}{}
-\contentsline {chapter}{Bibliography}{1}{chapter*.2}
