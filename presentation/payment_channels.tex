@@ -1,0 +1,37 @@
+\Section{Payment channels}
+With the topics we have covered so far under our belt we could start moving into
+the more complex areas of Bitcoin. One such concept is payment channels. 
+
+Before going any further let's define two very important terms: Off-chain and on-chain.
+These terms refer to a proccess or data that ocurs on the blockchain or outside the blockchain.
+FOr example the transactions we have described so far has been on-chain, as in the 
+transaction is broadcast to the bitcoin network and is later included in the blockchain.
+Something that is off-chain is data or a proccess that are outside the blockchain.
+A payment channel is something that is typically refered to as off-chain. You will see
+why soon.
+
+With programmable contracts using clever scripts and signatures we can make a new type
+of construct that allows for safe transactions being made between two peers without
+being braodcast to the blockchain. I would love to cover this in more detail, there is
+sadly not enough time, so I will only cover the basics.
+
+The channel is opend by the peers by broadcasting a funding transaction it's 
+output can only spent by having the signatures of both participants. As long
+as the funding transaction remains unspent payments can be amde between the
+two participants in the form of commitment transactions. A commitment transaction
+spends the funding transaction and splits the money among the two participants 
+in the agreed upon amounts. 
+
+Imagine a payment channel open between two fictional characters Alice and Bob.
+In the channel Alice has 0.5 btc and Bob has 0.5 btc. This would mean that the output
+in the funding transaction has 1.0 btc and the latest commitment transaction has two 
+outputs both worth 0.5. If Alice wants to send 0.1 btc to Bob they make an agreement,
+and then construct a new commitment transaction updating the output values. In this
+case the new values would be 0.4 to Alice and 0.6 to Bob. To close a channel you
+simply need to broadcast a commitment transaction. 
+
+Additional security is needed to prevent things like broadcasting old commitment 
+transactions for monetary gain. The additions are called revocable delivery and breach
+remedy. 
+
+*Show images and explain what is going on*
