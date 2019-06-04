@@ -2,4 +2,44 @@
 So let's take a closer look at how I implemented this. To work with bitcoin and litecoin you
 need a very specific setup. I had one Bitcoin node and one Litecoin node running on my raspberry pi 3
 at home. Both running the latest version of their respective core implementations. The nodes were used 
-for interacting with the blockchain (broadcasting, reading, monitoring etc...).
+for interacting with the blockchain (broadcasting, reading, monitoring etc...). 
+BOth of them ran on the testnet version of the respective blockchains.
+This is a global test network where the coins are considered worthless,
+but the important parts like blocktime and consensus works exactly the same.
+THe testnet exists exactly for the purpose of testing contracts and other bitcoin software
+before use in the real world.
+
+My implementation was entirely writen in go-lang. I had never written any code in go
+so at the start I spent a day or two just learning how to operate. THe reason 
+for choosing go was mostly because of the many great libraries that are available
+when programming towards bitcoin and other cryptocurrencies. The most used
+library was the btcd-suite. This is the code used for the go-lang specific implementation
+of a bitcoin node, it is modularized in such a way that you can basically use it for any
+Bitcoin specific task. In my case most of the coding was in regards to constructing
+the specialized transactions. 
+
+The on-chain atomic swap implementation actually consists of three small programs.
+Two of the programs are from ALices perspective and the other two are from
+Bobs perspective. In my little example the bargening and agreement parts are
+set in stone, meaning that the exchange rate, timelocks etc are hardcoded.
+Both participants are represented as data structures that contains stuff like
+their private key and their public key. 
+
+The first program constructs the very first contract transaction that Alice
+will broadcast to the bitcoin blockchain. THe btcd libarary provides the
+proper datastructures for the transaction related stuff, the contract has 
+to be constucted manually however. This is the entire contract script 
+for Alice: *Show on screen*
+
+None of the programs actually broadcast the transactions, instead
+they print it in hex-format. THe hex-formatted transaction can be broadcast
+manually by the user by running a simple command in the Bitcoin-core node.
+
+The other programs are just part of the steps I described earlier. The second
+program creates the Bob side of the contract, the contract looks exactly the same but
+the timelock as been altered to 24 hours, and of course the payout is in 10 litecoins.
+The third and fourth program constructs the claim transactions. 
+
+Overall making this into several programs was pretty pointless. On the bright
+side it works just as intended. I tested all possible scenarios and they
+all worked just like intended. 
