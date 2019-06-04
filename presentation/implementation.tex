@@ -23,9 +23,9 @@ The process of an on-chain atomic swap is as follows:
 Alice and Bob agrees to do a swap, 1 bitcoin for 10 litecoins. They also 
 decide that Alice should be the one to initiate the exchange. 
 To start off, Alice generates a random bytestring that will act as a 
-pre-image, let's call this R. She hashes this pre-image and produces H_R.  
-With te help of H_R she constructs a new swap contract with the following clauses. Pay 1
-bitcoin to Bob if he can provide the pre-image of H_R (R). If Bob does not claim 
+pre-image, let's call this $R$. She hashes this pre-image and produces $H_R$.  
+With te help of $H_R$ she constructs a new swap contract with the following clauses. Pay 1
+bitcoin to Bob if he can provide the pre-image of $H_R$ ($R$). If Bob does not claim 
 this output wihin 48 hours, refund the full amount to Alice. 
 
 Alice broadcasts this contract transaction to the bitcoin blockchain and
@@ -33,3 +33,31 @@ notifies Bob of doing so, she also sends the unhahsed contract to Bob.
 Bob can then fetch the transaction from the blockchain, he then makes
 sure that the contract hash matches the one on the chain (P2SH) and
 he validates all the details of the contract. 
+
+If something is wrong here or if Bob changed his mind, he does not have 
+to do anything, and Alice can refund her money after 48 hours. 
+He can not try to claim Alices bitcoins as he does not know the
+pre-image.
+If everything in the contract is alright however he constructs a new contract with 
+the following details. Alice gets 10 litecoins if she can provide
+the pre-image to $H_R$, if she does not claim them within \textbf{24 hours}:
+refund the full amount to Bob. Bob broadcasts this transaction to the litecoin
+blockchain then notifies Alice and sends over the unhashed contract. 
+
+Alice fetches the contract and validates all the information just like
+Bob did. If something is wrong or she has changed her mind she can do nothing,
+Bob will get his refund after 24 hours and Alice gets her refund after 48 hours.
+Otherwise she can claim Bob's litecoins, she does this by constrcting a claim
+transaction containing the pre-image and a signature from her private key. 
+
+Meanwhile Bob has been monitoring the litecoin blockchain and when Alice claims the
+litecoins he will see the transaction together the pre-image data. Now when he has
+the pre-image he can construct his own claim transaction that claims the bitcoins 
+from the initial contract. 
+
+The safety of this swap comes from the reveal mechanism of the pre-image being
+the blockchain and the decreasing timelocks. Those of you who have paid close
+atention will notice that the mechanisms are very much like the ones used in hashed
+timelocked contracts. 
+
+\input{on_chain_details.tex}
