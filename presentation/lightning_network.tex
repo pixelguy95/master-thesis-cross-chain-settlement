@@ -1,0 +1,21 @@
+\Section{Lightning network}
+The payment channel I just described allows for unlimited transaction between two people.
+It is quite usefull if you have two people who make a lot of transaction between each other,
+but it would be very encumbersome to have a channel open to every person you might ever
+make transactions to. This is where lightning network becomes useful. With just a few
+additions to the payment channel it ill allow for transactions that travel through
+multiple channels, safely of course.
+
+To do this channels add another output to their commitment transactions that pay
+to something called Hashed timelocked contract or HTLC for short. Just as before
+I would like to cover the fine details of the contract, but there is no time for 
+that. In simplest possible terms the contract says that each node along the way will
+receive the money they put up plus a small fee if they can prove that the transaction
+reached it's destination. This is done via hashes and pre-images, something I will touch
+upon a bit later in this presentation.
+
+The contract has a built in timelimit, if the transaction never makes it the whole way
+to it's destination all transactions along the way will be refunded and nobody will receive
+their fee. 
+
+*Show basic image, talk about how large the network is* 
