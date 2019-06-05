@@ -1,0 +1,54 @@
+\chapter{Results \& Proposal}
+I'd say the results I got were good overall. And I learned a lot doing it. Just as with
+the implementaion part of the presentation i will try to slplit up this section into 
+the on-chain and the off-chain results and proposal.
+
+\Section{On-chain results and proposal}
+After my experiments I'd say that on-chain atomic swaps have the following traits:
+\begin{itemize}
+\item Easy to understand
+\item Easy to perform
+\item However, very time consuming
+\item And in the futur might be very expensive.
+\end{itemize}
+
+Once you have studied Bitcoin and surounding technologies constructing atomic 
+swap contracts and transactions is fairly trivial. And should be very easy to 
+implement in wallet software. They do however have pretty major flaws, 
+unrelated to their safety ad clearity, and that is time and cost.
+As it is now the available space in blocks is limited and for a transaction 
+to be included in a block it costs a fee based on transaction size. Right now 
+the average transaction fee to be included into the next 6 blocks is about 29 
+cents. This fee has been known to grow when the traffic is high. So perofming 
+an atomic swap could be seen as being fairly expensive depending on the time 
+of transaction. 
+
+What also has to be taken into account is the time it takes. Under the example 
+Bitcoin to liteocin which has the average blocktimes 10 minutes and 2.5 minutes 
+the shortest possible time to perform an atomic sawp is around 25 minutes, as 
+at the very least two blocks are required to pass on both chains. The maximum 
+amount of time an atomic swap can take depends on the timelocks the participants 
+agreed upon. In my implementation the timelocks were 24 and 48 hours so the 
+swap could take up to 48 hours to complete. This however assumes that one of 
+the participants willingly waited more time than neccessary. 
+
+\Subsection{proposal}
+My proposal is fairly simple, either extend or build a brand new wallet software 
+with the following new traits:
+\begin{itemize}
+\item Construction of the new contracts. Obviously
+\item THe active swaps needs to be kept track of somehow, easiest way is to extend the already existing databases with new tables or key-values etc.
+\item Monitoring function, if the counter part is not revealing the proper information the wallet needs to be able to monitor the blockchains for the transactions and relevant data. Looking for it manually is too time costly and complicated to be considered.
+\item the Wallet needs to support all the different cryptocurrenies that might be swapped. 
+\end{itemize}
+
+In general I recommend that each participant has their own nodes running on the cryptocurrencies that they want to exchange. If you rely on others for that data there is a risk that you could be tricked. 
+
+\Section{Off-chain atomic swaps}
+I found the results from the off-chain atomic swaps to be much more promising. Under the assumption that no channel needs to be closed the fees are very tiny, and because each peer can negotiate with the other even in the case of a non-cooperative participant. The most interesting result that becomes clear with the usage of the regular htlc is that the oter peers on either side of the network, (with the exception of Alice and Bob), do not need to be part of the atomic swap in any way, for them the swap appears like a regula multi-hop transaction. This is very promising as no seperate netowrk is needed specificly for swaps. Instead the the two swapees need special software and can use the main lightning networks for both crypto-currencies. my proposal relies on the extensible BOLT-specification and the plugin system reasently added to the lightning node implementation c-lightning. 
+
+in the BOLT-specification they have intentionally left spaces open in flags and protocol messages, this space goes under the ''its ok to be odd'' rule. Meaning flags and protocol messages with odd positions or numbers are optional, and can be filled with functionality that is not officially supported by the lightning network. My proposed solution involves adding a new flag that signals to others in the network that your node can, and is willing to perform atomic swaps. 
+
+The proposed plugin would add this new flag, and it would handle atomic swap transactions a bit differently than normal. If you have agreed to do a swap with a certain exchange rate etc the plugin will keep track of this, along with the pre determined pre-image hash used in the swap. When a new htlc arrives that matches one of the saved pre-image hashes the plugin knows to handle it differently compared to a regular muti-hop transaction. Instead it will send a htlc contract on the other chain back to the original sender, using the same pre-image hash and continuing on the same decreasing timelock, as seen in the previous explantation. 
+
+This method of doing it is very non disruptive as the othe rnodes in the network remian entirly uneffected.
