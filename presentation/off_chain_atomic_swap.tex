@@ -14,12 +14,39 @@ As you might remember from payment channels and lightning network
 a multi-hop transactions relies on the htlc contract to be safe. 
 THe htlc contracts needs the same hashed pre-image and a strictly
 decreasing timelock to be safe. This holds true even in the 
-case where a multi-hop transaction travels across chains. 
+case where a multi-hop transaction travels across chains.
+The requirements is that ALice and Bob run specialized 
+lightning network software, that runs on both chains. And 
+bot of them has to have an open channel on both cryptocurrencies.
+Also there needs to be a viable path between eachother
+on both networks. 
 
 THis is perhaps best demostrated with a diagram
 
 *Show image and explain*
 
+\Subsection{Off-chain implementation details}
+my implememtation of this used most of the same setup as the on-chain swap 
+implementation, still used golang, still used the same libraries, still
+used the same nodes. A new addition was the lnd library. This is a golang
+specific implementation of the BOLT specification. Te BOLT specification
+is the official document detailing the protocol and software that drives the 
+lightning network, I will come back to this shortly.
 
+My implementaton does not properly connect to the lightning network, doing
+it that way would take to much time and it would be very likely to fail for
+a newcomer such as me. Instead I implementated my own proper payment channels,
+it could be seen as my own private lightning network. I did not use all the proper 
+protocol stuff, as I was in controll of both nodes and I was in full control. 
 
+The payment channels were setup using proper contracts as defined by the BOLT 
+specification. THis time everything was packed into one neat program, with proper
+datastructures for the simulated users and their channels. As before the program 
+did not braodcast anything by it self, instead it printed the hex-formated transactions
+and the user can optionally braodcast them if they want to try something.
 
+In my tiny network only Alice and Bob existed and they had two channels between them,
+one in bitcoin and one in litecoin. I implemented it so that they could make normal
+transactions in the payment channels. When I got tht to function properly
+I performed my first off-chain atomic swap, using the same method as I showed earlier.
+It worked just as intended. I tried all outcomes and it functioned as expected.  
