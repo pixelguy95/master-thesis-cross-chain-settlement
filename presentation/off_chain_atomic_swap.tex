@@ -1,0 +1,25 @@
+\Section{Off-chain atomic swaps}
+How an on-chain atomic swap functions should be pretty clear. The script never does
+anyhting I would call super complex. Off-chain atomic swaps however is a bit of
+a different story and it can be pretty hard to grasp, escpecially with the
+simplified explenations I have given so far. 
+
+An off-chain atomic swap is as you might imagine an atomic swap, but if
+it goes as planned it occurs entirrly without any script being executed
+on the blockchain. In fact this version of an atomic swap does not use any
+specialized scripts at all, instead it uses the clever mechanisms in htlc
+contracts to perform it, even across chains. 
+
+As you might remember from payment channels and lightning network 
+a multi-hop transactions relies on the htlc contract to be safe. 
+THe htlc contracts needs the same hashed pre-image and a strictly
+decreasing timelock to be safe. This holds true even in the 
+case where a multi-hop transaction travels across chains. 
+
+THis is perhaps best demostrated with a diagram
+
+*Show image and explain*
+
+
+
+
