@@ -31,7 +31,7 @@ simpler solution that makes the implementation even more versatile.
 
 The writers of the BOLT specification has purposely left openings in the
 flag and protocol structure to allow for easy extensions.\cite{bolt} This is what is known
-as ''it's ok to be odd rule'', what that means is that any  message with
+as \enquote{it's ok to be odd rule}, what that means is that any  message with
 and even number should be supported by all nodes. Messages with odd numbers 
 are interpreted as optional. If the node receives a message with an odd number 
 that it does not recognize it will simply be ignored (unknown even messages 
@@ -41,7 +41,7 @@ have different version numbers).
 There are also flags in the BOLT specification that nodes tell each other about
 upon connection. A flag is a bit set to 1 or 0 in a bytestring, and they 
 represent a supported feature. As before these
-flags follow the ''it's ok to be odd rule''. Thus flags in even positions are 
+flags follow the \enquote{it's ok to be odd rule}. Thus flags in even positions are 
 features that must be supported, and flags in odd positions represent optional
 features that this node support.
 
@@ -130,7 +130,7 @@ So what is stopping the service from just closing all channels and running away 
 This is where the streams come in handy. Each participant only sends a really tiny amount at
 a time, and does not send the next package until thy have received the right amount on the 
 channel of the other currency. The service could at most steal the amount used in one 
-''stream'' package. The user could adjust the amount sent in each package to 
+\enquote{stream} package. The user could adjust the amount sent in each package to 
 whatever value they are willing to risk. With a functioning fee system, the service would
 be encouraged to not cheat their users and being seen as not trustworthy, the fee could be sent 
 with each package, and be proportional to the amount.

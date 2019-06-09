@@ -12,7 +12,7 @@ decentralized, trust-less verification.
 These usually are the main concerns people have with distributed ledgers:
 \begin{itemize}
 	\item How is spending someone else's money prevented?
-	\item What prevents someone from ''printing'' more Bitcoins?
+	\item What prevents someone from \enquote{printing} more Bitcoins?
 	\item How is spending the same money in different places in the world prevented?
 	\item How is the consensus on the order of transactions reached?
 	\item How do I interact with it?
@@ -46,7 +46,7 @@ second (If such a machine could exist at all), it would still take
 $\frac{(2^{256} / 10^{18})}{(60\cdot60\cdot24\cdot365)}\approx3.67\cdot10^{51}$
 years to check all possible private keys.
 
-The most common transaction made on the blockchain is one where you ''pay to''
+The most common transaction made on the blockchain is one where you \enquote{pay to}
 a public key. Who ever holds the private key paired with that public key can
 then via a mathematical equation prove that they hold the private key without
 actually revealing the private key.\cite{quantabytes}
@@ -114,7 +114,7 @@ algorithm does, the hashing algorithm used in Bitcoin is called \texttt{SHA256}.
 \texttt{SHA256} takes in data of any size and produces a sort of finger print
 of 256 bits.
 
-For example the \texttt{SHA256} of the text ''cool'':
+For example the \texttt{SHA256} of the text \enquote{cool}:
 
 \fbox{\begin{minipage}{\textwidth}
 	\texttt{echo "cool" | openssl sha256}
@@ -160,7 +160,7 @@ a stale block are not considered valid, and eventually they can be pruned
 if new blocks are found in different parts of the network at almost the same
 time. Then the network will be split, each node tries to find the next block on
 the chain of whatever block they received first. In the case shown below the
-chain on the left ''won'' and the green block is now the longest chain.
+chain on the left \enquote{won} and the green block is now the longest chain.
 
 The red block in figure \ref{fig:blockchain2} is what is known as an orphan
 block, that is, it has no known parent in the chain. This can happen if someone

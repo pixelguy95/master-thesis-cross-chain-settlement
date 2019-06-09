@@ -39,14 +39,14 @@ The question is: what is signed when the signature is created? Broadly speaking 
 This can be considered the default sighash, if it is not stated otherwise it can safely be assumed that this type was used. This simply means that the entire transaction is signed with all outputs and all other inputs.
 
 \Subsubsection{SIGHASH\_NONE}
-This one signs the transaction but without the outputs, it could be thought of as ''I do not care where the money goes''.
+This one signs the transaction but without the outputs, it could be thought of as \enquote{I do not care where the money goes}.
 
 \Subsubsection{SIGHASH\_SINGLE}
 All outputs are removed except the output with the same index as the input that is being signed, then that transaction is signed.
-This could be thought of as ''I do not care about any other outputs to this transaction as long as this one remains as is''.
+This could be thought of as \enquote{I do not care about any other outputs to this transaction as long as this one remains as is}.
 
 \Subsubsection{SIGHASH\_ANYONECANPAY}
-Signs the transaction with all the outputs but none of the other inputs. This basically means ''The money has to go here, but I do not care if someone else want to fund this transaction also''
+Signs the transaction with all the outputs but none of the other inputs. This basically means \enquote{The money has to go here, but I do not care if someone else want to fund this transaction also}
 
 %\Subsubsection{More detailed process}
 %On the next page the entire signing process for SIGHASH\_ALL is detailed. This is how it is performed in the actual implementation:
@@ -96,14 +96,14 @@ The execution of the combined input output script is not straight forward as mos
 
 If all stages are executed without error the redeeming transaction is valid. 
 
-P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is ''pay to a script matching this hash, a script that will be presented later when this output is spent''\cite{antonopoulos_2017}\cite{scripthash}
+P2SH was developed to resolve the difficulties in making complex transaction scripts and make them as simple as paying to an address. What P2SH basically means is \enquote{pay to a script matching this hash, a script that will be presented later when this output is spent}\cite{antonopoulos_2017}\cite{scripthash}
 
 \Subsection{Timelock and sequence}
 Since the start of bitcoin; transactions has had two fields in them called \textbf{nTimelock} and \textbf{nSequence}. The timelock variable stopped a transaction from being  included in a block until a certain unix-timestamp or a certain blockheight\footnote{Blockheight is the number of blocks on the current chain} had passed. The sequence field is part of each input into a transaction, it's original purpose was to give users a mechanism for updating a transaction that were still in the transaction-pool. Miners were supposed to include the transaction version with highest sequence number, this however was unenforceable, as there is no way of knowing which transactions were in the transaction-pool of the miner at the time of block creation. So nSequence became mostly defunct and saw little use.
 
 To make timelocks more versatile and more easily enforceable Peter Todd proposed an addition to Script, a new op-code that verifies that the correct timestamp is set, \\\texttt{OP\_CHECKTIMELOCKVERIFY}.
 
-As timelocks only allows for absolute wait time, like for example: ''this transaction can only be spent after \texttt{10th June 2019}''. Mark Friedenbach et al. proposed in 2015 to add an additonal op code to Script that can check for relative time passage as well, \texttt{OP\_CHECKSEQUENCEVERIFY}.
+As timelocks only allows for absolute wait time, like for example: \enquote{this transaction can only be spent after \texttt{10th June 2019}}. Mark Friedenbach et al. proposed in 2015 to add an additonal op code to Script that can check for relative time passage as well, \texttt{OP\_CHECKSEQUENCEVERIFY}.
 
 \Subsubsection{OP\_CHECKTIMELOCKVERIFY}
 There is an operation in Script called \texttt{OP\_CHECKTIMELOCKVERIFY}, what it does is that it compares the timestamp or blockheight that is on the stack and compares it to the timestamp that is in the transaction trying to spend the output that this op code is part of.\cite{antonopoulos_2017}\cite{checklocktime}\cite{script_wiki}\cite{bitcoin_core_tx}
